@@ -1,4 +1,4 @@
-package pl.selvin.android.ListSyncSample.authenticator;
+package pl.selvin.android.listsyncsample.authenticator;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
@@ -7,32 +7,32 @@ import android.os.IBinder;
 import android.util.Log;
 
 public class AuthenticationService extends Service {
-	private static final String TAG = "ListSync";
-	private Authenticator mAuthenticator;
+    private static final String TAG = "ListSync";
+    private Authenticator mAuthenticator;
 
-	@Override
-	public void onCreate() {
-		if (Log.isLoggable(TAG, Log.VERBOSE)) {
-			Log.v(TAG, "SampleSyncAdapter Authentication Service started.");
-		}
-		mAuthenticator = new Authenticator(this);
-	}
+    @Override
+    public void onCreate() {
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            Log.v(TAG, "SampleSyncAdapter Authentication Service started.");
+        }
+        mAuthenticator = new Authenticator(this);
+    }
 
-	@Override
-	public void onDestroy() {
-		if (Log.isLoggable(TAG, Log.VERBOSE)) {
-			Log.v(TAG, "SampleSyncAdapter Authentication Service stopped.");
-		}
-	}
+    @Override
+    public void onDestroy() {
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            Log.v(TAG, "SampleSyncAdapter Authentication Service stopped.");
+        }
+    }
 
-	@SuppressLint("NewApi")
-	@Override
-	public IBinder onBind(Intent intent) {
-		if (Log.isLoggable(TAG, Log.VERBOSE)) {
-			Log.v(TAG,
-					"getBinder()...  returning the AccountAuthenticator binder for intent "
-							+ intent);
-		}
-		return mAuthenticator.getIBinder();
-	}
+    @SuppressLint("NewApi")
+    @Override
+    public IBinder onBind(Intent intent) {
+        if (Log.isLoggable(TAG, Log.VERBOSE)) {
+            Log.v(TAG,
+                    "getBinder()...  returning the AccountAuthenticator binder for intent "
+                            + intent);
+        }
+        return mAuthenticator.getIBinder();
+    }
 }

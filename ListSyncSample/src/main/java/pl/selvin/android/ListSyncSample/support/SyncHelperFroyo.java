@@ -1,6 +1,5 @@
-package pl.selvin.android.ListSyncSample.support;
+package pl.selvin.android.listsyncsample.support;
 
-import pl.selvin.android.ListSyncSample.Constants;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
@@ -11,95 +10,96 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import pl.selvin.android.listsyncsample.Constants;
+
 public class SyncHelperFroyo extends SyncHelper {
 
-	private static final String TAG = SyncHelperFroyo.class.getName();
+    private static final String TAG = SyncHelperFroyo.class.getName();
 
-	public SyncHelperFroyo(Activity activity) {
-		super(activity);
-	}
+    public SyncHelperFroyo(Activity activity) {
+        super(activity);
+    }
 
-	@Override
-	public void doSync() {
-		AccountManager am = AccountManager.get(mActivity);
-		Account[] ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
-		if (ac.length > 0) {
-			ContentResolver.requestSync(ac[0], Constants.AUTHORITY,
-					new Bundle());
-		} else {
-			try {
-				am.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE,
-						null, null, mActivity,
-						new AccountManagerCallback<Bundle>() {
-							@Override
-							public void run(AccountManagerFuture<Bundle> ret) {
-								try {
-									Log.d(TAG, ret.getResult() + " ");
-									doSync();
-								} catch (Exception ex) {
-									// Log.e(TAG, ex.getMessage());
-									Toast.makeText(
-											mActivity,
-											"Can't create ListSync account ... closing",
-											Toast.LENGTH_LONG).show();
-									mActivity.finish();
-								}
+    @Override
+    public void doSync() {
+        AccountManager am = AccountManager.get(mActivity);
+        Account[] ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
+        if (ac.length > 0) {
+            ContentResolver.requestSync(ac[0], Constants.AUTHORITY,
+                    new Bundle());
+        } else {
+            try {
+                am.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTHTOKEN_TYPE,
+                        null, null, mActivity,
+                        new AccountManagerCallback<Bundle>() {
+                            @Override
+                            public void run(AccountManagerFuture<Bundle> ret) {
+                                try {
+                                    Log.d(TAG, ret.getResult() + " ");
+                                    doSync();
+                                } catch (Exception ex) {
+                                    // Log.e(TAG, ex.getMessage());
+                                    Toast.makeText(
+                                            mActivity,
+                                            "Can't create ListSync account ... closing",
+                                            Toast.LENGTH_LONG).show();
+                                    mActivity.finish();
+                                }
 
-							}
-						}, null);
+                            }
+                        }, null);
 
-			} catch (Exception ex) {
-				Log.e(TAG, ex.getMessage());
-				Toast.makeText(mActivity,
-						"Can't open ListSync account ... closing",
-						Toast.LENGTH_LONG).show();
-				mActivity.finish();
-			}
-		}
-	}
+            } catch (Exception ex) {
+                Log.e(TAG, ex.getMessage());
+                Toast.makeText(mActivity,
+                        "Can't open ListSync account ... closing",
+                        Toast.LENGTH_LONG).show();
+                mActivity.finish();
+            }
+        }
+    }
 
-	class UserIDRunnale implements Runnable {
-		UserIDRunnale(final Account ac) {
-			this.ac = ac;
-		}
+    public String getUserId() throws Exception {
 
-		String UserID = null;
-		Exception ex = null;
-		final Account ac;
+        AccountManager am = AccountManager.get(mActivity);
+        final Account[] ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
+        if (ac.length != 0) {
+            UserIDRunnale uid = new UserIDRunnale(ac[0]);
+            Thread th = new Thread(uid);
+            th.start();                //since 3.1 or so calling blockingGetAuthToken on UI thread will throw illegal state exception
+            th.join();                //just hack to not getting illegal state exception ... DO NOT do this in production code
+            if (uid.getUserID() != null)
+                return uid.getUserID();
+            if (uid.getException() != null)
+                throw uid.getException();
+        }
+        throw new Exception("Can't open ListSync account ... closing");
+    }
 
-		public String getUserID() {
-			return UserID;
-		}
+    class UserIDRunnale implements Runnable {
+        final Account ac;
+        String UserID = null;
+        Exception ex = null;
+        UserIDRunnale(final Account ac) {
+            this.ac = ac;
+        }
 
-		public Exception getException() {
-			return ex;
-		}
+        public String getUserID() {
+            return UserID;
+        }
 
-		@Override
-		public void run() {
-			try {
-				UserID = AccountManager.get(mActivity).blockingGetAuthToken(ac,
-						Constants.AUTHTOKEN_TYPE, true);
-			} catch (Exception e) {
-				ex = e;
-			}
-		}
-	}
+        public Exception getException() {
+            return ex;
+        }
 
-	public String getUserId() throws Exception {
-
-		AccountManager am = AccountManager.get(mActivity);
-		final Account[] ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
-		if (ac.length != 0) {
-			UserIDRunnale uid = new UserIDRunnale(ac[0]);
-			Thread th = new Thread(uid); 
-			th.start();				//since 3.1 or so calling blockingGetAuthToken on UI thread will throw illegal state exception
-			th.join();				//just hack to not getting illegal state exception ... DO NOT do this in production code
-			if (uid.getUserID() != null)
-				return uid.getUserID();
-			if (uid.getException() != null)
-				throw uid.getException();
-		}
-		throw new Exception("Can't open ListSync account ... closing");
-	}
+        @Override
+        public void run() {
+            try {
+                UserID = AccountManager.get(mActivity).blockingGetAuthToken(ac,
+                        Constants.AUTHTOKEN_TYPE, true);
+            } catch (Exception e) {
+                ex = e;
+            }
+        }
+    }
 }

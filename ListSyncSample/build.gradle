@@ -12,7 +12,7 @@ android {
     compileSdkVersion 21
     buildToolsVersion "21.1.1"
     defaultConfig {
-        applicationId "pl.selvin.android.ListSyncSample"
+        applicationId "pl.selvin.android.listsyncsample"
         minSdkVersion 7
         targetSdkVersion 21
         versionCode 1

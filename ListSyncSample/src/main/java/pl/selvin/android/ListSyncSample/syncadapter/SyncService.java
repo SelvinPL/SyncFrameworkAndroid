@@ -1,4 +1,4 @@
-package pl.selvin.android.ListSyncSample.syncadapter;
+package pl.selvin.android.listsyncsample.syncadapter;
 
 import android.app.Service;
 import android.content.Intent;

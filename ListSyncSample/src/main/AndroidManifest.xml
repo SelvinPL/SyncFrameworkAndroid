@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="pl.selvin.android.ListSyncSample">
+    package="pl.selvin.android.listsyncsample">
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
@@ -108,7 +108,7 @@
 
         <provider
             android:name=".provider.ListProvider"
-            android:authorities="pl.selvin.android.ListSyncSample" />
+            android:authorities="pl.selvin.android.listsyncsample" />
     </application>
 
 </manifest>

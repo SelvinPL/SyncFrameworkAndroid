@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <sync-adapter xmlns:android="http://schemas.android.com/apk/res/android"
-	android:contentAuthority="pl.selvin.android.ListSyncSample" android:accountType="pl.selvin.android.ListSyncSample.sync"
-	android:supportsUploading="true" />
+    android:accountType="pl.selvin.android.listsyncsample.sync"
+    android:contentAuthority="pl.selvin.android.listsyncsample"
+    android:supportsUploading="true" />
 

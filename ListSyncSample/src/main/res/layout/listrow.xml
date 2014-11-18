@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<pl.selvin.android.ListSyncSample.widget.CheckableRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<pl.selvin.android.listsyncsample.widget.CheckableRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:padding="6dip" >
+    android:padding="6dip">
 
     <ImageView
         android:id="@+id/icon"
@@ -54,4 +54,4 @@
         android:src="@drawable/submenu_arrow_nofocus"
         android:visibility="gone" />
 
-</pl.selvin.android.ListSyncSample.widget.CheckableRelativeLayout>
+</pl.selvin.android.listsyncsample.widget.CheckableRelativeLayout>

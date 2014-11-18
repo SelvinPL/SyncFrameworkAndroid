@@ -1,4 +1,4 @@
-package pl.selvin.android.ListSyncSample.ui;
+package pl.selvin.android.listsyncsample.ui;
 
 import android.content.Intent;
 import android.content.res.Configuration;
@@ -9,34 +9,34 @@ import android.view.MenuItem;
 
 public class ListActivity extends SyncActivity {
 
-	String listID = null;
+    String listID = null;
 
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
-		ListFragment details = null;
-		Intent intent = getIntent();
-		Uri uri = intent.getData();
-		Configuration config = getResources().getConfiguration();
-		if (uri != null) {
-			String sId = uri.getLastPathSegment();
-			details = ListFragment.newInstance(Long.parseLong(sId), false);
-		} else {
-			if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-				// && (config.screenLayout &
-				// Configuration.SCREENLAYOUT_SIZE_MASK) ==
-				// Configuration.SCREENLAYOUT_SIZE_LARGE) {
-				finish();
-				return;
-			}
-			details = new ListFragment();
-			details.setArguments(getIntent().getExtras());
-		}
-		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		getSupportFragmentManager().beginTransaction()
-				.replace(android.R.id.content, details).commit();
-		/*-
-		setContentView(R.layout.list_activity);
+        ListFragment details = null;
+        Intent intent = getIntent();
+        Uri uri = intent.getData();
+        Configuration config = getResources().getConfiguration();
+        if (uri != null) {
+            String sId = uri.getLastPathSegment();
+            details = ListFragment.newInstance(Long.parseLong(sId), false);
+        } else {
+            if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                // && (config.screenLayout &
+                // Configuration.SCREENLAYOUT_SIZE_MASK) ==
+                // Configuration.SCREENLAYOUT_SIZE_LARGE) {
+                finish();
+                return;
+            }
+            details = new ListFragment();
+            details.setArguments(getIntent().getExtras());
+        }
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportFragmentManager().beginTransaction()
+                .replace(android.R.id.content, details).commit();
+        /*-
+        setContentView(R.layout.list_activity);
 		getSupportActionBar().setTitle(R.string.ui_listactivity_title);
 		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		Intent intent = getIntent();
@@ -80,16 +80,16 @@ public class ListActivity extends SyncActivity {
 				}
 			}
 		}*/
-	}
+    }
 
 
-	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case android.R.id.home:
-			finish();
-			return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                finish();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }

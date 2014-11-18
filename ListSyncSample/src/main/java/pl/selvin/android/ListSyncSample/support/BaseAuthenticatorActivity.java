@@ -1,8 +1,5 @@
-package pl.selvin.android.ListSyncSample.support;
+package pl.selvin.android.listsyncsample.support;
 
-import pl.selvin.android.ListSyncSample.R;
-import pl.selvin.android.ListSyncSample.authenticator.Common;
-import pl.selvin.android.ListSyncSample.authenticator.Common.IAuthenticationResult;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.Dialog;
@@ -17,83 +14,84 @@ import android.view.Window;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import pl.selvin.android.listsyncsample.R;
+import pl.selvin.android.listsyncsample.authenticator.Common;
+import pl.selvin.android.listsyncsample.authenticator.Common.IAuthenticationResult;
+
 public class BaseAuthenticatorActivity extends Activity implements
-		IAuthenticationResult {
+        IAuthenticationResult {
 
-	private Thread mAuthThread;
+    public static final String BROADCAST = "PRE_FROYO_LOGIN";
+    private final Handler mHandler = new Handler();
+    private Thread mAuthThread;
+    private TextView mMessage;
+    private EditText mUsernameEdit;
+    private String mUsername;
 
-	private final Handler mHandler = new Handler();
-	private TextView mMessage;
+    public void onCreate(Bundle icicle) {
+        super.onCreate(icicle);
+        requestWindowFeature(Window.FEATURE_LEFT_ICON);
+        setContentView(R.layout.login_activity);
+        getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
+                android.R.drawable.ic_dialog_alert);
 
-	private EditText mUsernameEdit;
-	private String mUsername;
+        mMessage = (TextView) findViewById(R.id.message);
+        mUsernameEdit = (EditText) findViewById(R.id.username_edit);
+        mMessage.setText(getMessage());
+    }
 
-	public void onCreate(Bundle icicle) {
-		super.onCreate(icicle);
-		requestWindowFeature(Window.FEATURE_LEFT_ICON);
-		setContentView(R.layout.login_activity);
-		getWindow().setFeatureDrawableResource(Window.FEATURE_LEFT_ICON,
-				android.R.drawable.ic_dialog_alert);
+    private CharSequence getMessage() {
+        getString(R.string.label);
+        if (TextUtils.isEmpty(mUsername)) {
+            final CharSequence msg = getText(R.string.login_activity_newaccount_text);
+            return msg;
+        }
+        return null;
+    }
 
-		mMessage = (TextView) findViewById(R.id.message);
-		mUsernameEdit = (EditText) findViewById(R.id.username_edit);
-		mMessage.setText(getMessage());
-	}
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        final ProgressDialog dialog = new ProgressDialog(this);
+        dialog.setMessage(getText(R.string.ui_activity_authenticating));
+        dialog.setIndeterminate(true);
+        dialog.setCancelable(true);
+        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            public void onCancel(DialogInterface dialog) {
+                // Log.i(TAG, "dialog cancel has been invoked");
+                if (mAuthThread != null) {
+                    mAuthThread.interrupt();
 
-	private CharSequence getMessage() {
-		getString(R.string.label);
-		if (TextUtils.isEmpty(mUsername)) {
-			final CharSequence msg = getText(R.string.login_activity_newaccount_text);
-			return msg;
-		}
-		return null;
-	}
+                    finish();
+                }
 
-	@Override
-	protected Dialog onCreateDialog(int id) {
-		final ProgressDialog dialog = new ProgressDialog(this);
-		dialog.setMessage(getText(R.string.ui_activity_authenticating));
-		dialog.setIndeterminate(true);
-		dialog.setCancelable(true);
-		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-			public void onCancel(DialogInterface dialog) {
-				// Log.i(TAG, "dialog cancel has been invoked");
-				if (mAuthThread != null) {
-					mAuthThread.interrupt();
+            }
+        });
+        return dialog;
+    }
 
-					finish();
-				}
+    public void handleLogin(View view) {
+        mUsername = mUsernameEdit.getText().toString();
+        if (TextUtils.isEmpty(mUsername)) {
+            mMessage.setText(getMessage());
+        } else {
+            showDialog(0);
 
-			}
-		});
-		return dialog;
-	}
+            // Start authenticating...
+            mAuthThread = Common.attemptAuth(mUsername, mHandler, this);
+        }
+    }
 
-	public void handleLogin(View view) {
-		mUsername = mUsernameEdit.getText().toString();
-		if (TextUtils.isEmpty(mUsername)) {
-			mMessage.setText(getMessage());
-		} else {
-			showDialog(0);
+    public void onAuthenticationResult(boolean result) {
+        dismissDialog(0);
+        finish();
+    }
 
-			// Start authenticating...
-			mAuthThread = Common.attemptAuth(mUsername, mHandler, this);
-		}
-	}
-
-	public void onAuthenticationResult(boolean result) {
-		dismissDialog(0);
-		finish();
-	}
-
-	public void finish() {
-		Intent intent = new Intent(BROADCAST);
-		if (Common.getAuthtoken() != null) {
-			intent.putExtra(AccountManager.KEY_AUTHTOKEN, Common.getAuthtoken());
-		}
-		sendBroadcast(intent);
-		super.finish();
-	}
-
-	public static final String BROADCAST = "PRE_FROYO_LOGIN";
+    public void finish() {
+        Intent intent = new Intent(BROADCAST);
+        if (Common.getAuthtoken() != null) {
+            intent.putExtra(AccountManager.KEY_AUTHTOKEN, Common.getAuthtoken());
+        }
+        sendBroadcast(intent);
+        super.finish();
+    }
 }
