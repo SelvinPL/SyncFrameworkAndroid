@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="fill_parent" android:layout_height="fill_parent">
+	<include layout="@layout/itemrow" android:id="@+id/caption" />
+	<TextView android:id="@+id/dummy1" android:layout_width="100dip"
+		android:layout_height="wrap_content" android:text="Start date:"
+		android:layout_alignBottom="@id/tStartDate" android:layout_alignTop="@id/tStartDate" />
+	<TextView android:id="@+id/tStartDate" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:textStyle="bold"
+		android:layout_toRightOf="@id/dummy1" android:layout_below="@id/caption" />
+	<TextView android:id="@+id/dummy2" android:layout_width="100dip"
+		android:layout_height="wrap_content" android:text="End date:"
+		android:layout_alignBottom="@id/tEndDate" android:layout_alignTop="@id/tEndDate" />
+	<TextView android:id="@+id/tEndDate" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:textStyle="bold"
+		android:layout_toRightOf="@id/dummy2" android:layout_below="@id/tStartDate" />
+	<TextView android:id="@+id/dummy3" android:layout_width="100dip"
+		android:layout_height="wrap_content" android:text="Status:"
+		android:layout_alignBottom="@+id/tStatus" android:layout_alignTop="@id/tStatus" />
+	<TextView android:id="@+id/tStatus" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:textStyle="bold"
+		android:layout_toRightOf="@id/dummy3" android:layout_below="@id/tEndDate" />
+	<TextView android:id="@+id/dummy4" android:layout_width="100dip"
+		android:layout_height="wrap_content" android:text="Priority:"
+		android:layout_alignBottom="@+id/tPriority" android:layout_alignTop="@id/tPriority" />
+	<TextView android:id="@+id/tPriority" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:textStyle="bold"
+		android:layout_toRightOf="@id/dummy4" android:layout_below="@id/tStatus" />
+	<TextView android:id="@+id/dummy5" android:layout_width="100dip"
+		android:layout_height="wrap_content" android:text="Tags:"
+		android:layout_alignBottom="@+id/tTags" android:layout_alignTop="@id/tTags" />
+	<TextView android:id="@+id/tTags" android:layout_width="fill_parent"
+		android:layout_height="wrap_content" android:textStyle="bold"
+		android:layout_toRightOf="@id/dummy5" android:layout_below="@id/tPriority" />
+</RelativeLayout>
