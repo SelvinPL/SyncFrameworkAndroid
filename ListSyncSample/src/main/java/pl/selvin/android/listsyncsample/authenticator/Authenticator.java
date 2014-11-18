@@ -8,8 +8,10 @@ import android.accounts.NetworkErrorException;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.widget.Toast;
 
 import pl.selvin.android.listsyncsample.Constants;
@@ -38,9 +40,24 @@ class Authenticator extends AbstractAccountAuthenticator {
             AccountAuthenticatorResponse response, Account account)
             throws NetworkErrorException {
         Bundle ret = super.getAccountRemovalAllowed(response, account);
-        if (ret.getBoolean(AccountManager.KEY_BOOLEAN_RESULT))
-            mContext.getContentResolver().delete(ListProvider.getHelper().getClearUri(),
-                    null, null);
+        if (ret.getBoolean(AccountManager.KEY_BOOLEAN_RESULT)) {
+            try {
+                //temporary fix for account deletetion and clearing data
+                //next move is to return intent ...
+                final String[] pckgs = mContext.getPackageManager().getPackagesForUid(1000);
+                for (final String pckg : pckgs) {
+                    mContext.grantUriPermission(pckg,
+                            ListProvider.getHelper().getClearUri(),
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                }
+                mContext.getContentResolver().delete(ListProvider.getHelper().getClearUri(),
+                        null, null);
+                mContext.revokeUriPermission(ListProvider.getHelper().getClearUri(),
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            } catch (Exception ex){
+                ex.printStackTrace();
+            }
+        }
         return ret;
 
     }

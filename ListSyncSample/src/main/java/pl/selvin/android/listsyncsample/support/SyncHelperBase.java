@@ -51,8 +51,6 @@ public class SyncHelperBase extends SyncHelper {
             return null;
         }
 
-        String ui;
-
         @Override
         protected void onPreExecute() {
             mActivity.sendOrderedBroadcast(new Intent(
@@ -130,8 +128,7 @@ public class SyncHelperBase extends SyncHelper {
 
     @Override
     public String getUserId() throws Exception {
-        String userID = getPrefs()
+        return getPrefs()
                 .getString(AccountManager.KEY_AUTHTOKEN, null);
-        return userID;
     }
 }

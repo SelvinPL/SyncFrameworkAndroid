@@ -143,6 +143,9 @@ public abstract class BaseContentProvider extends ContentProvider {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriClearCode) {
+                if (DEBUG) {
+                    Log.d("delete", "uriClearCode");
+                }
                 mDB.onUpgrade(getWritableDatabase(), 1, contentHelper.DATABASE_VERSION);
                 return 0;
             }

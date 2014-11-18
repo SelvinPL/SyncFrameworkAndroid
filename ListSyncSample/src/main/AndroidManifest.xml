@@ -107,6 +107,7 @@
         </activity>
 
         <provider
+            android:grantUriPermissions="true"
             android:name=".provider.ListProvider"
             android:authorities="pl.selvin.android.listsyncsample" />
     </application>

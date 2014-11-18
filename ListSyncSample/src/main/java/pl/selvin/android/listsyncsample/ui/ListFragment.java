@@ -147,7 +147,7 @@ public class ListFragment extends android.support.v4.app.ListFragment implements
                 } else {
                     Toast.makeText(getActivity(),
                             "Can't add new item to unsaved list!",
-                            Toast.LENGTH_LONG);
+                            Toast.LENGTH_LONG).show();
                 }
                 return true;
             default:
