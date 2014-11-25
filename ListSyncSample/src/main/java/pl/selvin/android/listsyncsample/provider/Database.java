@@ -17,6 +17,7 @@ import pl.selvin.android.syncframework.annotation.Column;
 import pl.selvin.android.syncframework.annotation.Table;
 import pl.selvin.android.syncframework.annotation.TableName;
 
+@SuppressWarnings("unused")
 public class Database {
 
     static final String DS = "DefaultScope";

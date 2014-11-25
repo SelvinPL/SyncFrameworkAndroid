@@ -20,12 +20,10 @@ import android.view.MenuItem;
 
 public class ListActivity extends SyncActivity {
 
-    String listID = null;
-
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        ListFragment details = null;
+        ListFragment details;
         Intent intent = getIntent();
         Uri uri = intent.getData();
         Configuration config = getResources().getConfiguration();

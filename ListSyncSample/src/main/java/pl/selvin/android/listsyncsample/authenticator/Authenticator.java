@@ -8,10 +8,9 @@ import android.accounts.NetworkErrorException;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
+import android.support.annotation.NonNull;
 import android.widget.Toast;
 
 import pl.selvin.android.listsyncsample.Constants;
@@ -24,6 +23,14 @@ import pl.selvin.android.listsyncsample.provider.ListProvider;
  */
 @SuppressLint("NewApi")
 class Authenticator extends AbstractAccountAuthenticator {
+    static final String smsg = "ListSyncSample account already exists.\nOnly one account is supported.";
+    final Handler handler = new Handler() {
+        @Override
+        public void handleMessage(android.os.Message msg) {
+            if (msg.what == 0)
+                Toast.makeText(mContext, smsg, Toast.LENGTH_LONG).show();
+        }
+    };
     // Authentication Service context
     private final Context mContext;
 
@@ -36,6 +43,7 @@ class Authenticator extends AbstractAccountAuthenticator {
      * {@inheritDoc}
      */
     @Override
+    @NonNull
     public Bundle getAccountRemovalAllowed(
             AccountAuthenticatorResponse response, Account account)
             throws NetworkErrorException {
@@ -54,7 +62,7 @@ class Authenticator extends AbstractAccountAuthenticator {
                         null, null);
                 mContext.revokeUriPermission(ListProvider.getHelper().getClearUri(),
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } catch (Exception ex){
+            } catch (Exception ex) {
                 ex.printStackTrace();
             }
         }
@@ -90,17 +98,6 @@ class Authenticator extends AbstractAccountAuthenticator {
         handler.sendEmptyMessage(0);
         return bundle;
     }
-
-    static final String smsg = "ListSyncSample account already exists.\nOnly one account is supported.";
-    final Handler handler = new Handler() {
-        @Override
-        public void handleMessage(android.os.Message msg) {
-            if (msg.what == 0)
-                Toast.makeText(mContext, smsg, Toast.LENGTH_LONG).show();
-        }
-
-        ;
-    };
 
     /**
      * {@inheritDoc}

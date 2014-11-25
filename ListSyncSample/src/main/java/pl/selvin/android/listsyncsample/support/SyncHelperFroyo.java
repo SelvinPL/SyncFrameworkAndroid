@@ -70,8 +70,8 @@ public class SyncHelperFroyo extends SyncHelper {
         }
     }
 
-    class UserIDRunnale implements Runnable {
-        UserIDRunnale(final Account ac) {
+    class UserIDRunnable implements Runnable {
+        UserIDRunnable(final Account ac) {
             this.ac = ac;
         }
 
@@ -103,7 +103,7 @@ public class SyncHelperFroyo extends SyncHelper {
         AccountManager am = AccountManager.get(mActivity);
         final Account[] ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
         if (ac.length != 0) {
-            UserIDRunnale uid = new UserIDRunnale(ac[0]);
+            UserIDRunnable uid = new UserIDRunnable(ac[0]);
             Thread th = new Thread(uid);
             th.start();                //since 3.1 or so calling blockingGetAuthToken on UI thread will throw illegal state exception
             th.join();                //just hack to not getting illegal state exception ... DO NOT do this in production code

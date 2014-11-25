@@ -55,8 +55,7 @@ public class BaseAuthenticatorActivity extends Activity implements
     private CharSequence getMessage() {
         getString(R.string.label);
         if (TextUtils.isEmpty(mUsername)) {
-            final CharSequence msg = getText(R.string.login_activity_newaccount_text);
-            return msg;
+            return getText(R.string.login_activity_newaccount_text);
         }
         return null;
     }

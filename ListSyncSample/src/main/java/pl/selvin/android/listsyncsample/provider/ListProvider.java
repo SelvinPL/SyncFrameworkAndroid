@@ -21,12 +21,12 @@ import pl.selvin.android.syncframework.content.ContentHelper;
 public class ListProvider extends BaseContentProvider {
     private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class);
 
-    public static final synchronized ContentHelper getHelper() {
-        return helperInstance;
-    }
-
     public ListProvider() {
         super(getHelper());
+    }
+
+    public static synchronized ContentHelper getHelper() {
+        return helperInstance;
     }
     // we don't need implementation ... base class do everything on it's own
     // this is just class which we are pointing in xml files as Provider
@@ -35,12 +35,6 @@ public class ListProvider extends BaseContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        try {
-            //delay for testing
-            //Thread.sleep(2000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         return super
                 .query(uri, projection, selection, selectionArgs, sortOrder);
     }

@@ -11,6 +11,7 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -26,6 +27,7 @@ import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.support.SyncHelper;
 
+@SuppressLint("Registered")
 public class SyncActivity extends ActionBarActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {

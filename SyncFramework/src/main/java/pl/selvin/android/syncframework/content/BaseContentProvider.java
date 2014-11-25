@@ -238,7 +238,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     public String getType(Uri uri) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
-            if (code == contentHelper.uriSyncCode) {
+            if (code == ContentHelper.uriSyncCode) {
                 throw new IllegalArgumentException(
                         "There is no type for SYNC Uri: " + uri);
             }

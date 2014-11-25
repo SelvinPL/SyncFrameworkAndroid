@@ -11,13 +11,16 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
+
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.ActionBarActivity;
 import android.view.MenuItem;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import pl.selvin.android.listsyncsample.R;
@@ -26,7 +29,11 @@ import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 
 
-public class ItemActivity extends ActionBarActivity {
+public class ItemActivity extends ActionBarActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+
+    private final static int ItemLoaderId = 1;
+    private final static int TagsLoaderId = 2;
+    Uri uri = null;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,58 +41,15 @@ public class ItemActivity extends ActionBarActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         Intent intent = getIntent();
         if (intent != null) {
-            Uri uri = intent.getData();
+            uri = intent.getData();
             if (uri != null) {
-                Cursor cursor = managedQuery(uri, new String[]{
-                                Database.Item.NAME, Database.Item.DESCRIPTION,
-                                Database.Item.STARTDATE, Database.Item.ENDDATE,
-                                Database.Item.PRIORITY, Database.Item.STATUS,
-                                Database.Item.ID, Database.Item.USERID}, null, null,
-                        null);
-
-                if (cursor == null) {
-                    finish();
-                } else {
-                    if (cursor.moveToFirst()) {
-                        ((ImageView) findViewById(R.id.iItem)).setPadding(6, 6,
-                                6, 6);
-                        ((TextView) findViewById(R.id.tName)).setText(cursor
-                                .getString(0));
-                        ((TextView) findViewById(R.id.tDescription))
-                                .setText(cursor.getString(1));
-                        ((TextView) findViewById(R.id.tStartDate))
-                                .setText(cursor.getString(2));
-                        ((TextView) findViewById(R.id.tEndDate)).setText(cursor
-                                .getString(3));
-                        ((TextView) findViewById(R.id.tPriority))
-                                .setText(cursor.getString(4));
-                        ((TextView) findViewById(R.id.tStatus)).setText(cursor
-                                .getString(5));
-                        Cursor tags = managedQuery(
-                                ListProvider
-                                        .getHelper().getDirUri(Database.TagItemMapping.TABLE_NAME),
-                                new String[]{TagItemMapping.TAGID},
-                                String.format("%s=? AND %s=?",
-                                        TagItemMapping.ITEMID,
-                                        TagItemMapping.USERID),
-                                new String[]{cursor.getString(6),
-                                        cursor.getString(7)}, null);
-                        if (tags.moveToFirst()) {
-                            StringBuilder sb = new StringBuilder();
-                            do {
-                                if (sb.length() > 0)
-                                    sb.append(", ");
-                                sb.append(tags.getString(0));
-                            } while (tags.moveToNext());
-                            ((TextView) findViewById(R.id.tTags)).setText(sb
-                                    .toString());
-                        }
-                    } else {
-                        finish();
-                    }
-
-                }
+                getSupportLoaderManager().initLoader(ItemLoaderId, null, this);
+            } else {
+                finish();
             }
+
+        } else {
+            finish();
         }
     }
 
@@ -99,6 +63,83 @@ public class ItemActivity extends ActionBarActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int lid, Bundle bundle) {
+        switch (lid) {
+            case ItemLoaderId:
+                return new CursorLoader(this, uri, new String[]{
+                        Database.Item.NAME, Database.Item.DESCRIPTION,
+                        Database.Item.STARTDATE, Database.Item.ENDDATE,
+                        Database.Item.PRIORITY, Database.Item.STATUS,
+                        Database.Item.ID, Database.Item.USERID}, null, null,
+                        null);
+            case TagsLoaderId:
+                return new CursorLoader(this, ListProvider
+                        .getHelper().getDirUri(Database.TagItemMapping.TABLE_NAME),
+                        new String[]{TagItemMapping.TAGID},
+                        String.format("%s=? AND %s=?",
+                                TagItemMapping.ITEMID,
+                                TagItemMapping.USERID),
+                        new String[]{bundle.getString(TagItemMapping.ITEMID),
+                                bundle.getString(TagItemMapping.USERID)}, null);
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
+        final int lid = cursorLoader.getId();
+        switch (lid) {
+            case ItemLoaderId:
+                if (cursor == null) {
+                    finish();
+                } else {
+                    if (cursor.moveToFirst()) {
+                        findViewById(R.id.iItem).setPadding(6, 6,
+                                6, 6);
+                        ((TextView) findViewById(R.id.tName)).setText(cursor
+                                .getString(0));
+                        ((TextView) findViewById(R.id.tDescription))
+                                .setText(cursor.getString(1));
+                        ((TextView) findViewById(R.id.tStartDate))
+                                .setText(cursor.getString(2));
+                        ((TextView) findViewById(R.id.tEndDate)).setText(cursor
+                                .getString(3));
+                        ((TextView) findViewById(R.id.tPriority))
+                                .setText(cursor.getString(4));
+                        ((TextView) findViewById(R.id.tStatus)).setText(cursor
+                                .getString(5));
+                        final Bundle args = new Bundle();
+                        args.putString(TagItemMapping.ITEMID, cursor.getString(6));
+                        args.putString(TagItemMapping.USERID, cursor.getString(7));
+                        getSupportLoaderManager().initLoader(TagsLoaderId, args, this);
+                    } else {
+                        finish();
+                    }
+                }
+                return;
+            case TagsLoaderId:
+                if (cursor.moveToFirst()) {
+                    final StringBuilder sb = new StringBuilder();
+                    do {
+                        if (sb.length() > 0)
+                            sb.append(", ");
+                        sb.append(cursor.getString(0));
+                    } while (cursor.moveToNext());
+                    ((TextView) findViewById(R.id.tTags)).setText(sb
+                            .toString());
+                }
+                return;
+            default:
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
 
     }
 }

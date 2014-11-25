@@ -11,28 +11,25 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
-import android.app.AlertDialog;
-import android.app.DatePickerDialog;
-import android.app.Dialog;
-import android.app.TimePickerDialog;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.support.annotation.NonNull;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.ActionBarActivity;
-import android.text.format.DateFormat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.text.ParseException;
@@ -41,6 +38,8 @@ import java.util.Calendar;
 import java.util.UUID;
 
 import pl.selvin.android.listsyncsample.R;
+import pl.selvin.android.listsyncsample.app.DatePickerFragment;
+import pl.selvin.android.listsyncsample.app.TimePickerFragment;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.Database.Item;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
@@ -48,23 +47,41 @@ import pl.selvin.android.listsyncsample.support.SyncHelper;
 
 
 public class EditItemActivity extends ActionBarActivity implements
-        OnClickListener {
-    EditText edName, edDesc;
-    TextView tStartDate, tStartTime, tEndDate, tEndTime;
-    Spinner sPriority, sStatus;
-    Uri id = null;
-    TextView lastDateView = null;
-
+        OnClickListener, LoaderManager.LoaderCallbacks<Cursor> {
     final static SimpleDateFormat sdf = new SimpleDateFormat(
             "yyyy-MM-dd HH:mm:ss");
     final static SimpleDateFormat sdfdate = new SimpleDateFormat("yyyy-MM-dd");
     final static SimpleDateFormat sdftime = new SimpleDateFormat("HH:mm");
+    final static String UserDataView = "view";
+    DatePickerFragment.OnDateSetListener dpdfListener = new DatePickerFragment.OnDateSetListener() {
 
+        @Override
+        public void setDate(Calendar calendar, Bundle userData) {
+            final TextView tv = (TextView) findViewById(userData.getInt(UserDataView));
+            tv.setTag(calendar);
+            tv.setText(sdfdate.format(calendar.getTime()));
+        }
+    };
+    TimePickerFragment.OnTimeSetListener tpdfListener = new TimePickerFragment.OnTimeSetListener() {
+
+        @Override
+        public void setTime(Calendar calendar, Bundle userData) {
+            final TextView tv = (TextView) findViewById(userData.getInt(UserDataView));
+            tv.setTag(calendar);
+            tv.setText(sdftime.format(calendar.getTime()));
+        }
+    };
+    final static String TimePickerFragmentTag = "TimePickerFragment";
+    final static String DatePickerFragmentTag = "DatePickerFragment";
+    private final static int PriorityLoaderId = 1;
+    private final static int StatusLoaderId = 2;
+    private final static int ItemLoaderId = 3;
+    EditText edName, edDesc;
+    TextView tStartDate, tStartTime, tEndDate, tEndTime;
+    Spinner sPriority, sStatus;
+    SimpleCursorAdapter adPriority, adStatus;
+    Uri id = null;
     String listID = null;
-    static final int TIME_DIALOG_ID = 0;
-    static final int DATE_DIALOG_ID = 1;
-    static final int TAG_DIALOG_ID = 2;
-
     String UserID;
 
     @Override
@@ -90,97 +107,49 @@ public class EditItemActivity extends ActionBarActivity implements
         tStartTime.setOnClickListener(this);
         tEndDate.setOnClickListener(this);
         tEndTime.setOnClickListener(this);
-        SimpleCursorAdapter adPriority = new SimpleCursorAdapter(this,
-                android.R.layout.simple_spinner_item, managedQuery(
-                ListProvider.getHelper().getDirUri(Database.Priority.TABLE_NAME),
-                new String[]{BaseColumns._ID,
-                        Database.Priority.C_NAME}, null, null, null),
+        adPriority = new SimpleCursorAdapter(this,
+                R.layout.support_simple_spinner_dropdown_item, null,
                 new String[]{Database.Priority.C_NAME},
-                new int[]{android.R.id.text1});
-        adPriority
-                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                new int[]{android.R.id.text1}, 0);
+        adPriority.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sPriority.setAdapter(adPriority);
-        SimpleCursorAdapter adStatus = new SimpleCursorAdapter(this,
-                android.R.layout.simple_spinner_item, managedQuery(
-                ListProvider.getHelper().getDirUri(Database.Status.TABLE_NAME),
-                new String[]{BaseColumns._ID, Database.Status.NAME},
-                null, null, null),
+        adStatus = new SimpleCursorAdapter(this,
+                R.layout.support_simple_spinner_dropdown_item, null,
                 new String[]{Database.Status.NAME},
-                new int[]{android.R.id.text1});
+                new int[]{android.R.id.text1}, 0);
         adStatus.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         sStatus.setAdapter(adStatus);
         Intent intent = getIntent();
         if (!Intent.ACTION_INSERT.endsWith(intent.getAction())) {
             id = intent.getData();
-            Cursor cursor = managedQuery(id, new String[]{Database.Item.NAME,
-                    Database.Item.DESCRIPTION, Database.Item.PRIORITY,
-                    Database.Item.STATUS, Database.Item.STARTDATE,
-                    Database.Item.ENDDATE}, null, null, null);
-            if (cursor.moveToFirst()) {
-                setTitle(R.string.ui_edit_item);
-                edName.setText(cursor.getString(0));
-                edDesc.setText(cursor.getString(1));
-                int sid = cursor.getInt(2);
-                for (int i = 0; i < sPriority.getCount(); i++) {
-                    Cursor value = (Cursor) sPriority.getItemAtPosition(i);
-                    int id = value
-                            .getInt(value.getColumnIndex(BaseColumns._ID));
-                    if (id == sid) {
-                        sPriority.setSelection(i);
-                        break;
-                    }
-                }
-                sid = cursor.getInt(3);
-                for (int i = 0; i < sStatus.getCount(); i++) {
-                    Cursor value = (Cursor) sStatus.getItemAtPosition(i);
-                    int id = value
-                            .getInt(value.getColumnIndex(BaseColumns._ID));
-                    if (id == sid) {
-                        sStatus.setSelection(i);
-                        break;
-                    }
-                }
-                String time = cursor.getString(4);
-                Calendar cal = Calendar.getInstance();
-                try {
-                    cal.setTime(sdf.parse(time));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                tStartDate.setTag(cal);
-                tStartDate.setText(sdfdate.format(cal.getTime()));
-                tStartTime.setTag(cal);
-                tStartTime.setText(sdftime.format(cal.getTime()));
-                time = cursor.getString(5);
-                cal = Calendar.getInstance();
-                try {
-                    cal.setTime(sdf.parse(time));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                tEndDate.setTag(cal);
-                tEndDate.setText(sdfdate.format(cal.getTime()));
-                tEndTime.setTag(cal);
-                tEndTime.setText(sdftime.format(cal.getTime()));
-            } else {
-                finish();
-            }
         } else {
             listID = intent.getStringExtra(Item.LISTID);
             Calendar cal = Calendar.getInstance();
             cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
             tStartDate.setTag(cal);
             tStartDate.setText(sdfdate.format(cal.getTime()));
             tStartTime.setTag(cal);
             tStartTime.setText(sdftime.format(cal.getTime()));
             cal = Calendar.getInstance();
             cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
             cal.add(Calendar.DAY_OF_MONTH, 1);
             tEndDate.setTag(cal);
             tEndDate.setText(sdfdate.format(cal.getTime()));
             tEndTime.setTag(cal);
             tEndTime.setText(sdftime.format(cal.getTime()));
         }
+
+        final DatePickerFragment dateFragment = (DatePickerFragment) getSupportFragmentManager().findFragmentByTag(DatePickerFragmentTag);
+        if (dateFragment != null) {
+            dateFragment.setOnDateSetListener(dpdfListener);
+        }
+        final TimePickerFragment timeFragment = (TimePickerFragment) getSupportFragmentManager().findFragmentByTag(TimePickerFragmentTag);
+        if (timeFragment != null) {
+            timeFragment.setOnTimeSetListener(tpdfListener);
+        }
+        getSupportLoaderManager().initLoader(PriorityLoaderId, null, this);
     }
 
     @Override
@@ -188,56 +157,6 @@ public class EditItemActivity extends ActionBarActivity implements
         getMenuInflater().inflate(R.menu.save_cancel, menu);
         return super.onCreateOptionsMenu(menu);
     }
-
-    @Override
-    protected Dialog onCreateDialog(int id) {
-        switch (id) {
-            case TIME_DIALOG_ID:
-                Calendar cal = (Calendar) lastDateView.getTag();
-                return new TimePickerDialog(this, mTimeSetListener,
-                        cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE),
-                        DateFormat.is24HourFormat(this));
-            case DATE_DIALOG_ID:
-                cal = (Calendar) lastDateView.getTag();
-                return new DatePickerDialog(this, mDateSetListener,
-                        cal.get(Calendar.YEAR), cal.get(Calendar.MONTH),
-                        cal.get(Calendar.DAY_OF_MONTH));
-            case TAG_DIALOG_ID:
-                return new AlertDialog.Builder(this).setTitle("Tags").create();// .setMultiChoiceItems(arg0,
-            // arg1,
-            // arg2,
-            // arg3)
-        }
-        return null;
-    }
-
-    private DatePickerDialog.OnDateSetListener mDateSetListener = new DatePickerDialog.OnDateSetListener() {
-
-        public void onDateSet(DatePicker view, int year, int monthOfYear,
-                              int dayOfMonth) {
-            if (lastDateView != null) {
-                Calendar cal = (Calendar) lastDateView.getTag();
-                cal.set(Calendar.YEAR, year);
-                cal.set(Calendar.MONTH, monthOfYear);
-                cal.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                lastDateView.setText(sdfdate.format(cal.getTime()));
-                lastDateView = null;
-            }
-        }
-    };
-
-    private TimePickerDialog.OnTimeSetListener mTimeSetListener = new TimePickerDialog.OnTimeSetListener() {
-
-        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-            if (lastDateView != null) {
-                Calendar cal = (Calendar) lastDateView.getTag();
-                cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                cal.set(Calendar.MINUTE, minute);
-                lastDateView.setText(sdftime.format(cal.getTime()));
-                lastDateView = null;
-            }
-        }
-    };
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -287,35 +206,151 @@ public class EditItemActivity extends ActionBarActivity implements
         }
     }
 
+
     @Override
-    public void onClick(View v) {
-        switch (v.getId()) {
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        Calendar cal = (Calendar) tStartDate.getTag();
+        outState.putSerializable("StartDate", cal);
+        cal = (Calendar) tEndDate.getTag();
+        outState.putSerializable("EndDate", cal);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        Calendar cal = (Calendar) savedInstanceState.getSerializable("StartDate");
+        tStartDate.setTag(cal);
+        tStartDate.setText(sdfdate.format(cal.getTime()));
+        tStartTime.setTag(cal);
+        tStartTime.setText(sdftime.format(cal.getTime()));
+        cal = (Calendar) savedInstanceState.getSerializable("EndDate");
+        tEndDate.setTag(cal);
+        tEndDate.setText(sdfdate.format(cal.getTime()));
+        tEndTime.setTag(cal);
+        tEndTime.setText(sdftime.format(cal.getTime()));
+    }
+
+
+    @Override
+    public void onClick(final View v) {
+        final int vId = v.getId();
+        final Bundle userData = new Bundle();
+        userData.putInt(UserDataView, vId);
+        switch (vId) {
             case R.id.tStartDate:
             case R.id.tEndDate:
-                lastDateView = (TextView) v;
-                showDialog(DATE_DIALOG_ID);
+                final DatePickerFragment dateFragment = DatePickerFragment.newInstance((Calendar) v.getTag(), userData);
+                dateFragment.setOnDateSetListener(dpdfListener);
+                dateFragment.show(getSupportFragmentManager(), DatePickerFragmentTag);
                 break;
             case R.id.tStartTime:
             case R.id.tEndTime:
-                lastDateView = (TextView) v;
-                showDialog(TIME_DIALOG_ID);
+                final TimePickerFragment timeFragment = TimePickerFragment.newInstance((Calendar) v.getTag(), userData);
+                timeFragment.setOnTimeSetListener(tpdfListener);
+                timeFragment.show(getSupportFragmentManager(), TimePickerFragmentTag);
                 break;
         }
     }
 
     @Override
-    protected void onPrepareDialog(int id, Dialog dialog) {
+    public Loader<Cursor> onCreateLoader(int lid, Bundle args) {
+        switch (lid) {
+            case PriorityLoaderId:
+                return new CursorLoader(this,
+                        ListProvider.getHelper().getDirUri(Database.Priority.TABLE_NAME),
+                        new String[]{BaseColumns._ID,
+                                Database.Priority.C_NAME}, null, null, null);
+            case StatusLoaderId:
+                return new CursorLoader(this,
+                        ListProvider.getHelper().getDirUri(Database.Status.TABLE_NAME),
+                        new String[]{BaseColumns._ID, Database.Status.NAME},
+                        null, null, null);
+            case ItemLoaderId:
+                return new CursorLoader(this, id, new String[]{Database.Item.NAME,
+                        Database.Item.DESCRIPTION, Database.Item.PRIORITY,
+                        Database.Item.STATUS, Database.Item.STARTDATE,
+                        Database.Item.ENDDATE}, null, null, null);
+            default:
+                return null;
+        }
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
+        final int lid = cursorLoader.getId();
+        switch (lid) {
+            case PriorityLoaderId:
+                adPriority.swapCursor(cursor);
+                getSupportLoaderManager().initLoader(StatusLoaderId, null, this);
+                return;
+            case StatusLoaderId:
+                adStatus.swapCursor(cursor);
+                if (id != null) {
+                    getSupportLoaderManager().initLoader(ItemLoaderId, null, this);
+                }
+                return;
+            case ItemLoaderId:
+                if (cursor.moveToFirst()) {
+                    setTitle(R.string.ui_edit_item);
+                    edName.setText(cursor.getString(0));
+                    edDesc.setText(cursor.getString(1));
+                    SetupSpinner(cursor.getInt(2), sPriority);
+                    SetupSpinner(cursor.getInt(3), sStatus);
+                    String time = cursor.getString(4);
+                    Calendar cal = Calendar.getInstance();
+                    try {
+                        cal.setTime(sdf.parse(time));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    tStartDate.setTag(cal);
+                    tStartDate.setText(sdfdate.format(cal.getTime()));
+                    tStartTime.setTag(cal);
+                    tStartTime.setText(sdftime.format(cal.getTime()));
+                    time = cursor.getString(5);
+                    cal = Calendar.getInstance();
+                    try {
+                        cal.setTime(sdf.parse(time));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    tEndDate.setTag(cal);
+                    tEndDate.setText(sdfdate.format(cal.getTime()));
+                    tEndTime.setTag(cal);
+                    tEndTime.setText(sdftime.format(cal.getTime()));
+                } else {
+                    finish();
+                }
+                return;
+            default:
+        }
+    }
+
+    void SetupSpinner(final int sid, final Spinner spinner) {
+        for (int i = 0; i < spinner.getCount(); i++) {
+            Cursor value = (Cursor) spinner.getItemAtPosition(i);
+            int id = value
+                    .getInt(value.getColumnIndex(BaseColumns._ID));
+            if (id == sid) {
+                spinner.setSelection(i);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> cursorLoader) {
+        final int id = cursorLoader.getId();
         switch (id) {
-            case TIME_DIALOG_ID:
-                Calendar cal = (Calendar) lastDateView.getTag();
-                ((TimePickerDialog) dialog).updateTime(
-                        cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE));
-                break;
-            case DATE_DIALOG_ID:
-                cal = (Calendar) lastDateView.getTag();
-                ((DatePickerDialog) dialog).updateDate(cal.get(Calendar.YEAR),
-                        cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
-                break;
+            case PriorityLoaderId:
+                adPriority.swapCursor(null);
+                return;
+            case StatusLoaderId:
+                adStatus.swapCursor(null);
+                return;
+            default:
+
         }
     }
 }

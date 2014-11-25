@@ -12,7 +12,7 @@
     <string name="login_activity_username_label">Username</string>
     <string name="login_activity_password_label">Password</string>
     <string name="login_activity_ok_button">Sign in</string>
-    <string name="ui_synchronizing">Synchronizing...</string>
+    <string name="ui_synchronizing">Synchronizing…</string>
     <string name="ui_alert_confirm">Are you sure?</string>
     <string name="ui_alert_delete_list">Deleting List</string>
     <string name="ui_alert_delete_item">Deleting Item</string>
@@ -21,8 +21,8 @@
     <string name="ui_save">Save</string>
     <string name="ui_status">Status</string>
     <string name="ui_priority">Priority</string>
-    <string name="ui_status_prompt">Select status...</string>
-    <string name="ui_priority_prompt">Select priority...</string>
+    <string name="ui_status_prompt">Select status…</string>
+    <string name="ui_priority_prompt">Select priority…</string>
     <string name="ui_edit">Edit</string>
     <string name="ui_edit_list">Edit list</string>
     <string name="ui_edit_item">Edit item</string>

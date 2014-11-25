@@ -13,6 +13,8 @@ import org.apache.http.util.EntityUtils;
 import pl.selvin.android.listsyncsample.Constants;
 
 public class Common {
+    private static String mAuthtoken;
+
     public static void sendResult(final Boolean result, final Handler handler,
                                   final Context context) {
         if (handler == null || context == null) {
@@ -24,10 +26,6 @@ public class Common {
                         .onAuthenticationResult(result);
             }
         });
-    }
-
-    public interface IAuthenticationResult {
-        void onAuthenticationResult(boolean result);
     }
 
     public static boolean authenticate(String username, Handler handler,
@@ -53,8 +51,6 @@ public class Common {
         return false;
     }
 
-    private static String mAuthtoken;
-
     public static String getAuthtoken() {
         return mAuthtoken;
     }
@@ -63,11 +59,7 @@ public class Common {
         final Thread t = new Thread() {
             @Override
             public void run() {
-                try {
-                    runnable.run();
-                } finally {
-
-                }
+                runnable.run();
             }
         };
         t.start();
@@ -82,5 +74,9 @@ public class Common {
             }
         };
         return performOnBackgroundThread(runnable);
+    }
+
+    public interface IAuthenticationResult {
+        void onAuthenticationResult(boolean result);
     }
 }

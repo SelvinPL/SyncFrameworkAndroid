@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_below="@id/tName"
             android:hint="@string/ui_name"
-            android:imeOptions="actionNext" />
+            android:imeOptions="actionNext|flagNoExtractUi" />
 
         <TextView
             android:id="@+id/tDesc"
@@ -35,7 +35,7 @@
             android:layout_below="@id/tDesc"
             android:gravity="top"
             android:hint="@string/ui_description"
-            android:imeOptions="actionDone"
+            android:imeOptions="actionDone|flagNoExtractUi"
             android:lines="6"
             android:singleLine="false" />
 

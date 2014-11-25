@@ -11,7 +11,6 @@
 
 package pl.selvin.android.listsyncsample.authenticator;
 
-import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -36,7 +35,6 @@ public class AuthenticationService extends Service {
         }
     }
 
-    @SuppressLint("NewApi")
     @Override
     public IBinder onBind(Intent intent) {
         if (Log.isLoggable(TAG, Log.VERBOSE)) {

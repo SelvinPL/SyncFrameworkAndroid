@@ -28,20 +28,20 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 
 public class ListsListFragment extends android.support.v4.app.ListFragment implements
         LoaderManager.LoaderCallbacks<Cursor> {
+    private static final int ListsListLoaderId = 1;
     boolean mDualPane;
     int mCurIndex;
     long mCurId;
 
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        getLoaderManager().initLoader(Constants.Loaders.Lists.List, null, this);
+        getLoaderManager().initLoader(ListsListLoaderId, null, this);
     }
 
     @Override

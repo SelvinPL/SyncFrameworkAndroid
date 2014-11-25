@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="CustomTheme" parent="@style/Theme.AppCompat"></style>
+    <style name="CustomTheme" parent="@style/Theme.AppCompat">
+        <item name="colorPrimary">#607d8b</item>
+        <item name="colorPrimaryDark">#263238</item>
+        <item name="colorAccent">#eceff1</item>
+    </style>
 </resources>

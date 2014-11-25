@@ -27,13 +27,10 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
     public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
 
     private static final String TAG = "AuthenticatorActivity";
-
+    private final Handler mHandler = new Handler();
     private AccountManager mAccountManager;
     private Thread mAuthThread;
-
     private String mAuthtokenType;
-
-    private final Handler mHandler = new Handler();
     private TextView mMessage;
 
     private String mUsername;
@@ -117,8 +114,7 @@ public class AuthenticatorActivity extends AccountAuthenticatorActivity
     private CharSequence getMessage() {
         getString(R.string.label);
         if (TextUtils.isEmpty(mUsername)) {
-            final CharSequence msg = getText(R.string.login_activity_newaccount_text);
-            return msg;
+            return getText(R.string.login_activity_newaccount_text);
         }
         return null;
     }
