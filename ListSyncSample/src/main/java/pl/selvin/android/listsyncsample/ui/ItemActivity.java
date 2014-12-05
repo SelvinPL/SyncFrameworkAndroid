@@ -21,6 +21,7 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v7.app.ActionBarActivity;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import pl.selvin.android.listsyncsample.R;
@@ -99,8 +100,7 @@ public class ItemActivity extends ActionBarActivity implements LoaderManager.Loa
                     finish();
                 } else {
                     if (cursor.moveToFirst()) {
-                        findViewById(R.id.iItem).setPadding(6, 6,
-                                6, 6);
+                        findViewById(R.id.vDivider).setVisibility(View.GONE);
                         ((TextView) findViewById(R.id.tName)).setText(cursor
                                 .getString(0));
                         ((TextView) findViewById(R.id.tDescription))

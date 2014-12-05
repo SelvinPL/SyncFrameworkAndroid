@@ -105,6 +105,7 @@ public class ListFragment extends android.support.v4.app.ListFragment implements
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         getLoaderManager().initLoader(ListLoaderId, null, this);
+        setEmptyText("No items");
         registerForContextMenu(getListView());
     }
 

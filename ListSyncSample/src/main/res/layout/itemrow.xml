@@ -2,24 +2,20 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
-    android:padding="6dip">
+    android:padding="6dp">
 
-    <ImageView
-        android:id="@+id/iItem"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_marginLeft="16dip"
-        android:layout_marginRight="6dip"
-        android:src="@drawable/ic_item" />
-
+    <View android:id="@+id/vDivider"
+        android:layout_alignParentLeft="true"
+        android:layout_width="16dp"
+        android:layout_height="0dp"
+        />
     <TextView
         android:id="@+id/tName"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/vDivider"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
-        android:layout_toRightOf="@id/iItem"
         android:ellipsize="marquee"
         android:singleLine="true"
         android:textAppearance="?android:attr/textAppearanceLarge" />
@@ -30,5 +26,5 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_below="@id/tName"
-        android:layout_toRightOf="@id/iItem" />
+        android:layout_toRightOf="@id/vDivider" />
 </RelativeLayout>

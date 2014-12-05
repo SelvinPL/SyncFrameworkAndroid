@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="CustomTheme" parent="@style/Theme.AppCompat">
-        <item name="colorPrimary">#607d8b</item>
-        <item name="colorPrimaryDark">#263238</item>
-        <item name="colorAccent">#eceff1</item>
+    <style name="CustomThemeBase" parent="@style/Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
     </style>
+
+    <style name="CustomTheme" parent="@style/CustomThemeBase" />
 </resources>
