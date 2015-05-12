@@ -25,11 +25,10 @@ android {
             signingConfig signingConfigs.release
         }
     }
-    productFlavors {
-    }
 }
 
 dependencies {
     compile 'com.android.support:appcompat-v7:21.0.+'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.3.+'
     compile project(':SyncFramework')
 }

@@ -1,12 +1,12 @@
-/***
- Copyright (c) 2014 Selvin
- Licensed under the Apache License, Version 2.0 (the "License"); you may not
- use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
- by applicable law or agreed to in writing, software distributed under the
- License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
- OF ANY KIND, either express or implied. See the License for the specific
- language governing permissions and limitations under the License.
+/**
+ * Copyright (c) 2014 Selvin
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
+ * by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+ * OF ANY KIND, either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  */
 
 package pl.selvin.android.syncframework.content;
@@ -18,7 +18,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Base64;
-import android.util.Log;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -27,47 +26,49 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.TimeZone;
 
-import pl.selvin.android.syncframework.BuildConfig;
 import pl.selvin.android.syncframework.ColumnType;
 import pl.selvin.android.syncframework.annotation.Cascade;
 import pl.selvin.android.syncframework.annotation.Table;
 
 public final class TableInfo {
 
-    final static String msdate = "\"/Date(%s)/\"";
-    final static SimpleDateFormat sdf = new SimpleDateFormat(
-            "yyyy-MM-dd HH:mm:ss");
+    private final static String msdate = "\"/Date(%s)/\"";
+    private final static SimpleDateFormat sdf = new SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss", Locale.US);
 
     static {
         sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         // comment this line if you're store date in SQL in UTC format
     }
 
-    public final HashMap<String, String> map = new HashMap<String, String>();
+    public final HashMap<String, String> map = new HashMap<>();
+    public final String name;
+    public final String scope;
+    public final String scope_name;
+    public final ColumnInfo[] primaryKey;
+    public final String[] primaryKeyStrings;
+    public final String DirMime;
+    public final String ItemMime;
+    public final boolean readonly;
+    public final String[] notifyUris;
     final ColumnInfo[] columns;
     final ColumnInfo[] columnsComputed;
     final CascadeInfo[] cascadeDelete;
-    final String name;
-    final String scope;
-    final String scope_name;
-    final ColumnInfo[] primaryKey;
-    final String[] primaryKeyStrings;
-    final String DirMime;
-    final String ItemMime;
-    final boolean readonly;
     final ContentValues vals = new ContentValues(2);
-    public String[] notifyUris;
+    private final Class<?> clazz;
     String selection = null;
 
     TableInfo(String scope, String name, ArrayList<ColumnInfo> columns,
               ArrayList<ColumnInfo> columnsComputed,
               HashMap<String, ColumnInfo> columnsHash,
               String[] primaryKey, Table table, String AUTHORITY) {
+        clazz = getClass();
         this.name = name;
         final Cascade[] delete = table.delete();
-        cascadeDelete = delete.length > 0 ? new CascadeInfo[delete.length] : null;
+        cascadeDelete = new CascadeInfo[delete.length];
         for (int i = 0; i < delete.length; i++) {
             cascadeDelete[i] = new CascadeInfo(delete[i]);
         }
@@ -122,40 +123,8 @@ public final class TableInfo {
         return false;
     }
 
-    static class OperationHolder {
-        public final static int DELETE = 0;
-        public final static int UPDATE = 1;
-        public final static int INSERT = 2;
-
-
-        public OperationHolder(String table, int operation, ContentValues values, String uri) {
-            this.table = table;
-            this.operation = operation;
-            this.values = values;
-            this.uri = uri;
-        }
-
-        public long execute(SQLiteDatabase db) {
-            switch (operation) {
-                case DELETE:
-                    return db.delete(table, _.uriP, new String[]{uri});
-                case UPDATE:
-                    return db.update(table, values, _.uriP, new String[]{uri});
-                case INSERT:
-                    return db.insert(table, null, values);
-                default:
-                    return 0;
-            }
-        }
-
-        final String table;
-        final int operation;
-        final ContentValues values;
-        final String uri;
-    }
-
-    public void GetChanges(SQLiteDatabase db, JsonGenerator gen,
-                           ArrayList<TableInfo> notifyTableInfo)
+    public int GetChanges(SQLiteDatabase db, JsonGenerator gen,
+                          ArrayList<TableInfo> notifyTableInfo)
             throws IOException {
         String[] cols = new String[columns.length + 3];
         int i = 0;
@@ -165,14 +134,15 @@ public final class TableInfo {
         cols[i + 1] = _.tempId;
         cols[i + 2] = _.isDeleted;
         Cursor c = db.query(name, cols, _.isDirtyP, new String[]{"1"}, null, null, null);
-        //to fix startPos  > actual rows for large cursors db operations should be done after cursor is closed ...
-        final ArrayList<OperationHolder> operations = new ArrayList<OperationHolder>();
+        int counter = 0;
+        //to fix startPos  > actual rows for large cursors db operations should be done after
+        // cursor is closed ...
+        final ArrayList<OperationHolder> operations = new ArrayList<>();
         if (c.moveToFirst()) {
             if (!notifyTableInfo.contains(this))
                 notifyTableInfo.add(this);
             do {
-
-
+                counter++;
                 gen.writeStartObject();
                 gen.writeObjectFieldStart(_.__metadata);
                 gen.writeBooleanField(_.isDirty, true);
@@ -219,10 +189,7 @@ public final class TableInfo {
                                                         sdf.parse(c.getString(i))
                                                                 .getTime()));
                                     } catch (Exception e) {
-                                        if (BuildConfig.DEBUG) {
-                                            Log.e("ListSync",
-                                                    e.getLocalizedMessage());
-                                        }
+                                        Logger.LogE(clazz, e);
                                     }
                                     break;
                                 case ColumnType.NUMERIC:
@@ -241,8 +208,10 @@ public final class TableInfo {
             } while (c.moveToNext());
         }
         c.close();
+        Logger.LogD(clazz, "Table: '" + name + "', changes: " + counter);
         for (OperationHolder operation : operations)
             operation.execute(db);
+        return counter;
     }
 
     final public void DeleteWithUri(String uri, SQLiteDatabase db) {
@@ -250,8 +219,8 @@ public final class TableInfo {
     }
 
     @SuppressLint("NewApi")
-    final public void SyncJSON(final HashMap<String, Object> hval,
-                               final Metadata meta, final SQLiteDatabase db) {
+    final public boolean SyncJSON(final HashMap<String, Object> hval,
+                                  final Metadata meta, final SQLiteDatabase db) {
         int i = 0;
         vals.clear();
         for (; i < columns.length; i++) {
@@ -291,9 +260,11 @@ public final class TableInfo {
         vals.put(_.isDirty, 0);
         if (meta.tempId != null) {
             db.update(name, vals, _.tempIdP, new String[]{meta.tempId});
+            return true;
         } else {
             db.replace(name, null, vals);
         }
+        return false;
     }
 
     final public String DropStatement() {
@@ -320,9 +291,37 @@ public final class TableInfo {
         sb.append(TextUtils.join(", ", primaryKeyStrings));
         sb.append("));");
         String ret = sb.toString();
-        if (BuildConfig.DEBUG) {
-            Log.d(BaseContentProvider.TAG, "DB-C: " + ret);
-        }
+        Logger.LogD(clazz, "*CreateStatement*: " + ret);
         return ret;
+    }
+
+    static class OperationHolder {
+        public final static int DELETE = 0;
+        public final static int UPDATE = 1;
+        public final static int INSERT = 2;
+        final String table;
+        final int operation;
+        final ContentValues values;
+        final String uri;
+
+        public OperationHolder(String table, int operation, ContentValues values, String uri) {
+            this.table = table;
+            this.operation = operation;
+            this.values = values;
+            this.uri = uri;
+        }
+
+        public long execute(SQLiteDatabase db) {
+            switch (operation) {
+                case DELETE:
+                    return db.delete(table, _.uriP, new String[]{uri});
+                case UPDATE:
+                    return db.update(table, values, _.uriP, new String[]{uri});
+                case INSERT:
+                    return db.insert(table, null, values);
+                default:
+                    return 0;
+            }
+        }
     }
 }

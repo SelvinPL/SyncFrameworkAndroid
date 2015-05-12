@@ -1,24 +1,19 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion "21.1.1"
+    compileSdkVersion 22
+    buildToolsVersion '22.0.1'
 
     defaultConfig {
-        //applicationId "pl.selvin.android.syncframework" //removed for com.android.tools.build:gradle:1.0.0-rc1
         minSdkVersion 4
-        targetSdkVersion 21
+        targetSdkVersion 22
         versionCode 1
         versionName "1.0"
     }
     buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
     }
 }
 
 dependencies {
-    compile 'com.fasterxml.jackson.core:jackson-core:2.3.+' //for API > 7 can be 2.+
+    provided 'com.fasterxml.jackson.core:jackson-core:2.3.4'
 }

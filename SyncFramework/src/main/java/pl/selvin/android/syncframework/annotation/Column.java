@@ -28,6 +28,9 @@ import pl.selvin.android.syncframework.ColumnType;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface Column {
+    String COLLATE = "COLLATE LOCALIZED";
+    String EMPTY = "";
+
     int type() default ColumnType.INTEGER;
 
     boolean nullable() default false;
@@ -38,7 +41,4 @@ public @interface Column {
      *
      */
     String computed() default EMPTY;
-
-    public static final String COLLATE = "COLLATE LOCALIZED";
-    public static final String EMPTY = "";
 }

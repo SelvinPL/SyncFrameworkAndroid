@@ -1,12 +1,12 @@
-/***
- Copyright (c) 2014 Selvin
- Licensed under the Apache License, Version 2.0 (the "License"); you may not
- use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
- by applicable law or agreed to in writing, software distributed under the
- License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
- OF ANY KIND, either express or implied. See the License for the specific
- language governing permissions and limitations under the License.
+/**
+ * Copyright (c) 2014 Selvin
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
+ * by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+ * OF ANY KIND, either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  */
 
 package pl.selvin.android.syncframework.content;
@@ -27,9 +27,6 @@ import pl.selvin.android.syncframework.annotation.Column;
 import pl.selvin.android.syncframework.annotation.Table;
 import pl.selvin.android.syncframework.annotation.TableName;
 
-/**
- * Created by selvin on 24.02.14.
- */
 public class ContentHelper {
     // why this name... to ensure that your never call your table like this
     public static final String DOSYNC = "pl_selvin_android_syncframework_dosync";
@@ -39,8 +36,10 @@ public class ContentHelper {
     public static final int uriCode = 0xfff;
     public static final int uriCodeItemFlag = 0x1000;
     public static final int uriCodeItemRowIDFlag = 0x2000 | uriCodeItemFlag;
-    public static final int uriCodeViewFlag = 0x4000;
-    private static HashMap<Class<? extends SetupInterface>, ContentHelper> instances = new HashMap<Class<? extends SetupInterface>, ContentHelper>();
+    //public static final int uriCodeViewFlag = 0x4000;
+    public static final String PARAMETER_SYNC_TO_NETWORK = "sf_syncToNetwork";
+    public static final String PARAMETER_LIMIT = "sf_limit";
+    private final static HashMap<Class<? extends SetupInterface>, ContentHelper> instances = new HashMap<>();
     public final Uri CONTENT_URI;
     public final String SERVICE_URI;
     public final String AUTHORITY;
@@ -51,14 +50,9 @@ public class ContentHelper {
     public final Uri CLEAR_URI;
     public final String DATABASE_NAME;
     public final int DATABASE_VERSION;
-    public static final String SYNCTONETWORK = "syncToNetwork";
     private final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
-    private final SparseArray<TableInfo> AllTableInfoCode = new SparseArray<TableInfo>();
-    private final HashMap<String, TableInfo> AllTableInfo = new HashMap<String, TableInfo>();
-
-    public TableInfo getTableFromCode(int code) {
-        return AllTableInfoCode.get(code);
-    }
+    private final SparseArray<TableInfo> AllTableInfoCode = new SparseArray<>();
+    private final HashMap<String, TableInfo> AllTableInfo = new HashMap<>();
 
     protected ContentHelper(Class<? extends SetupInterface> setupClass) {
         SetupInterface setupInterface = null;
@@ -81,9 +75,9 @@ public class ContentHelper {
             matcher.addURI(AUTHORITY, DOSYNC + "/*/*", uriSyncCode);
             matcher.addURI(AUTHORITY, DOCLEAR, uriClearCode);
             final Class<?>[] clazzes = DB_CONTAINER_CLASS.getClasses();
-            final ArrayList<ColumnInfo> columns = new ArrayList<ColumnInfo>();
-            final ArrayList<ColumnInfo> columnsComputed = new ArrayList<ColumnInfo>();
-            final HashMap<String, ColumnInfo> columnsHash = new HashMap<String, ColumnInfo>();
+            final ArrayList<ColumnInfo> columns = new ArrayList<>();
+            final ArrayList<ColumnInfo> columnsComputed = new ArrayList<>();
+            final HashMap<String, ColumnInfo> columnsHash = new HashMap<>();
             int code = 0;
             for (final Class<?> clazz : clazzes) {
                 final Table table = clazz.getAnnotation(Table.class);
@@ -160,14 +154,17 @@ public class ContentHelper {
         return ret;
     }
 
+    public TableInfo getTableFromCode(int code) {
+        return AllTableInfoCode.get(code);
+    }
 
     public Uri.Builder getDirUriBuilder(String tableName) {
         return CONTENT_URI.buildUpon().appendPath(tableName);
     }
 
     public Uri.Builder getDirUriBuilder(String tableName,
-                                        Boolean syncToNetwork) {
-        return getDirUriBuilder(tableName).appendQueryParameter(SYNCTONETWORK,
+                                        boolean syncToNetwork) {
+        return getDirUriBuilder(tableName).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK,
                 Boolean.toString(syncToNetwork));
     }
 
@@ -175,12 +172,12 @@ public class ContentHelper {
         return getDirUriBuilder(tableName).build();
     }
 
-    public Uri getDirUri(String tableName, Boolean syncToNetwork) {
+    public Uri getDirUri(String tableName, boolean syncToNetwork) {
         return getDirUriBuilder(tableName, syncToNetwork).build();
     }
 
     public Uri.Builder getItemUriBuilder(String tableName,
-                                         Object... primaryKeys) {
+                                         String... primaryKeys) {
         Uri.Builder builder = CONTENT_URI.buildUpon();
         builder.appendPath(tableName);
         if (primaryKeys == null || primaryKeys.length == 0) {
@@ -195,17 +192,17 @@ public class ContentHelper {
     }
 
     public Uri.Builder getItemUriBuilder(String tableName,
-                                         Boolean syncToNetwork, Object... primaryKeys) {
+                                         boolean syncToNetwork, String... primaryKeys) {
         return getItemUriBuilder(tableName, primaryKeys).appendQueryParameter(
-                SYNCTONETWORK, Boolean.toString(syncToNetwork));
+                PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
-    public Uri getItemUri(String tableName, Object... primaryKeys) {
+    public Uri getItemUri(String tableName, String... primaryKeys) {
         return getItemUriBuilder(tableName, primaryKeys).build();
     }
 
-    public Uri getItemUri(String tableName, Boolean syncToNetwork,
-                          Object... primaryKeys) {
+    public Uri getItemUri(String tableName, boolean syncToNetwork,
+                          String... primaryKeys) {
         return getItemUriBuilder(tableName, syncToNetwork, primaryKeys).build();
     }
 
@@ -215,9 +212,9 @@ public class ContentHelper {
     }
 
     public Uri.Builder getItemUriBuilder(String tableName,
-                                         Boolean syncToNetwork, long _id) {
+                                         boolean syncToNetwork, long _id) {
         return getItemUriBuilder(tableName, _id).appendQueryParameter(
-                SYNCTONETWORK, Boolean.toString(syncToNetwork));
+                PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
     public Uri getItemUri(String tableName, long _id) {
@@ -251,6 +248,7 @@ public class ContentHelper {
                     break;
             }
         }
+        Logger.LogD(getClass(), "Scope: '" + scope + "' has" + (ret ? "" : " NO") + " dirty tables");
         return ret;
     }
 
