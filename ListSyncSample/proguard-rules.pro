@@ -21,3 +21,4 @@
           @pl.selvin.android.syncframework.annotation.Column static <fields>;
           @pl.selvin.android.syncframework.annotation.TableName static <fields>;
 }
+-dontwarn okio.**

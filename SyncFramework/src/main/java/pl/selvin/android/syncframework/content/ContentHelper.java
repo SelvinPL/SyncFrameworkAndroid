@@ -162,10 +162,8 @@ public class ContentHelper {
         return CONTENT_URI.buildUpon().appendPath(tableName);
     }
 
-    public Uri.Builder getDirUriBuilder(String tableName,
-                                        boolean syncToNetwork) {
-        return getDirUriBuilder(tableName).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK,
-                Boolean.toString(syncToNetwork));
+    public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork) {
+        return getDirUriBuilder(tableName).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
     public Uri getDirUri(String tableName) {
@@ -176,8 +174,7 @@ public class ContentHelper {
         return getDirUriBuilder(tableName, syncToNetwork).build();
     }
 
-    public Uri.Builder getItemUriBuilder(String tableName,
-                                         String... primaryKeys) {
+    public Uri.Builder getItemUriBuilder(String tableName, String... primaryKeys) {
         Uri.Builder builder = CONTENT_URI.buildUpon();
         builder.appendPath(tableName);
         if (primaryKeys == null || primaryKeys.length == 0) {
@@ -191,44 +188,36 @@ public class ContentHelper {
         return builder;
     }
 
-    public Uri.Builder getItemUriBuilder(String tableName,
-                                         boolean syncToNetwork, String... primaryKeys) {
-        return getItemUriBuilder(tableName, primaryKeys).appendQueryParameter(
-                PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
+    public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, String... primaryKeys) {
+        return getItemUriBuilder(tableName, primaryKeys).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
     public Uri getItemUri(String tableName, String... primaryKeys) {
         return getItemUriBuilder(tableName, primaryKeys).build();
     }
 
-    public Uri getItemUri(String tableName, boolean syncToNetwork,
-                          String... primaryKeys) {
+    public Uri getItemUri(String tableName, boolean syncToNetwork, String... primaryKeys) {
         return getItemUriBuilder(tableName, syncToNetwork, primaryKeys).build();
     }
 
     public Uri.Builder getItemUriBuilder(String tableName, long _id) {
-        return CONTENT_URI.buildUpon().appendPath(tableName)
-                .appendPath("ROWID").appendPath(Long.toString(_id));
+        return CONTENT_URI.buildUpon().appendPath(tableName).appendPath("ROWID").appendPath(Long.toString(_id));
     }
 
-    public Uri.Builder getItemUriBuilder(String tableName,
-                                         boolean syncToNetwork, long _id) {
-        return getItemUriBuilder(tableName, _id).appendQueryParameter(
-                PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
+    public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, long _id) {
+        return getItemUriBuilder(tableName, _id).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
     public Uri getItemUri(String tableName, long _id) {
         return getItemUriBuilder(tableName, _id).build();
     }
 
-    public Uri getItemUri(String tableName, boolean syncToNetwork,
-                          long _id) {
+    public Uri getItemUri(String tableName, boolean syncToNetwork, long _id) {
         return getItemUriBuilder(tableName, syncToNetwork, _id).build();
     }
 
     public Uri getSyncUri(String serviceName, String syncScope) {
-        return Uri.withAppendedPath(
-                Uri.withAppendedPath(SYNC_URI, serviceName), syncScope);
+        return Uri.withAppendedPath(Uri.withAppendedPath(SYNC_URI, serviceName), syncScope);
     }
 
     public Uri getClearUri() {

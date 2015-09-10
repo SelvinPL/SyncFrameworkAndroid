@@ -1,12 +1,12 @@
 /***
- Copyright (c) 2014 Selvin
- Licensed under the Apache License, Version 2.0 (the "License"); you may not
- use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
- by applicable law or agreed to in writing, software distributed under the
- License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
- OF ANY KIND, either express or implied. See the License for the specific
- language governing permissions and limitations under the License.
+ * Copyright (c) 2014 Selvin
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
+ * by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+ * OF ANY KIND, either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  */
 
 package pl.selvin.android.listsyncsample.ui;
@@ -16,7 +16,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 
 import pl.selvin.android.listsyncsample.R;
@@ -31,7 +32,7 @@ import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.listsyncsample.support.SyncHelper;
 
-public class EditListActivity extends ActionBarActivity {
+public class EditListActivity extends AppCompatActivity {
     EditText edName, edDesc;
     Uri id = null;
     String UserID;
@@ -90,8 +91,7 @@ public class EditListActivity extends ActionBarActivity {
                     if (id == null) {
                         values.put(Database.List.ID, UUID.randomUUID().toString());
                         values.put(Database.List.USERID, UserID);
-                        values.put(Database.List.CREATEDATE, new SimpleDateFormat(
-                                "yyyy-MM-dd HH:mm:ss").format(new Date()));
+                        values.put(Database.List.CREATEDATE, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
                         getContentResolver().insert(
                                 ListProvider.getHelper().getDirUri(Database.List.TABLE_NAME), // content://pl.selvin.android.listsyncsample/Lists
                                 values);

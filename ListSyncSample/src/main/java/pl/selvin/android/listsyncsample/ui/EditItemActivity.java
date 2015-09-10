@@ -1,12 +1,12 @@
 /***
- Copyright (c) 2014 Selvin
- Licensed under the Apache License, Version 2.0 (the "License"); you may not
- use this file except in compliance with the License. You may obtain a copy
- of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
- by applicable law or agreed to in writing, software distributed under the
- License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
- OF ANY KIND, either express or implied. See the License for the specific
- language governing permissions and limitations under the License.
+ * Copyright (c) 2014 Selvin
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
+ * by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+ * OF ANY KIND, either express or implied. See the License for the specific
+ * language governing permissions and limitations under the License.
  */
 
 package pl.selvin.android.listsyncsample.ui;
@@ -22,7 +22,7 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +35,7 @@ import android.widget.Toast;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.UUID;
 
 import pl.selvin.android.listsyncsample.R;
@@ -46,13 +47,17 @@ import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.listsyncsample.support.SyncHelper;
 
 
-public class EditItemActivity extends ActionBarActivity implements
+public class EditItemActivity extends AppCompatActivity implements
         OnClickListener, LoaderManager.LoaderCallbacks<Cursor> {
-    final static SimpleDateFormat sdf = new SimpleDateFormat(
-            "yyyy-MM-dd HH:mm:ss");
-    final static SimpleDateFormat sdfdate = new SimpleDateFormat("yyyy-MM-dd");
-    final static SimpleDateFormat sdftime = new SimpleDateFormat("HH:mm");
+    final static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+    final static SimpleDateFormat sdfdate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+    final static SimpleDateFormat sdftime = new SimpleDateFormat("HH:mm", Locale.getDefault());
     final static String UserDataView = "view";
+    final static String TimePickerFragmentTag = "TimePickerFragment";
+    final static String DatePickerFragmentTag = "DatePickerFragment";
+    private final static int PriorityLoaderId = 1;
+    private final static int StatusLoaderId = 2;
+    private final static int ItemLoaderId = 3;
     DatePickerFragment.OnDateSetListener dpdfListener = new DatePickerFragment.OnDateSetListener() {
 
         @Override
@@ -71,11 +76,6 @@ public class EditItemActivity extends ActionBarActivity implements
             tv.setText(sdftime.format(calendar.getTime()));
         }
     };
-    final static String TimePickerFragmentTag = "TimePickerFragment";
-    final static String DatePickerFragmentTag = "DatePickerFragment";
-    private final static int PriorityLoaderId = 1;
-    private final static int StatusLoaderId = 2;
-    private final static int ItemLoaderId = 3;
     EditText edName, edDesc;
     TextView tStartDate, tStartTime, tEndDate, tEndTime;
     Spinner sPriority, sStatus;
@@ -94,6 +94,7 @@ public class EditItemActivity extends ActionBarActivity implements
             finish();
         }
         setContentView(R.layout.edit_item_activity);
+        //noinspection ConstantConditions
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         edName = (EditText) findViewById(R.id.edName);
         edDesc = (EditText) findViewById(R.id.edDesc);
@@ -220,15 +221,19 @@ public class EditItemActivity extends ActionBarActivity implements
     protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         Calendar cal = (Calendar) savedInstanceState.getSerializable("StartDate");
-        tStartDate.setTag(cal);
-        tStartDate.setText(sdfdate.format(cal.getTime()));
-        tStartTime.setTag(cal);
-        tStartTime.setText(sdftime.format(cal.getTime()));
+        if (cal != null) {
+            tStartDate.setTag(cal);
+            tStartDate.setText(sdfdate.format(cal.getTime()));
+            tStartTime.setTag(cal);
+            tStartTime.setText(sdftime.format(cal.getTime()));
+        }
         cal = (Calendar) savedInstanceState.getSerializable("EndDate");
-        tEndDate.setTag(cal);
-        tEndDate.setText(sdfdate.format(cal.getTime()));
-        tEndTime.setTag(cal);
-        tEndTime.setText(sdftime.format(cal.getTime()));
+        if (cal != null) {
+            tEndDate.setTag(cal);
+            tEndDate.setText(sdfdate.format(cal.getTime()));
+            tEndTime.setTag(cal);
+            tEndTime.setText(sdftime.format(cal.getTime()));
+        }
     }
 
 

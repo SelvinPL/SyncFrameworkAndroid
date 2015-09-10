@@ -26,7 +26,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 
-import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
@@ -34,7 +33,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,15 +45,14 @@ import pl.selvin.android.syncframework.support.v4.database.DatabaseUtilsCompat;
 
 public abstract class BaseContentProvider extends ContentProvider {
     public static final String SYNC_SYNCSTATS = "SYNC_PARAM_IN_SYNCSTATS";
-    protected final static int HTTP_GET = 1;
-    protected final static int HTTP_POST = 2;
-
+    protected final RequestExecutor executor;
     protected final ContentHelper contentHelper;
     private final Class<?> clazz;
     private OpenHelper mDB;
 
-    public BaseContentProvider(ContentHelper contentHelper) {
+    public BaseContentProvider(ContentHelper contentHelper, RequestExecutor executor) {
         clazz = getClass();
+        this.executor = executor;
         this.contentHelper = contentHelper;
     }
 
@@ -74,6 +71,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
+        Logger.LogD(clazz, "delete: " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriClearCode) {
@@ -203,8 +201,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
-                        String sortOrder) {
+    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -250,8 +247,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                             String sortOrder, String limit) {
         Logger.LogD(clazz, uri + "");
         //noinspection deprecation
-        Logger.LogD(clazz,
-                builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
+        Logger.LogD(clazz, builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
         Logger.LogD(clazz, Arrays.toString(selectionArgs));
     }
 
@@ -262,8 +258,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             Uri uri = Uri.parse(method);
             if (contentHelper.matchUri(uri) == ContentHelper.uriSyncCode) {
                 SyncStats inout = syncParams.getParcelable(SYNC_SYNCSTATS);
-                inout = Sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg,
-                        inout);
+                inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, inout);
                 syncParams.putParcelable(SYNC_SYNCSTATS, inout);
                 return syncParams;
             }
@@ -279,8 +274,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
                 Logger.LogD(clazz, "*update* sync uri: " + uri.toString());
-                final SyncStats result = Sync(uri.getPathSegments().get(1),
-                        uri.getPathSegments().get(2), selection, new SyncStats());
+                final SyncStats result = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), selection, new SyncStats());
                 return (result.hasErrors() ? 1 : 0);
             }
             final TableInfo tab = contentHelper.getTableFromCode(code & ContentHelper.uriCode);
@@ -326,8 +320,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     boolean checkSyncToNetwork(Uri uri) {
-        final String syncToNetworkUri = uri
-                .getQueryParameter(ContentHelper.PARAMETER_SYNC_TO_NETWORK);
+        final String syncToNetworkUri = uri.getQueryParameter(ContentHelper.PARAMETER_SYNC_TO_NETWORK);
         return syncToNetworkUri == null || Boolean.parseBoolean(syncToNetworkUri);
     }
 
@@ -339,22 +332,20 @@ public abstract class BaseContentProvider extends ContentProvider {
         return mDB.getWritableDatabase();
     }
 
-    protected SyncStats Sync(String service, String scope, String params, SyncStats stats) {
+    protected SyncStats sync(String service, String scope, String params, SyncStats stats) {
         final long start = System.currentTimeMillis();
         boolean hasError = false;
         if (params == null) params = "";
         final SQLiteDatabase db = mDB.getWritableDatabase();
         final ArrayList<TableInfo> notifyTableInfo = new ArrayList<>();
-
-        final String download = String
-                .format(contentHelper.DOWNLOAD_SERVICE_URI, service, scope, params);
-        final String upload = String
-                .format(contentHelper.UPLOAD_SERVICE_URI, service, scope, params);
+        final JsonFactory jsonFactory = new JsonFactory();
+        JsonToken current;
+        final String download = String.format(contentHelper.DOWNLOAD_SERVICE_URI, service, scope, params);
+        final String upload = String.format(contentHelper.UPLOAD_SERVICE_URI, service, scope, params);
         final String scopeServerBlob = String.format("%s.%s.%s", service, scope, _.serverBlob);
         String serverBlob = null;
-        Cursor cur = db
-                .query(BlobsTable.NAME, new String[]{BlobsTable.C_VALUE}, BlobsTable.C_NAME + "=?",
-                        new String[]{scopeServerBlob}, null, null, null);
+        Cursor cur = db.query(BlobsTable.NAME, new String[]{BlobsTable.C_VALUE}, BlobsTable.C_NAME + "=?",
+                new String[]{scopeServerBlob}, null, null, null);
         final String originalBlob;
         if (cur.moveToFirst()) {
             originalBlob = serverBlob = cur.getString(0);
@@ -372,29 +363,27 @@ public abstract class BaseContentProvider extends ContentProvider {
             final Metadata meta = new Metadata();
             final HashMap<String, Object> vals = new HashMap<>();
             final ContentValues cv = new ContentValues(2);
-            JsonFactory jsonFactory = new JsonFactory();
-            JsonToken current;
             String name;
             boolean moreChanges = false;
             boolean forceMoreChanges = false;
             do {
                 final int requestMethod;
                 final String serviceRequestUrl;
-                final SyncContentProducer contentProducer;
+                final ISyncContentProducer contentProducer;
 
                 if (serverBlob != null) {
-                    requestMethod = HTTP_POST;
+                    requestMethod = RequestExecutor.HTTP_POST;
                     if (noChanges) {
                         serviceRequestUrl = download;
                     } else {
                         serviceRequestUrl = upload;
                         forceMoreChanges = true;
                     }
-                    contentProducer = new SyncContentProducer(jsonFactory, db, scope, serverBlob,
-                            !noChanges, notifyTableInfo, contentHelper);
+
+                    contentProducer = new SyncContentProducer(jsonFactory, db, scope, serverBlob, !noChanges, notifyTableInfo, contentHelper);
                     noChanges = true;
                 } else {
-                    requestMethod = HTTP_GET;
+                    requestMethod = RequestExecutor.HTTP_GET;
                     serviceRequestUrl = download;
                     contentProducer = null;
 
@@ -403,10 +392,10 @@ public abstract class BaseContentProvider extends ContentProvider {
                     db.beginTransaction();
                 }
                 Logger.LogD(getClass(), serviceRequestUrl);
-                Result result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
-                if (result.getStatus() == 200) {
+                RequestExecutor.Result result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
+                if (result.status == 200) {
                     if (contentProducer != null) stats.numEntries += contentProducer.getChanges();
-                    final JsonParser jp = jsonFactory.createParser(result.getInputStream());
+                    final JsonParser jp = jsonFactory.createParser(result.inputBuffer);
 
                     jp.nextToken(); // skip ("START_OBJECT(d) expected");
                     jp.nextToken(); // skip ("FIELD_NAME(d) expected");
@@ -546,7 +535,10 @@ public abstract class BaseContentProvider extends ContentProvider {
                         }
                     }
                     jp.close();
-                    Logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                    if (resolveConflicts)
+                        Logger.LogE(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                    else
+                        Logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
                     if (!hasError) {
                         cv.clear();
                         cv.put(BlobsTable.C_NAME, scopeServerBlob);
@@ -561,8 +553,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                         for (TableInfo t : notifyTableInfo) {
                             final Uri nu = contentHelper.getDirUri(t.name);
                             cr.notifyChange(nu, null, false);
-                            Logger.LogD(clazz,
-                                    "*Sync* notifyChange table: " + t.name + ", uri: " + nu);
+                            Logger.LogD(clazz, "*Sync* notifyChange table: " + t.name + ", uri: " + nu);
                             for (String n : t.notifyUris) {
                                 cr.notifyChange(Uri.parse(n), null, false);
                                 Logger.LogD(clazz, "\t+ uri: " + n);
@@ -571,24 +562,13 @@ public abstract class BaseContentProvider extends ContentProvider {
                         notifyTableInfo.clear();
                     }
                 } else {
-                    Logger.LogD(clazz, "*Sync* Server error: " + result.getStatus());
-                    if (result.getInputStream() != null) {
-                        final InputStream input = result.getInputStream();
-                        int readed;
-                        final byte[] buffer = new byte[1024];
-                        while ((readed = input.read(buffer)) != -1) {
-                            Logger.LogD(clazz, "\t" + new String(buffer, 0, readed));
-                        }
-                    }
+                    Logger.LogD(clazz, "*Sync* Server error: " + result.status);
+                    Logger.LogD(clazz, "\t" + result.getError());
                     hasError = true;
                     break;
                 }
                 result.close();
             } while (moreChanges);
-        } catch (final JsonParseException e) {
-            stats.numParseExceptions++;
-            hasError = true;
-            Logger.LogE(clazz, e);
         } catch (final IOException e) {
             stats.numIoExceptions++;
             hasError = true;
@@ -622,10 +602,8 @@ public abstract class BaseContentProvider extends ContentProvider {
         return stats;
     }
 
-    public Result executeRequest(int requestMethod, String serviceRequestUrl,
-                                 final SyncContentProducer syncContentProducer) throws IOException {
-        return RequestExecutor.getInstance()
-                .execute(requestMethod, serviceRequestUrl, syncContentProducer);
+    protected RequestExecutor.Result executeRequest(int requestMethod, String serviceRequestUrl, final ISyncContentProducer syncContentProducer) throws IOException {
+        return executor.execute(requestMethod, serviceRequestUrl, syncContentProducer);
     }
 
     public void onDowngradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
@@ -649,10 +627,8 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     protected void onUpgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Cursor c = db
-                .query("sqlite_master", new String[]{"'DROP TABLE ' || name || ';' AS cmd"},
-                        "type=? AND name<>?", new String[]{"table", "android_metadata"}, null, null,
-                        null);
+        Cursor c = db.query("sqlite_master", new String[]{"'DROP TABLE ' || name || ';' AS cmd"},
+                "type=? AND name<>?", new String[]{"table", "android_metadata"}, null, null, null);
         final ArrayList<String> commands = new ArrayList<>();
         if (c.moveToFirst()) {
             do {
@@ -671,24 +647,30 @@ public abstract class BaseContentProvider extends ContentProvider {
         onCreateDataBase(db);
     }
 
-    public static class SyncContentProducer {
+    public interface ISyncContentProducer {
+        int getChanges();
+
+        void writeTo(final OutputStream outputStream) throws IOException;
+    }
+
+    private static class SyncContentProducer implements ISyncContentProducer {
         final SQLiteDatabase db;
         final String scope;
         final String serverBlob;
-        final JsonFactory jsonFactory;
         final boolean upload;
         final ArrayList<TableInfo> notifyTableInfo;
         final ContentHelper ch;
+        JsonFactory factory;
         int counter = 0;
 
-        public SyncContentProducer(JsonFactory jsonFactory, SQLiteDatabase db, String scope,
+        public SyncContentProducer(JsonFactory factory, SQLiteDatabase db, String scope,
                                    String serverBlob, boolean upload,
                                    ArrayList<TableInfo> notifyTableInfo,
                                    ContentHelper ch) {
+            this.factory = factory;
             this.db = db;
             this.scope = scope;
             this.serverBlob = serverBlob;
-            this.jsonFactory = jsonFactory;
             this.upload = upload;
             this.notifyTableInfo = notifyTableInfo;
             this.ch = ch;
@@ -698,46 +680,25 @@ public abstract class BaseContentProvider extends ContentProvider {
             return counter;
         }
 
-        public void writeTo(OutputStream outstream) throws IOException {
-            JsonGenerator gen = jsonFactory.createGenerator(outstream, JsonEncoding.UTF8);
-            gen.writeStartObject();
-            gen.writeObjectFieldStart(_.d);
-            gen.writeObjectFieldStart(_.__sync);
-            gen.writeBooleanField(_.moreChangesAvailable, false);
-            gen.writeStringField(_.serverBlob, serverBlob);
-            gen.writeEndObject(); // sync
-            gen.writeArrayFieldStart(_.results);
+        public void writeTo(final OutputStream outputStream) throws IOException {
+            final JsonGenerator generator = factory.createGenerator(outputStream);
+            generator.writeStartObject();
+            generator.writeObjectFieldStart(_.d);
+            generator.writeObjectFieldStart(_.__sync);
+            generator.writeBooleanField(_.moreChangesAvailable, false);
+            generator.writeStringField(_.serverBlob, serverBlob);
+            generator.writeEndObject(); // sync
+            generator.writeArrayFieldStart(_.results);
             if (upload) {
                 for (TableInfo tab : ch.getAllTables()) {
                     if (tab.scope.toLowerCase().equals(scope.toLowerCase()))
-                        counter += tab.GetChanges(db, gen, notifyTableInfo);
+                        counter += tab.getChanges(db, generator);
                 }
             }
-            gen.writeEndArray();// result
-            gen.writeEndObject(); // d
-            gen.writeEndObject();
-            gen.close();
-        }
-    }
-
-    protected static class Result {
-        private final InputStream inputStream;
-        private final int status;
-
-        public Result(InputStream inputStream, int status) {
-            this.inputStream = inputStream;
-            this.status = status;
-        }
-
-        public InputStream getInputStream() {
-            return inputStream;
-        }
-
-        public int getStatus() {
-            return status;
-        }
-
-        public void close() {
+            generator.writeEndArray();// result
+            generator.writeEndObject(); // d
+            generator.writeEndObject();
+            generator.close();
         }
     }
 

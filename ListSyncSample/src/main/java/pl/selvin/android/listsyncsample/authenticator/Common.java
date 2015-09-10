@@ -4,11 +4,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
+import com.squareup.okhttp.OkHttpClient;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
 import pl.selvin.android.listsyncsample.Constants;
 
@@ -28,19 +26,14 @@ public class Common {
         });
     }
 
-    public static boolean authenticate(String username, Handler handler,
-                                       final Context context) {
-        HttpRequestBase request = new HttpGet(Constants.SERVICE_URI
-                + "/Login.ashx?username=" + username);
-        request.setHeader("Accept", "application/json");
-        request.setHeader("Content-type", "application/json; charset=utf-8");
-        DefaultHttpClient httpClient = new DefaultHttpClient();
+    public static boolean authenticate(String username, Handler handler, final Context context) {
+        final OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder().url(Constants.SERVICE_URI + "/Login.ashx?username=" + username)
+                .addHeader("Accept", "application/json").addHeader("Content-type", "application/json; charset=utf-8").build();
         try {
-            HttpResponse response = httpClient.execute(request);
-            String bufstring = EntityUtils.toString(response.getEntity(),
-                    "UTF-8");
-            Log.d("ListSync", bufstring);
-            mAuthtoken = bufstring;
+            final Response response = client.newCall(request).execute();
+            mAuthtoken = response.body().string();
+            Log.d("ListSync", mAuthtoken);
             sendResult(true, handler, context);
             return true;
 

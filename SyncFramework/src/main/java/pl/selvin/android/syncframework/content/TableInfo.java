@@ -78,8 +78,7 @@ public final class TableInfo {
         for (ColumnInfo ci : columns) {
             map.put(ci.name, ci.name);
         }
-        this.columnsComputed = columnsComputed
-                .toArray(new ColumnInfo[columnsComputed.size()]);
+        this.columnsComputed = columnsComputed.toArray(new ColumnInfo[columnsComputed.size()]);
         for (ColumnInfo ci : columnsComputed) {
             map.put(ci.name, String.format("%s AS %s", ci.computed, ci.name));
         }
@@ -90,12 +89,8 @@ public final class TableInfo {
         }
         this.primaryKeyStrings = primaryKey;
         scope_name = String.format("%s.%s", scope, name);
-        DirMime = String.format("%s/%s.%s",
-                ContentResolver.CURSOR_DIR_BASE_TYPE,
-                AUTHORITY, scope_name);
-        ItemMime = String.format("%s/%s.%s",
-                ContentResolver.CURSOR_ITEM_BASE_TYPE,
-                AUTHORITY, scope_name);
+        DirMime = String.format("%s/%s.%s", ContentResolver.CURSOR_DIR_BASE_TYPE, AUTHORITY, scope_name);
+        ItemMime = String.format("%s/%s.%s", ContentResolver.CURSOR_ITEM_BASE_TYPE, AUTHORITY, scope_name);
         notifyUris = table.notifyUris();
 
     }
@@ -104,8 +99,7 @@ public final class TableInfo {
         if (selection == null) {
             String newSelection = "";
             for (String primaryKeyString : primaryKeyStrings) {
-                newSelection = String.format("%s AND %s=?", newSelection,
-                        primaryKeyString);
+                newSelection = String.format("%s AND %s=?", newSelection, primaryKeyString);
             }
             selection = newSelection;
         }
@@ -113,8 +107,7 @@ public final class TableInfo {
     }
 
     public boolean hasDirtData(SQLiteDatabase db) {
-        Cursor c = db.query(name, null, _.isDirtyP, new String[]{"1"}, null,
-                null, null);
+        Cursor c = db.query(name, null, _.isDirtyP, new String[]{"1"}, null, null, null);
         if (c.moveToFirst()) {
             c.close();
             return true;
@@ -123,9 +116,7 @@ public final class TableInfo {
         return false;
     }
 
-    public int GetChanges(SQLiteDatabase db, JsonGenerator gen,
-                          ArrayList<TableInfo> notifyTableInfo)
-            throws IOException {
+    public int getChanges(final SQLiteDatabase db, final JsonGenerator generator) throws IOException {
         String[] cols = new String[columns.length + 3];
         int i = 0;
         for (; i < columns.length; i++)
@@ -139,72 +130,64 @@ public final class TableInfo {
         // cursor is closed ...
         final ArrayList<OperationHolder> operations = new ArrayList<>();
         if (c.moveToFirst()) {
-            if (!notifyTableInfo.contains(this))
-                notifyTableInfo.add(this);
+            //if (!notifyTableInfo.contains(this)) //in fact we don't need to notify tables that we uploading
+            //    notifyTableInfo.add(this);
             do {
                 counter++;
-                gen.writeStartObject();
-                gen.writeObjectFieldStart(_.__metadata);
-                gen.writeBooleanField(_.isDirty, true);
-                gen.writeStringField(_.type, scope_name);
+                generator.writeStartObject();
+                generator.writeObjectFieldStart(_.__metadata);
+                generator.writeBooleanField(_.isDirty, true);
+                generator.writeStringField(_.type, scope_name);
                 //Log.d("before", scope_name + ":" + c.getLong(i + 3));
-                String uri = c.getString(i);
+                final String uri = c.getString(i);
                 //Log.d("after", scope_name + ":" + c.getLong(i + 3));
                 if (uri == null) {
-                    gen.writeStringField(_.tempId, c.getString(i + 1));
+                    generator.writeStringField(_.tempId, c.getString(i + 1));
                 } else {
-                    gen.writeStringField(_.uri, uri);
+                    generator.writeStringField(_.uri, uri);
                     final ContentValues update = new ContentValues(1);
                     update.put(_.isDirty, 0);
                     operations.add(new OperationHolder(name, OperationHolder.UPDATE, update, uri));
                 }
                 boolean isDeleted = c.getInt(i + 2) == 1;
                 if (isDeleted) {
-                    gen.writeBooleanField(_.isDeleted, true);
-                    gen.writeEndObject();// meta
+                    generator.writeBooleanField(_.isDeleted, true);
+                    generator.writeEndObject();// meta
                     operations.add(new OperationHolder(name, OperationHolder.DELETE, null, uri));
                 } else {
-                    gen.writeEndObject();// meta
+                    generator.writeEndObject();// meta
                     for (i = 0; i < columns.length; i++) {
                         if (columns[i].nullable && c.isNull(i)) {
-                            gen.writeNullField(columns[i].name);
+                            generator.writeNullField(columns[i].name);
                         } else {
                             switch (columns[i].type) {
                                 case ColumnType.BLOB:
-                                    gen.writeBinaryField(columns[i].name,
-                                            c.getBlob(i));
+                                    generator.writeBinaryField(columns[i].name, c.getBlob(i));
                                     break;
                                 case ColumnType.BOOLEAN:
-                                    gen.writeBooleanField(columns[i].name,
-                                            c.getLong(i) == 1);
+                                    generator.writeBooleanField(columns[i].name, c.getLong(i) == 1);
                                     break;
                                 case ColumnType.INTEGER:
-                                    gen.writeNumberField(columns[i].name,
-                                            c.getLong(i));
+                                    generator.writeNumberField(columns[i].name, c.getLong(i));
                                     break;
                                 case ColumnType.DATETIME:
                                     try {
-                                        gen.writeStringField(columns[i].name,
-                                                String.format(msdate,
-                                                        sdf.parse(c.getString(i))
-                                                                .getTime()));
+                                        generator.writeStringField(columns[i].name, String.format(msdate, sdf.parse(c.getString(i)).getTime()));
                                     } catch (Exception e) {
                                         Logger.LogE(clazz, e);
                                     }
                                     break;
                                 case ColumnType.NUMERIC:
-                                    gen.writeNumberField(columns[i].name,
-                                            c.getDouble(i));
+                                    generator.writeNumberField(columns[i].name, c.getDouble(i));
                                     break;
                                 default:
-                                    gen.writeStringField(columns[i].name,
-                                            c.getString(i));
+                                    generator.writeStringField(columns[i].name, c.getString(i));
                                     break;
                             }
                         }
                     }
                 }
-                gen.writeEndObject(); // end of row
+                generator.writeEndObject(); // end of row
             } while (c.moveToNext());
         }
         c.close();
@@ -219,8 +202,7 @@ public final class TableInfo {
     }
 
     @SuppressLint("NewApi")
-    final public boolean SyncJSON(final HashMap<String, Object> hval,
-                                  final Metadata meta, final SQLiteDatabase db) {
+    final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final SQLiteDatabase db) {
         int i = 0;
         vals.clear();
         for (; i < columns.length; i++) {
@@ -233,22 +215,19 @@ public final class TableInfo {
                     break;
                 case ColumnType.BOOLEAN:
                 case ColumnType.INTEGER:
-                    vals.put(column, (Long) hval.get(column));
-                    break;
-                case ColumnType.DATETIME:
-                    String date = (String) hval.get(column);
-                    if (date != null) {
-                        date = sdf.format(new Date(Long.parseLong(date.substring(6,
-                                date.length() - 2))));
-                    }
-                    vals.put(column, date);
-                    break;
                 case ColumnType.NUMERIC:
-                    Object obj = hval.get(column);
+                    final Object obj = hval.get(column);
                     if (obj instanceof Double)
                         vals.put(column, (Double) obj);
                     else
                         vals.put(column, (Long) obj);
+                    break;
+                case ColumnType.DATETIME:
+                    String date = (String) hval.get(column);
+                    if (date != null) {
+                        date = sdf.format(new Date(Long.parseLong(date.substring(6, date.length() - 2))));
+                    }
+                    vals.put(column, date);
                     break;
                 default:
                     vals.put(column, (String) hval.get(column));
