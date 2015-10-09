@@ -15,8 +15,8 @@ android {
         applicationId "pl.selvin.android.listsyncsample"
         minSdkVersion 8
         targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
+        versionCode 5001
+        versionName "0.5.1"
     }
     buildTypes {
         release {
