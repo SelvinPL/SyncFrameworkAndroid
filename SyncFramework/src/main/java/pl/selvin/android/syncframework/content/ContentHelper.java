@@ -53,8 +53,10 @@ public class ContentHelper {
     private final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
     private final SparseArray<TableInfo> AllTableInfoCode = new SparseArray<>();
     private final HashMap<String, TableInfo> AllTableInfo = new HashMap<>();
+    private final Logger logger;
 
-    protected ContentHelper(Class<? extends SetupInterface> setupClass) {
+    protected ContentHelper(Class<? extends SetupInterface> setupClass, Logger logger) {
+        this.logger = logger;
         SetupInterface setupInterface = null;
         try {
             setupInterface = setupClass.newInstance();
@@ -114,7 +116,7 @@ public class ContentHelper {
                         }
                     }
                     final TableInfo tab = new TableInfo(tscope, tname, columns,
-                            columnsComputed, columnsHash, table.primaryKeys(), table, AUTHORITY);
+                            columnsComputed, columnsHash, table.primaryKeys(), table, AUTHORITY, logger);
                     matcher.addURI(AUTHORITY, tname, code);
                     matcher.addURI(AUTHORITY, tname + "/ROWID/#", code
                             | uriCodeItemRowIDFlag);
@@ -146,10 +148,10 @@ public class ContentHelper {
         }
     }
 
-    public static ContentHelper getInstance(Class<? extends SetupInterface> clazz) {
+    public static ContentHelper getInstance(Class<? extends SetupInterface> clazz, Logger logger) {
         if (instances.containsKey(clazz))
             return instances.get(clazz);
-        final ContentHelper ret = new ContentHelper(clazz);
+        final ContentHelper ret = new ContentHelper(clazz, logger == null ? new Logger() : logger);
         instances.put(clazz, ret);
         return ret;
     }
@@ -237,7 +239,7 @@ public class ContentHelper {
                     break;
             }
         }
-        Logger.LogD(getClass(), "Scope: '" + scope + "' has" + (ret ? "" : " NO") + " dirty tables");
+        logger.LogD(getClass(), "Scope: '" + scope + "' has" + (ret ? "" : " NO") + " dirty tables");
         return ret;
     }
 
@@ -247,5 +249,9 @@ public class ContentHelper {
 
     public Collection<? extends TableInfo> getAllTables() {
         return AllTableInfo.values();
+    }
+
+    public Logger getLogger() {
+        return logger;
     }
 }

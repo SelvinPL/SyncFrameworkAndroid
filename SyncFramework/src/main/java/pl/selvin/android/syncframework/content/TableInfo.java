@@ -59,12 +59,14 @@ public final class TableInfo {
     final CascadeInfo[] cascadeDelete;
     final ContentValues vals = new ContentValues(2);
     private final Class<?> clazz;
+    private final Logger logger;
     String selection = null;
 
     TableInfo(String scope, String name, ArrayList<ColumnInfo> columns,
               ArrayList<ColumnInfo> columnsComputed,
               HashMap<String, ColumnInfo> columnsHash,
-              String[] primaryKey, Table table, String AUTHORITY) {
+              String[] primaryKey, Table table, String AUTHORITY, Logger logger) {
+        this.logger = logger;
         clazz = getClass();
         this.name = name;
         final Cascade[] delete = table.delete();
@@ -174,7 +176,7 @@ public final class TableInfo {
                                     try {
                                         generator.writeStringField(columns[i].name, String.format(msdate, sdf.parse(c.getString(i)).getTime()));
                                     } catch (Exception e) {
-                                        Logger.LogE(clazz, e);
+                                        logger.LogE(clazz, e);
                                     }
                                     break;
                                 case ColumnType.NUMERIC:
@@ -191,7 +193,7 @@ public final class TableInfo {
             } while (c.moveToNext());
         }
         c.close();
-        Logger.LogD(clazz, "Table: '" + name + "', changes: " + counter);
+        logger.LogD(clazz, "Table: '" + name + "', changes: " + counter);
         for (OperationHolder operation : operations)
             operation.execute(db);
         return counter;
@@ -270,7 +272,7 @@ public final class TableInfo {
         sb.append(TextUtils.join(", ", primaryKeyStrings));
         sb.append("));");
         String ret = sb.toString();
-        Logger.LogD(clazz, "*CreateStatement*: " + ret);
+        logger.LogD(clazz, "*CreateStatement*: " + ret);
         return ret;
     }
 

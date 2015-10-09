@@ -48,10 +48,12 @@ public abstract class BaseContentProvider extends ContentProvider {
     protected final RequestExecutor executor;
     protected final ContentHelper contentHelper;
     private final Class<?> clazz;
+    private final Logger logger;
     private OpenHelper mDB;
 
     public BaseContentProvider(ContentHelper contentHelper, RequestExecutor executor) {
         clazz = getClass();
+        this.logger = contentHelper.getLogger();
         this.executor = executor;
         this.contentHelper = contentHelper;
     }
@@ -71,11 +73,11 @@ public abstract class BaseContentProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        Logger.LogD(clazz, "delete: " + uri);
+        logger.LogD(clazz, "*delete* " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriClearCode) {
-                Logger.LogD(clazz, "delete uriClearCode");
+                logger.LogD(clazz, "delete uriClearCode");
                 mDB.onUpgrade(getWritableDatabase(), 1, contentHelper.DATABASE_VERSION);
                 return 0;
             }
@@ -108,34 +110,52 @@ public abstract class BaseContentProvider extends ContentProvider {
             }
             int ret;
             int cascadeResults = 0;
+            ArrayList<String[]> deleteWhereArgs = new ArrayList<>();
             for (CascadeInfo info : tab.cascadeDelete) {
 
-                final Cursor c = query(contentHelper.getDirUri(tab.name), info.pk, selection,
-                        selectionArgs, null);
-                if (c.moveToFirst()) {
-
-                    do {
-                        final String[] args = new String[info.pk.length];
-                        final StringBuilder sb = new StringBuilder();
-                        for (int i = 0; i < info.pk.length; i++) {
-                            if (i > 0) sb.append("AND ");
-                            sb.append(info.fk[i]);
-                            sb.append("=? ");
-                            args[i] = c.getString(i);
+                final Cursor c = query(contentHelper.getDirUri(tab.name), info.pk, selection, selectionArgs, null);
+                if (c != null) {
+                    try {
+                        if (c.moveToFirst()) {
+                            deleteWhereArgs.clear();
+                            final Uri deleteUri = contentHelper.getDirUri(info.table, syncToNetwork);
+                            final StringBuilder sb = new StringBuilder();
+                            for (int i = 0; i < info.pk.length; i++) {
+                                if (i > 0) sb.append("AND ");
+                                sb.append(info.fk[i]);
+                                sb.append("=? ");
+                            }
+                            final String deleteWhere = sb.toString();
+                            do {
+                                final String[] whereArgs = new String[info.pk.length];
+                                for (int i = 0; i < info.pk.length; i++) {
+                                    whereArgs[i] = c.getString(i);
+                                }
+                                deleteWhereArgs.add(whereArgs);
+                            } while (c.moveToNext());
+                            try {
+                                for (String[] whereArgs : deleteWhereArgs) {
+                                    cascadeResults += delete(deleteUri, deleteWhere, whereArgs);
+                                }
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
                         }
-                        cascadeResults += delete(contentHelper.getDirUri(info.table, syncToNetwork),
-                                sb.toString(), args);
-                    } while (c.moveToNext());
+                    } finally {
+                        c.close();
+                    }
+
                 }
-                c.close();
             }
             ContentValues values = new ContentValues(2);
             values.put("isDirty", 1);
             values.put("isDeleted", 1);
-            ret = getWritableDatabase()
-                    .update(tab.name, values, "tempId IS NULL AND " + selection, selectionArgs);
-            ret += getWritableDatabase()
-                    .delete(tab.name, "tempId IS NOT NULL AND " + selection, selectionArgs);
+            final String updateSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NULL", selection);
+            ret = getWritableDatabase().update(tab.name, values, updateSelection, selectionArgs);
+            logger.LogD(clazz, "ret:" + ret + " -upd: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + updateSelection + " values: " + String.valueOf(values));
+            final String deleteSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NOT NULL", selection);
+            ret += getWritableDatabase().delete(tab.name, deleteSelection, selectionArgs);
+            logger.LogD(clazz, "ret:" + ret + " -del: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + deleteSelection);
             if (ret > 0) {
                 final ContentResolver cr = getContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
@@ -163,6 +183,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
+        logger.LogD(clazz, "*insert* " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -173,7 +194,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                 throw new IllegalArgumentException("Table " + tab.name + " is readonly.");
             }
             if (isItemCode(code)) {
-                throw new IllegalArgumentException("Can not delete with Item type Uri.");
+                throw new IllegalArgumentException("Can not insert with Item type Uri.");
             }
             /*-String tempId = UUID.randomUUID().toString();
             if (tab.primaryKey.length == 1
@@ -185,11 +206,11 @@ public abstract class BaseContentProvider extends ContentProvider {
             values.put("isDirty", 1);
             values.put("isDeleted", 0);
             long rowId = getWritableDatabase().insert(tab.name, null, values);
-
+            logger.LogD(clazz, "rowId:" + rowId + ", values: " + String.valueOf(values));
             if (rowId > 0) {
                 Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
                 final ContentResolver cr = getContext().getContentResolver();
-                cr.notifyChange(ret_uri, null, syncToNetwork);
+                cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
                 }
@@ -245,10 +266,10 @@ public abstract class BaseContentProvider extends ContentProvider {
     protected void LogQuery(Uri uri, SQLiteQueryBuilder builder, String[] projection,
                             String selection, String[] selectionArgs, String groupBy, String having,
                             String sortOrder, String limit) {
-        Logger.LogD(clazz, uri + "");
+        logger.LogD(clazz, uri + "");
         //noinspection deprecation
-        Logger.LogD(clazz, builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
-        Logger.LogD(clazz, Arrays.toString(selectionArgs));
+        logger.LogD(clazz, builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
+        logger.LogD(clazz, Arrays.toString(selectionArgs));
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -273,7 +294,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
-                Logger.LogD(clazz, "*update* sync uri: " + uri.toString());
+                logger.LogD(clazz, "*update* sync uri: " + uri.toString());
                 final SyncStats result = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), selection, new SyncStats());
                 return (result.hasErrors() ? 1 : 0);
             }
@@ -281,7 +302,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             if (tab.readonly) {
                 throw new IllegalArgumentException("Table " + tab.name + " is readonly.");
             }
-            Logger.LogD(clazz, "*update* uri: " + uri.toString());
+            logger.LogD(clazz, "*update* uri: " + uri.toString());
             if (isItemCode(code)) {
                 final String newSelection;
                 final String[] newSelectionArgs;
@@ -301,12 +322,10 @@ public abstract class BaseContentProvider extends ContentProvider {
             } else {
                 selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
             }
-            Logger.LogD(clazz, "selectionArgs: " + Arrays
-                    .toString(selectionArgs) + "selection: " + selection + "values: " + String
-                    .valueOf(values));
             boolean syncToNetwork = checkSyncToNetwork(uri);
             values.put("isDirty", 1);
             int ret = getWritableDatabase().update(tab.name, values, selection, selectionArgs);
+            logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {
                 final ContentResolver cr = getContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
@@ -391,7 +410,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                 if (moreChanges) {
                     db.beginTransaction();
                 }
-                Logger.LogD(getClass(), serviceRequestUrl);
+                logger.LogD(getClass(), serviceRequestUrl);
                 RequestExecutor.Result result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
                 if (result.status == 200) {
                     if (contentProducer != null) stats.numEntries += contentProducer.getChanges();
@@ -536,9 +555,9 @@ public abstract class BaseContentProvider extends ContentProvider {
                     }
                     jp.close();
                     if (resolveConflicts)
-                        Logger.LogE(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                        logger.LogE(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
                     else
-                        Logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                        logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
                     if (!hasError) {
                         cv.clear();
                         cv.put(BlobsTable.C_NAME, scopeServerBlob);
@@ -548,22 +567,22 @@ public abstract class BaseContentProvider extends ContentProvider {
                         db.replace(BlobsTable.NAME, null, cv);
                         db.setTransactionSuccessful();
                         db.endTransaction();
-                        Logger.LogD(clazz, "*Sync* commit changes");
+                        logger.LogD(clazz, "*Sync* commit changes");
                         final ContentResolver cr = getContext().getContentResolver();
                         for (TableInfo t : notifyTableInfo) {
                             final Uri nu = contentHelper.getDirUri(t.name);
                             cr.notifyChange(nu, null, false);
-                            Logger.LogD(clazz, "*Sync* notifyChange table: " + t.name + ", uri: " + nu);
+                            logger.LogD(clazz, "*Sync* notifyChange table: " + t.name + ", uri: " + nu);
                             for (String n : t.notifyUris) {
                                 cr.notifyChange(Uri.parse(n), null, false);
-                                Logger.LogD(clazz, "\t+ uri: " + n);
+                                logger.LogD(clazz, "\t+ uri: " + n);
                             }
                         }
                         notifyTableInfo.clear();
                     }
                 } else {
-                    Logger.LogD(clazz, "*Sync* Server error: " + result.status);
-                    Logger.LogD(clazz, "\t" + result.getError());
+                    logger.LogE(clazz, "*Sync* Server error: " + result.status);
+                    logger.LogE(clazz, "\t" + result.getError());
                     hasError = true;
                     break;
                 }
@@ -572,7 +591,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         } catch (final IOException e) {
             stats.numIoExceptions++;
             hasError = true;
-            Logger.LogE(clazz, e);
+            logger.LogE(clazz, e);
             Log.d("Blob:", originalBlob);
         }
         if (hasError) {
@@ -598,7 +617,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 						null);
 			}
 		}*/
-        Logger.LogTimeD(clazz, "*Sync* time", start);
+        logger.LogTimeD(clazz, "*Sync* time", start);
         return stats;
     }
 
@@ -622,7 +641,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                     BlobsTable.NAME, BlobsTable.C_NAME, BlobsTable.C_VALUE, BlobsTable.C_DATE,
                     BlobsTable.C_STATE, BlobsTable.C_NAME));
         } catch (Exception e) {
-            Logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
+            logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
         }
     }
 
@@ -638,10 +657,10 @@ public abstract class BaseContentProvider extends ContentProvider {
         c.close();
         for (String command : commands) {
             try {
-                Logger.LogD(clazz, "*onUpgradeDatabase*: " + command);
+                logger.LogD(clazz, "*onUpgradeDatabase*: " + command);
                 db.execSQL(command);
             } catch (Exception e) {
-                Logger.LogE(clazz, e);
+                logger.LogE(clazz, e);
             }
         }
         onCreateDataBase(db);

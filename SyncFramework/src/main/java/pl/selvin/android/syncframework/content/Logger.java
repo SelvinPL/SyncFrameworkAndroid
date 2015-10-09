@@ -22,33 +22,33 @@ public class Logger {
         return TAG + clazz.getSimpleName();
     }
 
-    public static void LogE(Class<?> clazz, String msg) {
+    public void LogE(Class<?> clazz, String msg) {
         if (SHOULD_LOG)
             Log.e(formatTag(clazz), msg);
     }
 
-    public static void LogE(Class<?> clazz, String msg, Throwable tr) {
+    public void LogE(Class<?> clazz, String msg, Throwable tr) {
         if (SHOULD_LOG)
             Log.e(formatTag(clazz), msg, tr);
     }
 
-    public static void LogE(Class<?> clazz, Throwable tr) {
+    public void LogE(Class<?> clazz, Throwable tr) {
         if (SHOULD_LOG)
             Log.e(formatTag(clazz), tr.getMessage(), tr);
     }
 
-    public static void LogD(Class<?> clazz, String msg) {
+    public  void LogD(Class<?> clazz, String msg) {
         if (SHOULD_LOG)
             Log.d(formatTag(clazz), msg);
     }
 
-    public static void LogD(Class<?> clazz, String msg, Throwable tr) {
+    public void LogD(Class<?> clazz, String msg, Throwable tr) {
         if (SHOULD_LOG)
             Log.d(formatTag(clazz), msg, tr);
     }
 
 
-    public static void LogTimeD(Class<?> clazz, String msg, long start) {
+    public void LogTimeD(Class<?> clazz, String msg, long start) {
         long diffInMillis = System.currentTimeMillis() - start;
         long diffInSeconds = diffInMillis / 1000;
         long diff[] = new long[]{0, 0, 0, 0, 0};
