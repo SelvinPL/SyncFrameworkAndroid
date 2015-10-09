@@ -29,7 +29,7 @@ import pl.selvin.android.syncframework.content.ContentHelper;
 import pl.selvin.android.syncframework.content.RequestExecutor;
 
 public class ListProvider extends BaseContentProvider {
-    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class);
+    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null);
 
     private final static RequestExecutor executor = new RequestExecutor() {
         private final OkHttpClient client = new OkHttpClient();
