@@ -283,7 +283,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         try {
             Uri uri = Uri.parse(method);
             if (contentHelper.matchUri(uri) == ContentHelper.uriSyncCode) {
-                final SyncStats inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, (SyncStats)syncParams.getParcelable(SYNC_SYNCSTATS));
+                final SyncStats inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, (SyncStats) syncParams.getParcelable(SYNC_SYNCSTATS));
                 syncParams.putParcelable(SYNC_SYNCSTATS, inout);
             }
         } catch (Exception ex) {
@@ -600,7 +600,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             stats.numIoExceptions++;
             hasError = true;
             logger.LogE(clazz, e);
-            Log.d("Blob:", originalBlob);
+            Log.d("Blob:", originalBlob == null ? "null" : originalBlob);
         }
         if (hasError) {
             db.endTransaction();
