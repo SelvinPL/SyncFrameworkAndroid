@@ -15,6 +15,7 @@ import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -45,11 +46,15 @@ import pl.selvin.android.syncframework.support.v4.database.DatabaseUtilsCompat;
 
 public abstract class BaseContentProvider extends ContentProvider {
     public static final String SYNC_SYNCSTATS = "SYNC_PARAM_IN_SYNCSTATS";
+    private static final String DATABASE_OPERATION_TYPE = "DATABASE_OPERATION_TYPE";
     protected final RequestExecutor executor;
     protected final ContentHelper contentHelper;
     private final Class<?> clazz;
     private final Logger logger;
     private OpenHelper mDB;
+    public final static String DATABASE_OPERATION_TYPE_UPGRADE= "DATABASE_OPERATION_TYPE_UPGRADE";
+    public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
+    public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
 
     public BaseContentProvider(ContentHelper contentHelper, RequestExecutor executor) {
         clazz = getClass();
@@ -278,15 +283,18 @@ public abstract class BaseContentProvider extends ContentProvider {
         try {
             Uri uri = Uri.parse(method);
             if (contentHelper.matchUri(uri) == ContentHelper.uriSyncCode) {
-                SyncStats inout = syncParams.getParcelable(SYNC_SYNCSTATS);
-                inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, inout);
+                final SyncStats inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, (SyncStats)syncParams.getParcelable(SYNC_SYNCSTATS));
                 syncParams.putParcelable(SYNC_SYNCSTATS, inout);
-                return syncParams;
             }
         } catch (Exception ex) {
+            final SyncStats inout = syncParams.getParcelable(SYNC_SYNCSTATS);
+            if(inout != null) {
+                inout.numIoExceptions++;
+                syncParams.putParcelable(SYNC_SYNCSTATS, inout);
+            }
             ex.printStackTrace();
         }
-        return null;
+        return syncParams;
     }
 
     @Override
@@ -351,7 +359,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         return mDB.getWritableDatabase();
     }
 
-    protected SyncStats sync(String service, String scope, String params, SyncStats stats) {
+    public SyncStats sync(String service, String scope, String params, SyncStats stats) {
         final long start = System.currentTimeMillis();
         boolean hasError = false;
         if (params == null) params = "";
@@ -630,6 +638,9 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     protected void onCreateDataBase(SQLiteDatabase db) {
+        final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
+        intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
+        getContext().sendBroadcast(intent);
         try {
             for (TableInfo table : contentHelper.getAllTables()) {
                 String create = table.CreateStatement();
@@ -646,6 +657,9 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     protected void onUpgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
+        final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
+        intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
+        getContext().sendBroadcast(intent);
         Cursor c = db.query("sqlite_master", new String[]{"'DROP TABLE ' || name || ';' AS cmd"},
                 "type=? AND name<>?", new String[]{"table", "android_metadata"}, null, null, null);
         final ArrayList<String> commands = new ArrayList<>();
