@@ -29,4 +29,9 @@ final class ColumnInfo {
         extras = column.extras();
         computed = column.computed();
     }
+
+    @Override
+    public String toString() {
+        return name;
+    }
 }

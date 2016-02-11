@@ -54,7 +54,7 @@ public final class TableInfo {
     public final String ItemMime;
     public final boolean readonly;
     public final String[] notifyUris;
-    final ColumnInfo[] columns;
+    public final ColumnInfo[] columns;
     final ColumnInfo[] columnsComputed;
     final CascadeInfo[] cascadeDelete;
     final ContentValues vals = new ContentValues(2);
