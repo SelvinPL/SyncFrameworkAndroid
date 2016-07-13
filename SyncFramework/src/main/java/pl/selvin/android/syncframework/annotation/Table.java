@@ -53,4 +53,6 @@ public @interface Table {
      * Used to provide information about cascade deleting {@link Cascade}
      */
     String[] notifyUris() default {};
+
+    String rowIdAlias() default "ROWID";
 }

@@ -98,7 +98,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                 final String newSelection;
                 final String[] newSelectionArgs;
                 if (isItemRowIDCode(code)) {
-                    newSelection = "isDeleted=0 AND ROWID=?";
+                    newSelection = "isDeleted=0 AND " + tab.rowIdAlias + "=?";
                     newSelectionArgs = new String[]{uri.getPathSegments().get(2)};
                 } else {
                     newSelectionArgs = new String[tab.primaryKey.length];
@@ -241,7 +241,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                 limit = null;
                 final List<String> pathSegments = uri.getPathSegments();
                 if (isItemRowIDCode(code)) {
-                    builder.appendWhere(_.isDeleted + "=0 AND ROWID=?");
+                    builder.appendWhere(_.isDeleted + "=0 AND " + tab.rowIdAlias + "=?");
                     selectionArgs = DatabaseUtilsCompat
                             .appendSelectionArgs(new String[]{pathSegments.get(2)}, selectionArgs);
                 } else {
@@ -315,7 +315,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                 final String newSelection;
                 final String[] newSelectionArgs;
                 if (isItemRowIDCode(code)) {
-                    newSelection = "isDeleted=0 AND ROWID=?";
+                    newSelection = "isDeleted=0 AND " + tab.rowIdAlias + "=?";
                     newSelectionArgs = new String[]{uri.getPathSegments().get(2)};
                 } else {
                     newSelectionArgs = new String[tab.primaryKey.length];

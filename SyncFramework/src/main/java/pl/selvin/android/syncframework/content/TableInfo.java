@@ -11,7 +11,6 @@
 
 package pl.selvin.android.syncframework.content;
 
-import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -61,11 +60,12 @@ public final class TableInfo {
     private final Class<?> clazz;
     private final Logger logger;
     String selection = null;
+    public final String rowIdAlias;
 
     TableInfo(String scope, String name, ArrayList<ColumnInfo> columns,
               ArrayList<ColumnInfo> columnsComputed,
               HashMap<String, ColumnInfo> columnsHash,
-              String[] primaryKey, Table table, String AUTHORITY, Logger logger) {
+              String[] primaryKey, Table table, String AUTHORITY, Logger logger, String rowIdAlias) {
         this.logger = logger;
         clazz = getClass();
         this.name = name;
@@ -74,6 +74,7 @@ public final class TableInfo {
         for (int i = 0; i < delete.length; i++) {
             cascadeDelete[i] = new CascadeInfo(delete[i]);
         }
+        this.rowIdAlias = rowIdAlias;
         readonly = table.readonly();
         this.columns = columns.toArray(new ColumnInfo[columns.size()]);
         map.put("_id", "[" + name + "].ROWID AS _id");
@@ -203,41 +204,40 @@ public final class TableInfo {
         db.delete(name, _.uriP, new String[]{uri});
     }
 
-    @SuppressLint("NewApi")
     final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final SQLiteDatabase db) {
         int i = 0;
         vals.clear();
         for (; i < columns.length; i++) {
-            String column = columns[i].name;
-            switch (columns[i].type) {
-                case ColumnType.BLOB:
-                    final String str = (String) hval.get(column);
-                    if (str != null)
-                        vals.put(column, Base64.decode(str, Base64.DEFAULT));
-                    break;
-                case ColumnType.BOOLEAN:
-                case ColumnType.INTEGER:
-                case ColumnType.NUMERIC:
-                    final Object obj = hval.get(column);
-                    if (obj instanceof Double)
-                        vals.put(column, (Double) obj);
-                    else
-                        vals.put(column, (Long) obj);
-                    break;
-                case ColumnType.DATETIME:
-                    String date = (String) hval.get(column);
-                    if (date != null) {
-                        date = sdf.format(new Date(Long.parseLong(date.substring(6, date.length() - 2))));
-                    }
-                    vals.put(column, date);
-                    break;
-                default:
-                    vals.put(column, (String) hval.get(column));
-                    break;
+            final String column = columns[i].name;
+            final Object obj = hval.get(column);
+            if(obj == null) {
+                vals.putNull(column);
+            }
+            else {
+                switch (columns[i].type) {
+                    case ColumnType.BLOB:
+                        vals.put(column, Base64.decode((String) obj, Base64.DEFAULT));
+                        break;
+                    case ColumnType.BOOLEAN:
+                    case ColumnType.INTEGER:
+                    case ColumnType.NUMERIC:
+                        if (obj instanceof Double)
+                            vals.put(column, (Double) obj);
+                        else
+                            vals.put(column, (Long) obj);
+                        break;
+                    case ColumnType.DATETIME:
+                        final String date = (String) obj;
+                        vals.put(column, sdf.format(new Date(Long.parseLong(date.substring(6, date.length() - 2)))));
+                        break;
+                    default:
+                        vals.put(column, (String) obj);
+                        break;
+                }
             }
         }
         vals.put(_.uri, meta.uri);
-        vals.put(_.tempId, (String) null);
+        vals.putNull(_.tempId);
         vals.put(_.isDirty, 0);
         if (meta.tempId != null) {
             db.update(name, vals, _.tempIdP, new String[]{meta.tempId});

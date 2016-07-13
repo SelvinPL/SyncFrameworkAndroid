@@ -115,8 +115,7 @@ public class ContentHelper {
                             }
                         }
                     }
-                    final TableInfo tab = new TableInfo(tscope, tname, columns,
-                            columnsComputed, columnsHash, table.primaryKeys(), table, AUTHORITY, logger);
+                    final TableInfo tab = new TableInfo(tscope, tname, columns, columnsComputed, columnsHash, table.primaryKeys(), table, AUTHORITY, logger, table.rowIdAlias());
                     matcher.addURI(AUTHORITY, tname, code);
                     matcher.addURI(AUTHORITY, tname + "/ROWID/#", code
                             | uriCodeItemRowIDFlag);
