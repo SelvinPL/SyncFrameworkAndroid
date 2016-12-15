@@ -14,14 +14,14 @@ package pl.selvin.android.listsyncsample.provider;
 import android.database.Cursor;
 import android.net.Uri;
 
-import com.squareup.okhttp.MediaType;
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.RequestBody;
-import com.squareup.okhttp.Response;
-
 import java.io.IOException;
 
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import okio.BufferedSink;
 import pl.selvin.android.listsyncsample.Setup;
 import pl.selvin.android.syncframework.content.BaseContentProvider;
@@ -54,14 +54,18 @@ public class ListProvider extends BaseContentProvider {
                     break;
             }
             final Response response = client.newCall(requestBuilder.build()).execute();
-            return new Result(response.body().source().inputStream(), response.code()) {
+
+            final ResponseBody body = response.body();
+            String error = null;
+            try {
+                error = response.isSuccessful() ? null : response.body().string();
+            } catch (Exception ignore) {
+
+            }
+            return new Result(response.body().source().inputStream(), response.code(), error) {
                 @Override
                 public void close() {
-                    try {
-                        inputBuffer.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    body.close();
                 }
             };
         }

@@ -19,6 +19,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
@@ -29,7 +30,7 @@ import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.authenticator.Common;
 import pl.selvin.android.listsyncsample.authenticator.Common.IAuthenticationResult;
 
-public class BaseAuthenticatorActivity extends Activity implements
+public class BaseAuthenticatorActivity extends AppCompatActivity implements
         IAuthenticationResult {
 
     private Thread mAuthThread;

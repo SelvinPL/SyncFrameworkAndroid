@@ -21,7 +21,7 @@ import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.authenticator.Common.IAuthenticationResult;
 
-public class AuthenticatorActivity extends AccountAuthenticatorActivity
+public class AuthenticatorActivity extends AccountAuthenticatorActivityAppCompat
         implements IAuthenticationResult {
     public static final String PARAM_USERNAME = "username";
     public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";

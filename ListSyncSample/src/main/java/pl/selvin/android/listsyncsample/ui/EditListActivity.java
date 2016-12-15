@@ -40,7 +40,7 @@ public class EditListActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         try {
-            UserID = SyncHelper.createInstance(this).getUserId();
+            UserID = SyncHelper.getUserId(this);
         } catch (Exception ex) {
             Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
             finish();

@@ -29,7 +29,6 @@ import pl.selvin.android.listsyncsample.support.SyncHelper;
 
 @SuppressLint("Registered")
 public class SyncActivity extends AppCompatActivity {
-    final SyncHelper syncHelper = SyncHelper.createInstance(this);
     boolean registered = true;
     volatile boolean showMenu = true;
     BroadcastReceiver startSync = new BroadcastReceiver() {
@@ -52,7 +51,7 @@ public class SyncActivity extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                syncHelper.doSync();
+                SyncHelper.doSync(SyncActivity.this);
             }
 
         }, 200);
@@ -79,7 +78,7 @@ public class SyncActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.refresh:
-                syncHelper.doSync();
+                SyncHelper.doSync(this);
                 return true;
         }
         return super.onOptionsItemSelected(item);

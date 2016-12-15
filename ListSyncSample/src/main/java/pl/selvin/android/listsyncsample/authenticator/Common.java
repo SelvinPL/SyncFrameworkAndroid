@@ -4,10 +4,9 @@ import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
-import com.squareup.okhttp.OkHttpClient;
-import com.squareup.okhttp.Request;
-import com.squareup.okhttp.Response;
-
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import pl.selvin.android.listsyncsample.Constants;
 
 public class Common {
