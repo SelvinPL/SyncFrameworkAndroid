@@ -110,7 +110,7 @@ public final class TableInfo {
     }
 
     public boolean hasDirtData(SQLiteDatabase db) {
-        Cursor c = db.query(name, null, _.isDirtyP, new String[]{"1"}, null, null, null);
+        Cursor c = db.query(name, null, SYNC.isDirtyP, new String[]{"1"}, null, null, null);
         if (c.moveToFirst()) {
             c.close();
             return true;
@@ -124,10 +124,10 @@ public final class TableInfo {
         int i = 0;
         for (; i < columns.length; i++)
             cols[i] = columns[i].name;
-        cols[i] = _.uri;
-        cols[i + 1] = _.tempId;
-        cols[i + 2] = _.isDeleted;
-        Cursor c = db.query(name, cols, _.isDirtyP, new String[]{"1"}, null, null, null);
+        cols[i] = SYNC.uri;
+        cols[i + 1] = SYNC.tempId;
+        cols[i + 2] = SYNC.isDeleted;
+        Cursor c = db.query(name, cols, SYNC.isDirtyP, new String[]{"1"}, null, null, null);
         int counter = 0;
         //to fix startPos  > actual rows for large cursors db operations should be done after
         // cursor is closed ...
@@ -138,23 +138,23 @@ public final class TableInfo {
             do {
                 counter++;
                 generator.writeStartObject();
-                generator.writeObjectFieldStart(_.__metadata);
-                generator.writeBooleanField(_.isDirty, true);
-                generator.writeStringField(_.type, scope_name);
+                generator.writeObjectFieldStart(SYNC.__metadata);
+                generator.writeBooleanField(SYNC.isDirty, true);
+                generator.writeStringField(SYNC.type, scope_name);
                 //Log.d("before", scope_name + ":" + c.getLong(i + 3));
                 final String uri = c.getString(i);
                 //Log.d("after", scope_name + ":" + c.getLong(i + 3));
                 if (uri == null) {
-                    generator.writeStringField(_.tempId, c.getString(i + 1));
+                    generator.writeStringField(SYNC.tempId, c.getString(i + 1));
                 } else {
-                    generator.writeStringField(_.uri, uri);
+                    generator.writeStringField(SYNC.uri, uri);
                     final ContentValues update = new ContentValues(1);
-                    update.put(_.isDirty, 0);
+                    update.put(SYNC.isDirty, 0);
                     operations.add(new OperationHolder(name, OperationHolder.UPDATE, update, uri));
                 }
                 boolean isDeleted = c.getInt(i + 2) == 1;
                 if (isDeleted) {
-                    generator.writeBooleanField(_.isDeleted, true);
+                    generator.writeBooleanField(SYNC.isDeleted, true);
                     generator.writeEndObject();// meta
                     operations.add(new OperationHolder(name, OperationHolder.DELETE, null, uri));
                 } else {
@@ -201,7 +201,7 @@ public final class TableInfo {
     }
 
     final public void DeleteWithUri(String uri, SQLiteDatabase db) {
-        db.delete(name, _.uriP, new String[]{uri});
+        db.delete(name, SYNC.uriP, new String[]{uri});
     }
 
     final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final SQLiteDatabase db) {
@@ -236,11 +236,11 @@ public final class TableInfo {
                 }
             }
         }
-        vals.put(_.uri, meta.uri);
-        vals.putNull(_.tempId);
-        vals.put(_.isDirty, 0);
+        vals.put(SYNC.uri, meta.uri);
+        vals.putNull(SYNC.tempId);
+        vals.put(SYNC.isDirty, 0);
         if (meta.tempId != null) {
-            db.update(name, vals, _.tempIdP, new String[]{meta.tempId});
+            db.update(name, vals, SYNC.tempIdP, new String[]{meta.tempId});
             return true;
         } else {
             db.replace(name, null, vals);
@@ -266,8 +266,8 @@ public final class TableInfo {
                 sb.append(" NOT NULL ");
             sb.append(", [");
         }
-        sb.append(_.uri + "] varchar, [" + _.tempId + "] GUID, [" + _.isDeleted
-                + "] INTEGER NOT NULL DEFAULT (0)" + " , [" + _.isDirty
+        sb.append(SYNC.uri + "] varchar, [" + SYNC.tempId + "] GUID, [" + SYNC.isDeleted
+                + "] INTEGER NOT NULL DEFAULT (0)" + " , [" + SYNC.isDirty
                 + "] INTEGER NOT NULL DEFAULT (0), PRIMARY KEY (");
         sb.append(TextUtils.join(", ", primaryKeyStrings));
         sb.append("));");
@@ -295,9 +295,9 @@ public final class TableInfo {
         public long execute(SQLiteDatabase db) {
             switch (operation) {
                 case DELETE:
-                    return db.delete(table, _.uriP, new String[]{uri});
+                    return db.delete(table, SYNC.uriP, new String[]{uri});
                 case UPDATE:
-                    return db.update(table, values, _.uriP, new String[]{uri});
+                    return db.update(table, values, SYNC.uriP, new String[]{uri});
                 case INSERT:
                     return db.insert(table, null, values);
                 default:

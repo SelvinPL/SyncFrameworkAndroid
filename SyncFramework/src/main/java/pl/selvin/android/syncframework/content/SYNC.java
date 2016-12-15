@@ -42,7 +42,7 @@ package pl.selvin.android.syncframework.content;
  */
 
 @SuppressWarnings("unused")
-public interface _ {
+public interface SYNC {
     String d = "d";
     String P = "=?";
     String __sync = "__sync";

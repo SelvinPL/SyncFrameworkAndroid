@@ -11,6 +11,7 @@
 
 package pl.selvin.android.syncframework.content;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -34,6 +35,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -241,11 +243,11 @@ public abstract class BaseContentProvider extends ContentProvider {
                 limit = null;
                 final List<String> pathSegments = uri.getPathSegments();
                 if (isItemRowIDCode(code)) {
-                    builder.appendWhere(_.isDeleted + "=0 AND " + tab.rowIdAlias + "=?");
+                    builder.appendWhere(SYNC.isDeleted + "=0 AND " + tab.rowIdAlias + "=?");
                     selectionArgs = DatabaseUtilsCompat
                             .appendSelectionArgs(new String[]{pathSegments.get(2)}, selectionArgs);
                 } else {
-                    builder.appendWhere(_.isDeleted + "=0" + tab.getSelection());
+                    builder.appendWhere(SYNC.isDeleted + "=0" + tab.getSelection());
                     final String[] querySelection = new String[tab.primaryKey.length];
                     for (int i = 0; i < tab.primaryKey.length; i++)
                         querySelection[i] = pathSegments.get(i + 1);
@@ -254,7 +256,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                 }
             } else {
                 limit = uri.getQueryParameter(ContentHelper.PARAMETER_LIMIT);
-                builder.appendWhere(_.isDeleted + "=0");
+                builder.appendWhere(SYNC.isDeleted + "=0");
             }
             builder.setProjectionMap(tab.map);
             LogQuery(uri, builder, projection, selection, selectionArgs, null, null, sortOrder,
@@ -359,6 +361,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         return mDB.getWritableDatabase();
     }
 
+    @SuppressLint("DefaultLocale")
     public SyncStats sync(String service, String scope, String params, SyncStats stats) {
         final long start = System.currentTimeMillis();
         boolean hasError = false;
@@ -369,18 +372,18 @@ public abstract class BaseContentProvider extends ContentProvider {
         JsonToken current;
         final String download = String.format(contentHelper.DOWNLOAD_SERVICE_URI, service, scope, params);
         final String upload = String.format(contentHelper.UPLOAD_SERVICE_URI, service, scope, params);
-        final String scopeServerBlob = String.format("%s.%s.%s", service, scope, _.serverBlob);
+        final String scopeServerBlob = String.format("%s.%s.%s", service, scope, SYNC.serverBlob);
         String serverBlob = null;
         Cursor cur = db.query(BlobsTable.NAME, new String[]{BlobsTable.C_VALUE}, BlobsTable.C_NAME + "=?",
                 new String[]{scopeServerBlob}, null, null, null);
-        final String originalBlob;
+        String originalBlob;
         if (cur.moveToFirst()) {
             originalBlob = serverBlob = cur.getString(0);
         } else {
             originalBlob = null;
         }
         cur.close();
-        db.beginTransaction();
+        boolean serializationException = false;
         try {
             boolean noChanges = false;
             if (serverBlob != null) {
@@ -394,178 +397,201 @@ public abstract class BaseContentProvider extends ContentProvider {
             boolean moreChanges = false;
             boolean forceMoreChanges = false;
             do {
-                final int requestMethod;
-                final String serviceRequestUrl;
-                final ISyncContentProducer contentProducer;
-
-                if (serverBlob != null) {
-                    requestMethod = RequestExecutor.HTTP_POST;
-                    if (noChanges) {
-                        serviceRequestUrl = download;
-                    } else {
-                        serviceRequestUrl = upload;
-                        forceMoreChanges = true;
-                    }
-
-                    contentProducer = new SyncContentProducer(jsonFactory, db, scope, serverBlob, !noChanges, notifyTableInfo, contentHelper);
-                    noChanges = true;
-                } else {
-                    requestMethod = RequestExecutor.HTTP_GET;
-                    serviceRequestUrl = download;
-                    contentProducer = null;
-
-                }
-                if (moreChanges) {
+                RequestExecutor.Result result = null;
+                try {
                     db.beginTransaction();
-                }
-                logger.LogD(getClass(), serviceRequestUrl);
-                RequestExecutor.Result result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
-                if (result.status == 200) {
-                    if (contentProducer != null) stats.numEntries += contentProducer.getChanges();
-                    final JsonParser jp = jsonFactory.createParser(result.inputBuffer);
+                    final int requestMethod;
+                    final String serviceRequestUrl;
+                    final ISyncContentProducer contentProducer;
 
-                    jp.nextToken(); // skip ("START_OBJECT(d) expected");
-                    jp.nextToken(); // skip ("FIELD_NAME(d) expected");
-                    if (jp.nextToken() != JsonToken.START_OBJECT)
-                        throw new JsonParseException("START_OBJECT(d - object) expected",
-                                jp.getCurrentLocation());
-                    while (jp.nextToken() != JsonToken.END_OBJECT) {
-                        name = jp.getCurrentName();
-                        if (_.__sync.equals(name)) {
-                            jp.nextToken();
-                            while (jp.nextToken() != JsonToken.END_OBJECT) {
-                                name = jp.getCurrentName();
+                    if (serverBlob != null) {
+                        requestMethod = RequestExecutor.HTTP_POST;
+                        if (noChanges) {
+                            serviceRequestUrl = download;
+                        } else {
+                            serviceRequestUrl = upload;
+                            forceMoreChanges = true;
+                        }
+
+                        contentProducer = new SyncContentProducer(jsonFactory, db, scope, originalBlob, !noChanges, notifyTableInfo, contentHelper);
+                        noChanges = true;
+                    } else {
+                        requestMethod = RequestExecutor.HTTP_GET;
+                        serviceRequestUrl = download;
+                        contentProducer = null;
+
+                    }
+                    logger.LogD(getClass(), serviceRequestUrl);
+                    long startTime = System.currentTimeMillis();
+                    result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
+                    if (result.status == 200) {
+                        if (contentProducer != null)
+                            stats.numEntries += contentProducer.getChanges();
+                        final JsonParser jp = jsonFactory.createParser(result.inputBuffer);
+
+                        jp.nextToken(); // skip ("START_OBJECT(d) expected");
+                        jp.nextToken(); // skip ("FIELD_NAME(d) expected");
+                        if (jp.nextToken() != JsonToken.START_OBJECT)
+                            throw new JsonParseException(jp, "START_OBJECT(d - object) expected", jp.getCurrentLocation());
+                        while (jp.nextToken() != JsonToken.END_OBJECT) {
+                            name = jp.getCurrentName();
+                            if (SYNC.__sync.equals(name)) {
                                 jp.nextToken();
-                                switch (name) {
-                                    case _.serverBlob:
-                                        serverBlob = jp.getText();
-                                        break;
-                                    case _.moreChangesAvailable:
-                                        moreChanges = jp.getBooleanValue() || forceMoreChanges;
-                                        forceMoreChanges = false;
-                                        break;
-                                    case _.resolveConflicts:
-                                        resolveConflicts = jp.getBooleanValue();
-                                        break;
-                                }
-                            }
-                        } else if (_.results.equals(name)) {
-                            if (jp.nextToken() != JsonToken.START_ARRAY)
-                                throw new JsonParseException("START_ARRAY(results) expected",
-                                        jp.getCurrentLocation());
-                            while (jp.nextToken() != JsonToken.END_ARRAY) {
-                                meta.isDeleted = false;
-                                meta.tempId = null;
-                                vals.clear();
                                 while (jp.nextToken() != JsonToken.END_OBJECT) {
                                     name = jp.getCurrentName();
-                                    current = jp.nextToken();
-                                    switch (current) {
-                                        case VALUE_STRING:
-                                            vals.put(name, jp.getText());
+                                    jp.nextToken();
+                                    switch (name) {
+                                        case SYNC.serverBlob:
+                                            serverBlob = jp.getText();
                                             break;
-                                        case VALUE_NUMBER_INT:
-                                            vals.put(name, jp.getLongValue());
+                                        case SYNC.moreChangesAvailable:
+                                            moreChanges = jp.getBooleanValue() || forceMoreChanges;
+                                            forceMoreChanges = false;
                                             break;
-                                        case VALUE_NUMBER_FLOAT:
-                                            vals.put(name, jp.getDoubleValue());
+                                        case SYNC.resolveConflicts:
+                                            resolveConflicts = jp.getBooleanValue();
                                             break;
-                                        case VALUE_FALSE:
-                                            vals.put(name, 0L);
-                                            break;
-                                        case VALUE_TRUE:
-                                            vals.put(name, 1L);
-                                            break;
-                                        case VALUE_NULL:
-                                            vals.put(name, null);
-                                            break;
-                                        case START_OBJECT:
-                                            switch (name) {
-                                                case _.__metadata:
-                                                    while (jp.nextToken() != JsonToken.END_OBJECT) {
-                                                        name = jp.getCurrentName();
-                                                        jp.nextToken();
-                                                        switch (name) {
-                                                            case _.uri:
-                                                                meta.uri = jp.getText();
-                                                                break;
-                                                            case _.type:
-                                                                meta.type = jp.getText();
-                                                                break;
-                                                            case _.isDeleted:
-                                                                meta.isDeleted = jp
-                                                                        .getBooleanValue();
-                                                                break;
-                                                            case _.tempId:
-                                                                meta.tempId = jp.getText();
-                                                                break;
+                                    }
+                                }
+                            } else if (SYNC.results.equals(name)) {
+                                if (jp.nextToken() != JsonToken.START_ARRAY)
+                                    throw new JsonParseException(jp, "START_ARRAY(results) expected", jp.getCurrentLocation());
+                                while (jp.nextToken() != JsonToken.END_ARRAY) {
+                                    meta.isDeleted = false;
+                                    meta.tempId = null;
+                                    vals.clear();
+                                    while (jp.nextToken() != JsonToken.END_OBJECT) {
+                                        final long currentTime = System.currentTimeMillis();
+                                        if (currentTime - startTime > 1000 * 30) {
+                                            startTime = doPing(startTime, currentTime);
+                                        }
+                                        name = jp.getCurrentName();
+                                        current = jp.nextToken();
+                                        switch (current) {
+                                            case VALUE_STRING:
+                                                vals.put(name, jp.getText());
+                                                break;
+                                            case VALUE_NUMBER_INT:
+                                                vals.put(name, jp.getLongValue());
+                                                break;
+                                            case VALUE_NUMBER_FLOAT:
+                                                vals.put(name, jp.getDoubleValue());
+                                                break;
+                                            case VALUE_FALSE:
+                                                vals.put(name, 0L);
+                                                break;
+                                            case VALUE_TRUE:
+                                                vals.put(name, 1L);
+                                                break;
+                                            case VALUE_NULL:
+                                                vals.put(name, null);
+                                                break;
+                                            case START_OBJECT:
+                                                switch (name) {
+                                                    case SYNC.__metadata:
+                                                        while (jp.nextToken() != JsonToken.END_OBJECT) {
+                                                            name = jp.getCurrentName();
+                                                            jp.nextToken();
+                                                            switch (name) {
+                                                                case SYNC.uri:
+                                                                    meta.uri = jp.getText();
+                                                                    break;
+                                                                case SYNC.type:
+                                                                    meta.type = jp.getText();
+                                                                    break;
+                                                                case SYNC.isDeleted:
+                                                                    meta.isDeleted = jp
+                                                                            .getBooleanValue();
+                                                                    break;
+                                                                case SYNC.tempId:
+                                                                    meta.tempId = jp.getText();
+                                                                    break;
+                                                            }
                                                         }
-                                                    }
-                                                    break;
-                                                case _.__syncConflict:
-                                                    while (jp.nextToken() != JsonToken.END_OBJECT) {
-                                                        name = jp.getCurrentName();
-                                                        jp.nextToken();
-                                                        switch (name) {
-                                                            case _.isResolved:
-                                                                break;
-                                                            case _.conflictResolution:
-                                                                break;
-                                                            case _.conflictingChange:
-                                                                while (jp
-                                                                        .nextToken() != JsonToken
-                                                                        .END_OBJECT) {
-                                                                    name = jp.getCurrentName();
-                                                                    current = jp.nextToken();
-                                                                    if (current == JsonToken
-                                                                            .START_OBJECT) {
-                                                                        if (_.__metadata
-                                                                                .equals(name)) {
-                                                                            //noinspection StatementWithEmptyBody
-                                                                            while (jp
-                                                                                    .nextToken()
-                                                                                    != JsonToken
-                                                                                    .END_OBJECT) {
+                                                        break;
+                                                    case SYNC.__syncConflict:
+                                                        while (jp.nextToken() != JsonToken.END_OBJECT) {
+                                                            name = jp.getCurrentName();
+                                                            jp.nextToken();
+                                                            switch (name) {
+                                                                case SYNC.isResolved:
+                                                                    break;
+                                                                case SYNC.conflictResolution:
+                                                                    break;
+                                                                case SYNC.conflictingChange:
+                                                                    while (jp
+                                                                            .nextToken() != JsonToken
+                                                                            .END_OBJECT) {
+                                                                        name = jp.getCurrentName();
+                                                                        current = jp.nextToken();
+                                                                        if (current == JsonToken
+                                                                                .START_OBJECT) {
+                                                                            if (SYNC.__metadata
+                                                                                    .equals(name)) {
+                                                                                //noinspection StatementWithEmptyBody
+                                                                                while (jp
+                                                                                        .nextToken()
+                                                                                        != JsonToken
+                                                                                        .END_OBJECT) {
+                                                                                }
                                                                             }
                                                                         }
                                                                     }
-                                                                }
-                                                                break;
+                                                                    break;
+                                                            }
                                                         }
-                                                    }
-                                                    // resolve conf
-                                                    break;
-                                                case _.__syncError:
-                                                    //noinspection StatementWithEmptyBody
-                                                    while (jp.nextToken() != JsonToken.END_OBJECT) {
-                                                    }
-                                                    break;
-                                            }
-                                            break;
-                                        default:
-                                            throw new JsonParseException(
-                                                    "Wrong jsonToken: " + current,
-                                                    jp.getCurrentLocation());
-                                    }
+                                                        // resolve conf
+                                                        break;
+                                                    case SYNC.__syncError:
+                                                        //noinspection StatementWithEmptyBody
+                                                        while (jp.nextToken() != JsonToken.END_OBJECT) {
+                                                        }
+                                                        break;
+                                                }
+                                                break;
+                                            default:
+                                                throw new JsonParseException(jp, "Wrong jsonToken: " + current, jp.getCurrentLocation());
+                                        }
 
+                                    }
+                                    final TableInfo tab = contentHelper.getTableFromType(meta.type);
+                                    if (meta.isDeleted) {
+                                        tab.DeleteWithUri(meta.uri, db);
+                                        stats.numDeletes++;
+                                    } else {
+                                        if (tab.SyncJSON(vals, meta, db)) stats.numUpdates++;
+                                        else stats.numInserts++;
+                                    }
+                                    if (!notifyTableInfo.contains(tab)) notifyTableInfo.add(tab);
                                 }
-                                final TableInfo tab = contentHelper.getTableFromType(meta.type);
-                                if (meta.isDeleted) {
-                                    tab.DeleteWithUri(meta.uri, db);
-                                    stats.numDeletes++;
-                                } else {
-                                    if (tab.SyncJSON(vals, meta, db)) stats.numUpdates++;
-                                    else stats.numInserts++;
-                                }
-                                if (!notifyTableInfo.contains(tab)) notifyTableInfo.add(tab);
                             }
                         }
+                        jp.close();
+                        if (resolveConflicts)
+                            logger.LogE(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                        else
+                            logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                    } else {
+                        final String error = result.getError();
+                        if(error != null && error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException)
+                        {
+                            //nasty 500: System.Runtime.Serialization.SerializationException ...  using upload instead download with the same serverBlob should help
+                            logger.LogE(clazz, "*Sync* SerializationException first time - retrying",  RuntimeSerializationException.Instance);
+                            noChanges = false;
+                            moreChanges = true;
+                            serializationException = true;
+                        }
+                        else
+                            throw new IOException(String.format("%s, Server error: %d, error: %s, blob: %s", serviceRequestUrl, result.status, error, originalBlob == null ? "null" : originalBlob));
                     }
-                    jp.close();
-                    if (resolveConflicts)
-                        logger.LogE(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
-                    else
-                        logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+                }
+                catch(Exception e){
+                    hasError = true;
+                    throw e;
+                }
+                finally {
+                    if(result != null)
+                        result.close();
                     if (!hasError) {
                         cv.clear();
                         cv.put(BlobsTable.C_NAME, scopeServerBlob);
@@ -575,6 +601,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                         db.replace(BlobsTable.NAME, null, cv);
                         db.setTransactionSuccessful();
                         db.endTransaction();
+                        originalBlob = serverBlob;
                         logger.LogD(clazz, "*Sync* commit changes");
                         final ContentResolver cr = getContext().getContentResolver();
                         for (TableInfo t : notifyTableInfo) {
@@ -586,24 +613,25 @@ public abstract class BaseContentProvider extends ContentProvider {
                                 logger.LogD(clazz, "\t+ uri: " + n);
                             }
                         }
-                        notifyTableInfo.clear();
+                    } else {
+                        db.endTransaction();
                     }
-                } else {
-                    logger.LogE(clazz, "*Sync* Server error: " + result.status);
-                    logger.LogE(clazz, "\t" + result.getError());
-                    hasError = true;
-                    break;
+                    notifyTableInfo.clear();
                 }
-                result.close();
             } while (moreChanges);
-        } catch (final IOException e) {
-            stats.numIoExceptions++;
-            hasError = true;
+        }
+        catch (InterruptedIOException e){
+            stats.isInterrupted = true;
+        }
+        catch(JsonParseException e){
+            stats.numParseExceptions++;
             logger.LogE(clazz, e);
-            Log.d("Blob:", originalBlob == null ? "null" : originalBlob);
+        }
+        catch(IOException e){
+            stats.numIoExceptions++;
+            logger.LogE(clazz, e);
         }
         if (hasError) {
-            db.endTransaction();
             ContentValues cv = new ContentValues();
             cv.put(BlobsTable.C_NAME, scopeServerBlob);
             cv.put(BlobsTable.C_VALUE, originalBlob);
@@ -611,22 +639,12 @@ public abstract class BaseContentProvider extends ContentProvider {
             cv.put(BlobsTable.C_STATE, -1);
             db.replace(BlobsTable.NAME, null, cv);
         }
-        /*-if (!hasError) {
-            final ContentValues cv = new ContentValues(2);
-			cv.put(BlobsTable.C_NAME, scopeServerBlob);
-			cv.put(BlobsTable.C_VALUE, serverBlob);
-			db.replace(BlobsTable.NAME, null, cv);
-			db.setTransactionSuccessful();
-		}
-		db.endTransaction();
-		if (!hasError) {
-			for (String t : notifyTableInfo) {
-				getContext().getContentResolver().notifyChange(getDirUri(t),
-						null);
-			}
-		}*/
         logger.LogTimeD(clazz, "*Sync* time", start);
         return stats;
+    }
+
+    public long doPing(long startTime, long currentTime) {
+        return currentTime;
     }
 
     protected RequestExecutor.Result executeRequest(int requestMethod, String serviceRequestUrl, final ISyncContentProducer syncContentProducer) throws IOException {
@@ -655,6 +673,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
         }
     }
+    public static class RuntimeSerializationException extends Exception{ public static final RuntimeSerializationException Instance = new RuntimeSerializationException();}
 
     protected void onUpgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
@@ -716,12 +735,12 @@ public abstract class BaseContentProvider extends ContentProvider {
         public void writeTo(final OutputStream outputStream) throws IOException {
             final JsonGenerator generator = factory.createGenerator(outputStream);
             generator.writeStartObject();
-            generator.writeObjectFieldStart(_.d);
-            generator.writeObjectFieldStart(_.__sync);
-            generator.writeBooleanField(_.moreChangesAvailable, false);
-            generator.writeStringField(_.serverBlob, serverBlob);
+            generator.writeObjectFieldStart(SYNC.d);
+            generator.writeObjectFieldStart(SYNC.__sync);
+            generator.writeBooleanField(SYNC.moreChangesAvailable, false);
+            generator.writeStringField(SYNC.serverBlob, serverBlob);
             generator.writeEndObject(); // sync
-            generator.writeArrayFieldStart(_.results);
+            generator.writeArrayFieldStart(SYNC.results);
             if (upload) {
                 for (TableInfo tab : ch.getAllTables()) {
                     if (tab.scope.toLowerCase().equals(scope.toLowerCase()))

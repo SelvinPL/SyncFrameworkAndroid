@@ -22,6 +22,7 @@ public class SyncStats implements Parcelable {
     public long numDeletes;
     public long numEntries;
     public long numSkippedEntries;
+    public boolean isInterrupted;
 
     public SyncStats() {
         numAuthExceptions = 0;
@@ -33,6 +34,8 @@ public class SyncStats implements Parcelable {
         numDeletes = 0;
         numEntries = 0;
         numSkippedEntries = 0;
+        isInterrupted = false;
+
     }
 
     public SyncStats(Parcel in) {

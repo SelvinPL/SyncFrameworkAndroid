@@ -25,18 +25,20 @@ public interface RequestExecutor {
     class Result {
         public final InputStream inputBuffer;
         public final int status;
+        public final String error;
 
 
-        public Result(InputStream inputBuffer, int status) {
+        public Result(InputStream inputBuffer, int status, String error) {
             this.inputBuffer = inputBuffer;
             this.status = status;
+            this.error = error;
         }
 
         public void close() {
         }
 
         public String getError() {
-            return "";
+            return error;
         }
     }
 }
