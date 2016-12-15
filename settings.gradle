@@ -1,1 +1,1 @@
-include ':ListSyncSample', ':SyncFramework'
+include ':demo', ':sync-framework'
