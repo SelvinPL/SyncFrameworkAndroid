@@ -1,45 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="label">@string/app_name</string>
+    <string name="listslist_activity_title">Lists</string>
+    <string name="login_activity_title">Sign-in</string>
+    <string name="label_status">Status</string>
+    <string name="prompt_status">Select status</string>
+    <string name="label_priority">Priority</string>
+    <string name="prompt_priority">Select priority</string>
+    <string name="label_start_date">Start date</string>
+    <string name="label_end_date">End date</string>
+    <string name="label_name">Name</string>
+    <string name="label_description">Description</string>
 
-    <string name="hello">Hello World, List!</string>
-    <string name="app_name">ListSyncSample</string>
-    <string name="label">ListSyncAdapter</string>
-    <string name="empty" />
-    <string name="ui_listactivity_title">List - Items</string>
-    <string name="ui_listslistactivity_title">Lists</string>
-    <string name="ui_activity_title">Sign-in</string>
-    <string name="ui_activity_authenticating">Authenticating\u2026</string>
-    <string name="login_activity_username_label">Username</string>
-    <string name="login_activity_password_label">Password</string>
-    <string name="login_activity_ok_button">Sign in</string>
-    <string name="ui_synchronizing">Synchronizing…</string>
-    <string name="ui_alert_confirm">Are you sure?</string>
-    <string name="ui_alert_delete_list">Deleting List</string>
-    <string name="ui_alert_delete_item">Deleting Item</string>
-    <string name="ui_new_list">New list</string>
-    <string name="ui_new_item">New item</string>
-    <string name="ui_save">Save</string>
-    <string name="ui_status">Status</string>
-    <string name="ui_priority">Priority</string>
-    <string name="ui_status_prompt">Select status…</string>
-    <string name="ui_priority_prompt">Select priority…</string>
-    <string name="ui_edit">Edit</string>
-    <string name="ui_edit_list">Edit list</string>
-    <string name="ui_edit_item">Edit item</string>
-    <string name="ui_start_date">Start date</string>
-    <string name="ui_end_date">End date</string>
-    <string name="ui_delete">Delete</string>
-    <string name="ui_name">Name</string>
-    <string name="ui_synchronize">Synchronize</string>
-    <string name="ui_name_description_empty">Name or Description should not be empty!</string>
-    <string name="ui_description">Description</string>
-    <string name="login_activity_loginfail_text_both">The username or password isn\'t valid. A Sample
-		SyncAdapter account is
-		required. Please try again. </string>
-    <string name="login_activity_loginfail_text_pwonly">You entered the wrong password or your account has
-		changed.
-		Please re-enter your password.</string>
-    <string name="login_activity_loginfail_text_pwmissing">Type the password for this account.</string>
-    <string name="login_activity_newaccount_text">Sign in to your Sample SyncAdapter account.</string>
+    <string name="deletion_cancelled">Deletion cancelled</string>
+    <string name="deleted">Deleted</string>
+    <string name="lists_list_empty">There are no lists…</string>
+    <string name="list_deletion_title">Delete list</string>
+    <string name="list_deletion_message">Do you really want to delete list?</string>
+    <string name="items_list_empty">There are no items…</string>
+    <string name="item_deletion_title">Delete item</string>
+    <string name="item_deletion_message">Do you really want to delete item?</string>
+    <string name="menu_refresh_title">Refresh</string>
 
+
+    <string name="fragments_list_list">pl.selvin.android.listsyncsample.ui.ListsListFragment</string>
+    <string name="welcome">Welcome!</string>
+    <string name="login_error_invalid_login_or_password">Invalid user or password</string>
+    <string name="login_error_field_required">This field is required</string>
+    <string name="login_login_hint">Login</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_error_invalid_password">Wrong password - try: %s</string>
+    <string name="lists_search_hint">Find list</string>
+
+    <string name="fake_password">password</string>
+    <string name="account_exists">ListSyncSample account already exists. Only one account is supported.</string>
+    <string name="cannot_create_account">Cannot create account</string>
+    <string name="label_tags">Tags:</string>
+    <string name="label_items">Items:</string>
+    <string name="add_new_tag">Add new tag</string>
 </resources>

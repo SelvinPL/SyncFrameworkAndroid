@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="pl.selvin.android.listsyncsample">
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
@@ -13,11 +14,54 @@
 
 
     <application
-        android:icon="@drawable/icon"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:logo="@drawable/ic_menu_home"
-        android:theme="@style/CustomTheme"
-        android:uiOptions="splitActionBarWhenNarrow">
+        android:theme="@style/AppBaseTheme"
+        android:supportsRtl="true"
+        tools:ignore="GoogleAppIndexingWarning">
+
+        <activity android:name=".ui.GenericDetailsActivity" />
+        <activity android:name=".ui.GenericListActivity" />
+
+        <activity
+            android:name=".ui.HomeActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.Launcher">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity-alias
+            android:name=".ui.ListsListActivity"
+            android:label="@string/listslist_activity_title"
+            android:targetActivity=".ui.GenericListActivity">
+
+            <intent-filter>
+                <action android:name="pl.selvin.android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <meta-data
+                android:name="fragment_class"
+                android:value="@string/fragments_list_list" />
+            <meta-data
+                android:name="support_adding"
+                android:value="true" />
+            <meta-data
+                android:name="home_as_up"
+                android:value="false" />
+
+        </activity-alias>
+
+        <activity
+            android:name=".authenticator.AuthenticatorActivity"
+            android:excludeFromRecents="true"
+            android:label="@string/login_activity_title"
+            android:launchMode="singleTop" />
+
         <service
             android:name=".authenticator.AuthenticationService"
             android:exported="true">
@@ -29,6 +73,7 @@
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
         </service>
+
         <service
             android:name=".syncadapter.SyncService"
             android:exported="true">
@@ -41,75 +86,10 @@
                 android:resource="@xml/syncadapter" />
         </service>
 
-        <activity
-            android:name=".ui.ListsListActivity"
-            android:label="@string/ui_listslistactivity_title">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-            <intent-filter>
-                <action android:name="pl.selvin.android.ListSyncSample.MAIN" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-        <activity
-            android:name=".ui.EditListActivity"
-            android:label="@string/ui_new_list">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-        </activity>
-        <activity
-            android:name=".ui.EditItemActivity"
-            android:label="@string/ui_new_item">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-        </activity>
-        <activity
-            android:name=".ui.ListActivity"
-            android:label="@string/ui_listactivity_title">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-        </activity>
-        <activity
-            android:name=".ui.ItemActivity"
-            android:label="@string/ui_listactivity_title">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-        </activity>
-        <activity
-            android:name=".authenticator.AuthenticatorActivity"
-            android:excludeFromRecents="true"
-            android:label="@string/ui_activity_title"
-            android:launchMode="singleTop">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-        </activity>
-        <activity
-            android:name=".support.BaseAuthenticatorActivity"
-            android:excludeFromRecents="true"
-            android:label="@string/ui_activity_title"
-            android:launchMode="singleTop">
-            <meta-data
-                android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow" />
-        </activity>
-
         <provider
-            android:grantUriPermissions="true"
             android:name=".provider.ListProvider"
-            android:authorities="pl.selvin.android.listsyncsample" />
+            android:authorities="${applicationId}"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

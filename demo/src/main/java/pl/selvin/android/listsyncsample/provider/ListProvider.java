@@ -1,5 +1,5 @@
 /***
- * Copyright (c) 2014 Selvin
+ * Copyright (c) 2014-2016 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -11,10 +11,15 @@
 
 package pl.selvin.android.listsyncsample.provider;
 
+import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.provider.BaseColumns;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.util.HashMap;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -23,13 +28,22 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
+import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.Setup;
+import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
+import pl.selvin.android.listsyncsample.provider.Database.Tag;
 import pl.selvin.android.syncframework.content.BaseContentProvider;
 import pl.selvin.android.syncframework.content.ContentHelper;
 import pl.selvin.android.syncframework.content.RequestExecutor;
+import pl.selvin.android.syncframework.content.SYNC;
+import pl.selvin.android.syncframework.content.TableInfo;
 
 public class ListProvider extends BaseContentProvider {
     private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null);
+    private final HashMap<String, String> TAG_ITEM_MAPPING_WITH_NAMES = new HashMap<>();
+    private final static int TAG_ITEM_MAPPING_WITH_NAMES_MATCH = 1;
+    private final static int TAG_NOT_USED_MATCH = 2;
+    private final UriMatcher MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
 
     private final static RequestExecutor executor = new RequestExecutor() {
         private final OkHttpClient client = new OkHttpClient();
@@ -62,7 +76,7 @@ public class ListProvider extends BaseContentProvider {
             } catch (Exception ignore) {
 
             }
-            return new Result(response.body().source().inputStream(), response.code(), error) {
+            return new Result(new BufferedInputStream(response.body().source().inputStream(), 4 * 1024 * 1024), response.code(), error) {
                 @Override
                 public void close() {
                     body.close();
@@ -73,19 +87,63 @@ public class ListProvider extends BaseContentProvider {
 
     public ListProvider() {
         super(getHelper(), executor);
+        MATCHER.addURI(Constants.AUTHORITY, TagItemMapping.TagItemMappingWithNames, TAG_ITEM_MAPPING_WITH_NAMES_MATCH);
+        MATCHER.addURI(Constants.AUTHORITY, Tag.TagNotUsed, TAG_NOT_USED_MATCH);
+        TableInfo tableInfo = contentHelper.getTableFromType(String.format("%s.%s", TagItemMapping.SCOPE, TagItemMapping.TABLE_NAME));
+        TAG_ITEM_MAPPING_WITH_NAMES.putAll(tableInfo.map);
+        tableInfo = contentHelper.getTableFromType(String.format("%s.%s", Tag.SCOPE, Tag.TABLE_NAME));
+        for (final String key : tableInfo.map.keySet()) {
+            if (!key.equals(BaseColumns._ID)) {
+                TAG_ITEM_MAPPING_WITH_NAMES.put(key, tableInfo.map.get(key));
+            }
+        }
+    }
+
+    @Override
+    public String getType(Uri uri) {
+        switch (MATCHER.match(uri)) {
+            case TAG_ITEM_MAPPING_WITH_NAMES_MATCH:
+                return super.getType(contentHelper.getDirUri(TagItemMapping.TABLE_NAME));
+            case TAG_NOT_USED_MATCH:
+                return super.getType(contentHelper.getDirUri(Tag.TABLE_NAME));
+            default:
+                return super.getType(uri);
+        }
     }
 
     public static synchronized ContentHelper getHelper() {
         return helperInstance;
     }
-    // we don't need implementation ... base class do everything on it's own
-    // this is just class which we are pointing in xml files as Provider
-    // since one day i'll move BaseContentProvider to library
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        return super
-                .query(uri, projection, selection, selectionArgs, sortOrder);
+        final SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+        final HashMap<String, String> projectionMap;
+        String limit = uri.getQueryParameter(ContentHelper.PARAMETER_LIMIT);
+        switch (MATCHER.match(uri)) {
+            case TAG_ITEM_MAPPING_WITH_NAMES_MATCH:
+                builder.setTables(TagItemMapping.TABLE_NAME + "  INNER JOIN "
+                    + Tag.TABLE_NAME + " ON "
+                    + Tag.ID + "=" + TagItemMapping.TAGID );
+                projectionMap = TAG_ITEM_MAPPING_WITH_NAMES;
+                builder.appendWhere(TagItemMapping.TABLE_NAME + "." + SYNC.isDeleted + "=0");
+                break;
+            case TAG_NOT_USED_MATCH:
+                return super.query(contentHelper.getDirUri(Tag.TABLE_NAME), projection,
+                        "(NOT EXISTS(SELECT 1 FROM " + TagItemMapping.TABLE_NAME + " WHERE " + TagItemMapping.TAGID
+                        + "=" + Tag.ID + " AND " + TagItemMapping.ITEMID + "=? AND [" +
+                                TagItemMapping.TABLE_NAME + "]." + SYNC.isDeleted + "=0))",
+                        selectionArgs, sortOrder);
+            default:
+                return super.query(uri, projection, selection, selectionArgs, sortOrder);
+        }
+        builder.setProjectionMap(projectionMap);
+        LogQuery(uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit);
+        final Cursor cursor = builder.query(getReadableDatabase(), projection, selection, selectionArgs, null, null, sortOrder, limit);
+        if (cursor != null && getContext() != null) {
+            cursor.setNotificationUri(getContext().getContentResolver(), uri);
+        }
+        return cursor;
     }
 }

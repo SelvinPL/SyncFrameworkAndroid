@@ -1,5 +1,5 @@
 /***
- Copyright (c) 2014 Selvin
+ Copyright (c) 2014-2016 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
  of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -11,11 +11,13 @@
 
 package pl.selvin.android.listsyncsample;
 
-public class Constants {
-    public static final String ACCOUNT_TYPE = "pl.selvin.android.listsyncsample.sync";
-    public static final String AUTHORITY = "pl.selvin.android.listsyncsample";
-    public static final String AUTHTOKEN_TYPE = "pl.selvin.android.listsyncsample.sync";
-    public static final String SERVICE_URI = "http://www.agronom.pl/listservice/";
-    public static final String SYNCACTION_START = "SELVIN_SYNC_ACTION_START";
-    public static final String SYNCACTION_STOP = "SELVIN_SYNC_ACTION_STOP";
+public interface Constants {
+    String ACCOUNT_TYPE = BuildConfig.APPLICATION_ID;
+    String AUTHORITY = BuildConfig.APPLICATION_ID;
+    String AUTH_TOKEN_TYPE = BuildConfig.APPLICATION_ID;
+    String SERVICE_URI = "http://www.agronom.pl/listservice/";
+
+    interface StringUtil {
+        String EMPTY = "";
+    }
 }

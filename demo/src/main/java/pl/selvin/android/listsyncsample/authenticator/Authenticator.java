@@ -9,9 +9,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.widget.Toast;
 
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
@@ -23,18 +21,9 @@ import pl.selvin.android.listsyncsample.provider.ListProvider;
  */
 @SuppressLint("NewApi")
 class Authenticator extends AbstractAccountAuthenticator {
-    static final String smsg = "ListSyncSample account already exists.\nOnly one account is supported.";
-    final Handler handler = new Handler() {
-        @Override
-        public void handleMessage(android.os.Message msg) {
-            if (msg.what == 0)
-                Toast.makeText(mContext, smsg, Toast.LENGTH_LONG).show();
-        }
-    };
-    // Authentication Service context
     private final Context mContext;
 
-    public Authenticator(Context context) {
+    Authenticator(Context context) {
         super(context);
         mContext = context;
     }
@@ -94,8 +83,7 @@ class Authenticator extends AbstractAccountAuthenticator {
 
         bundle.putInt(AccountManager.KEY_ERROR_CODE,
                 AccountManager.ERROR_CODE_BAD_REQUEST);
-        bundle.putString(AccountManager.KEY_ERROR_MESSAGE, smsg);
-        handler.sendEmptyMessage(0);
+        bundle.putString(AccountManager.KEY_ERROR_MESSAGE, mContext.getString(R.string.account_exists));
         return bundle;
     }
 
@@ -131,7 +119,7 @@ class Authenticator extends AbstractAccountAuthenticator {
      */
     @Override
     public String getAuthTokenLabel(String authTokenType) {
-        if (authTokenType.equals(Constants.AUTHTOKEN_TYPE)) {
+        if (authTokenType.equals(Constants.AUTH_TOKEN_TYPE)) {
             return mContext.getString(R.string.label);
         }
         return null;

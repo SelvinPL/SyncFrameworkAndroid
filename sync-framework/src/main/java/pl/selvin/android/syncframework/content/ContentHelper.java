@@ -38,6 +38,7 @@ public class ContentHelper {
     public static final int uriCodeItemRowIDFlag = 0x2000 | uriCodeItemFlag;
     //public static final int uriCodeViewFlag = 0x4000;
     public static final String PARAMETER_SYNC_TO_NETWORK = "sf_syncToNetwork";
+    public static final String PARAMETER_UNDELETING= "sf_undeleting";
     public static final String PARAMETER_LIMIT = "sf_limit";
     private final static HashMap<Class<? extends SetupInterface>, ContentHelper> instances = new HashMap<>();
     public final Uri CONTENT_URI;
@@ -164,7 +165,16 @@ public class ContentHelper {
     }
 
     public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork) {
-        return getDirUriBuilder(tableName).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
+        return getDirUriBuilder(tableName, syncToNetwork, false);
+    }
+
+    public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork, boolean undeleting) {
+        final Uri.Builder builder = getDirUriBuilder(tableName);
+        if(undeleting)
+            builder.appendQueryParameter(PARAMETER_UNDELETING, Boolean.toString(true));
+        if(syncToNetwork)
+            builder.appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(true));
+        return builder;
     }
 
     public Uri getDirUri(String tableName) {
@@ -173,6 +183,10 @@ public class ContentHelper {
 
     public Uri getDirUri(String tableName, boolean syncToNetwork) {
         return getDirUriBuilder(tableName, syncToNetwork).build();
+    }
+
+    public Uri getDirUri(String tableName, boolean syncToNetwork, boolean undeleting) {
+        return getDirUriBuilder(tableName, syncToNetwork, undeleting).build();
     }
 
     public Uri.Builder getItemUriBuilder(String tableName, String... primaryKeys) {

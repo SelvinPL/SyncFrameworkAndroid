@@ -26,7 +26,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -54,7 +53,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     private final Class<?> clazz;
     private final Logger logger;
     private OpenHelper mDB;
-    public final static String DATABASE_OPERATION_TYPE_UPGRADE= "DATABASE_OPERATION_TYPE_UPGRADE";
+    public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
     public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
     public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
 
@@ -203,18 +202,13 @@ public abstract class BaseContentProvider extends ContentProvider {
             if (isItemCode(code)) {
                 throw new IllegalArgumentException("Can not insert with Item type Uri.");
             }
-            /*-String tempId = UUID.randomUUID().toString();
-            if (tab.primaryKey.length == 1
-					&& tab.primaryKey[0].type == ColumnType.guid) {
-				tempId = values.getAsString(tab.primaryKey[0].name);
-			}*/
-            boolean syncToNetwork = checkSyncToNetwork(uri);
             values.put("tempId", UUID.randomUUID().toString());
             values.put("isDirty", 1);
             values.put("isDeleted", 0);
             long rowId = getWritableDatabase().insert(tab.name, null, values);
             logger.LogD(clazz, "rowId:" + rowId + ", values: " + String.valueOf(values));
             if (rowId > 0) {
+                boolean syncToNetwork = checkSyncToNetwork(uri);
                 Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
                 final ContentResolver cr = getContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
@@ -290,7 +284,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             }
         } catch (Exception ex) {
             final SyncStats inout = syncParams.getParcelable(SYNC_SYNCSTATS);
-            if(inout != null) {
+            if (inout != null) {
                 inout.numIoExceptions++;
                 syncParams.putParcelable(SYNC_SYNCSTATS, inout);
             }
@@ -302,6 +296,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         final int code = contentHelper.matchUri(uri);
+        final boolean undeleting = checkUndeleting(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
                 logger.LogD(clazz, "*update* sync uri: " + uri.toString());
@@ -317,26 +312,26 @@ public abstract class BaseContentProvider extends ContentProvider {
                 final String newSelection;
                 final String[] newSelectionArgs;
                 if (isItemRowIDCode(code)) {
-                    newSelection = "isDeleted=0 AND " + tab.rowIdAlias + "=?";
+                    newSelection = (undeleting ? "" : "isDeleted=0 AND ") + tab.rowIdAlias + "=?";
                     newSelectionArgs = new String[]{uri.getPathSegments().get(2)};
                 } else {
                     newSelectionArgs = new String[tab.primaryKey.length];
                     for (int i = 0; i < tab.primaryKey.length; i++) {
                         newSelectionArgs[i] = uri.getPathSegments().get(i + 1);
                     }
-                    newSelection = "isDeleted=0 " + tab.getSelection();
+                    newSelection = (undeleting ? "1=1 " : "isDeleted=0 ") + tab.getSelection();
                 }
                 selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
                 selectionArgs = DatabaseUtilsCompat
                         .appendSelectionArgs(selectionArgs, newSelectionArgs);
             } else {
-                selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
+                selection = DatabaseUtilsCompat.concatenateWhere(selection, undeleting ? "" : "isDeleted=0");
             }
-            boolean syncToNetwork = checkSyncToNetwork(uri);
-            values.put("isDirty", 1);
+            values.put("isDirty", undeleting ? 0 : 1);
             int ret = getWritableDatabase().update(tab.name, values, selection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {
+                boolean syncToNetwork = checkSyncToNetwork(uri);
                 final ContentResolver cr = getContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
@@ -351,6 +346,11 @@ public abstract class BaseContentProvider extends ContentProvider {
     boolean checkSyncToNetwork(Uri uri) {
         final String syncToNetworkUri = uri.getQueryParameter(ContentHelper.PARAMETER_SYNC_TO_NETWORK);
         return syncToNetworkUri == null || Boolean.parseBoolean(syncToNetworkUri);
+    }
+
+    boolean checkUndeleting(Uri uri) {
+        final String undeleting = uri.getQueryParameter(ContentHelper.PARAMETER_UNDELETING);
+        return undeleting != null && Boolean.parseBoolean(undeleting);
     }
 
     final public SQLiteDatabase getReadableDatabase() {
@@ -573,24 +573,20 @@ public abstract class BaseContentProvider extends ContentProvider {
                             logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
                     } else {
                         final String error = result.getError();
-                        if(error != null && error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException)
-                        {
+                        if (error != null && error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException) {
                             //nasty 500: System.Runtime.Serialization.SerializationException ...  using upload instead download with the same serverBlob should help
-                            logger.LogE(clazz, "*Sync* SerializationException first time - retrying",  RuntimeSerializationException.Instance);
+                            logger.LogE(clazz, "*Sync* SerializationException first time - retrying", RuntimeSerializationException.Instance);
                             noChanges = false;
                             moreChanges = true;
                             serializationException = true;
-                        }
-                        else
+                        } else
                             throw new IOException(String.format("%s, Server error: %d, error: %s, blob: %s", serviceRequestUrl, result.status, error, originalBlob == null ? "null" : originalBlob));
                     }
-                }
-                catch(Exception e){
+                } catch (Exception e) {
                     hasError = true;
                     throw e;
-                }
-                finally {
-                    if(result != null)
+                } finally {
+                    if (result != null)
                         result.close();
                     if (!hasError) {
                         cv.clear();
@@ -619,15 +615,12 @@ public abstract class BaseContentProvider extends ContentProvider {
                     notifyTableInfo.clear();
                 }
             } while (moreChanges);
-        }
-        catch (InterruptedIOException e){
+        } catch (InterruptedIOException e) {
             stats.isInterrupted = true;
-        }
-        catch(JsonParseException e){
+        } catch (JsonParseException e) {
             stats.numParseExceptions++;
             logger.LogE(clazz, e);
-        }
-        catch(IOException e){
+        } catch (IOException e) {
             stats.numIoExceptions++;
             logger.LogE(clazz, e);
         }
@@ -673,7 +666,10 @@ public abstract class BaseContentProvider extends ContentProvider {
             logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
         }
     }
-    public static class RuntimeSerializationException extends Exception{ public static final RuntimeSerializationException Instance = new RuntimeSerializationException();}
+
+    public static class RuntimeSerializationException extends Exception {
+        public static final RuntimeSerializationException Instance = new RuntimeSerializationException();
+    }
 
     protected void onUpgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
