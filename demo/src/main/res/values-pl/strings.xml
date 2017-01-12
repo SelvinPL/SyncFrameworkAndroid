@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="account_exists">Konto List Sync Sample już istnieje. Tylko jedno konto jest obsługiwane.</string>
+    <string name="add_new_tag">Dodaj nowy tag</string>
+    <string name="cannot_create_account">Nie można utworzyć konta</string>
+    <string name="deleted">Skasowano</string>
+    <string name="deletion_cancelled">Kasowanie anulowane</string>
+    <string name="item_deletion_message">Czy napewno chcesz usunąć element?</string>
+    <string name="item_deletion_title">Usnunięcie elementu</string>
+    <string name="items_list_empty">Brak elementów…</string>
+    <string name="label_description">Opis</string>
+    <string name="label_end_date">Data końca</string>
+    <string name="label_items">Elementy:</string>
+    <string name="label_name">Nazwa</string>
+    <string name="label_priority">Priorytet</string>
+    <string name="label_start_date">Data początkowa</string>
+    <string name="label_status">Status</string>
+    <string name="label_tags">Tagi:</string>
+    <string name="list_deletion_message">Czy napewno chcesz usunąć listę?</string>
+    <string name="list_deletion_title">Usuwanie listy</string>
+    <string name="lists_list_empty">Brak list…</string>
+    <string name="lists_search_hint">Znajdź listę</string>
+    <string name="listslist_activity_title">Listy</string>
+    <string name="login_activity_title">Zaloguj się</string>
+    <string name="login_error_field_required">To pole jest wymagane</string>
+    <string name="login_error_invalid_login_or_password">Błedny użytkownik lub hasło</string>
+    <string name="login_error_invalid_password">Błedne hasło - spróbuj: %s</string>
+    <string name="login_login_hint">Użytkownik</string>
+    <string name="login_password_hint">Hasło</string>
+    <string name="menu_refresh_title">Odśwież</string>
+    <string name="prompt_priority">Wybierz priorytet</string>
+    <string name="prompt_status">Wybierz status</string>
+    <string name="welcome">Witamy!</string>
+</resources>

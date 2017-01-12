@@ -26,7 +26,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
-import android.widget.Toast;
 
 import java.util.Calendar;
 
@@ -128,16 +127,27 @@ public interface GenericDialogFragment {
     @SuppressLint("ValidFragment")
     class ConfirmDelete extends DialogFragment implements GenericDialogFragment {
 
-        public static ConfirmDelete newInstance(@StringRes int title, @StringRes int message,
-                                                @NonNull Uri uri) {
+        public static ConfirmDelete newInstance(int id, @StringRes int title, @StringRes int message, @NonNull Uri uri) {
             ConfirmDelete frag = new ConfirmDelete();
-
             Bundle args = new Bundle();
             args.putParcelable(URI, uri);
             args.putInt(TITLE, title);
             args.putInt(MESSAGE, message);
+            args.putInt(ID, id);
             frag.setArguments(args);
             return frag;
+        }
+
+        private void runCallback(int ID, boolean canceled) {
+            boolean handled = false;
+            if (getParentFragment() != null && getParentFragment() instanceof Callback)
+                handled = ((Callback) getParentFragment()).onAction(ID, canceled);
+            if (!handled && getActivity() instanceof Callback)
+                ((Callback) getActivity()).onAction(ID, canceled);
+        }
+
+        public interface Callback {
+            boolean onAction(int ID, boolean canceled);
         }
 
         @NonNull
@@ -155,7 +165,7 @@ public interface GenericDialogFragment {
                                                     int whichButton) {
                                     if (uri != null) {
                                         getActivity().getContentResolver().delete(uri, null, null);
-                                        Toast.makeText(getActivity(), R.string.deleted, Toast.LENGTH_SHORT).show();
+                                        runCallback(getArguments().getInt(ID), false);
                                     }
                                 }
                             })
@@ -163,7 +173,7 @@ public interface GenericDialogFragment {
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog,
                                                     int whichButton) {
-                                    Toast.makeText(getActivity(), R.string.deletion_cancelled, Toast.LENGTH_SHORT).show();
+                                    runCallback(getArguments().getInt(ID), true);
                                 }
                             }).create();
         }

@@ -77,7 +77,7 @@ public final class TableInfo {
         this.rowIdAlias = rowIdAlias;
         readonly = table.readonly();
         this.columns = columns.toArray(new ColumnInfo[columns.size()]);
-        map.put("_id", "[" + name + "].ROWID AS _id");
+        map.put("_id", "[" + name + "]." + rowIdAlias + " AS _id");
         for (ColumnInfo ci : columns) {
             map.put(ci.name, ci.name);
         }

@@ -205,7 +205,12 @@ public abstract class BaseContentProvider extends ContentProvider {
             values.put("tempId", UUID.randomUUID().toString());
             values.put("isDirty", 1);
             values.put("isDeleted", 0);
-            long rowId = getWritableDatabase().insert(tab.name, null, values);
+            final long rowId;
+            if (!checkUndeleting(uri)) {
+                rowId = getWritableDatabase().insert(tab.name, null, values);
+            } else {
+                rowId = getWritableDatabase().replace(tab.name, null, values);
+            }
             logger.LogD(clazz, "rowId:" + rowId + ", values: " + String.valueOf(values));
             if (rowId > 0) {
                 boolean syncToNetwork = checkSyncToNetwork(uri);
@@ -296,7 +301,6 @@ public abstract class BaseContentProvider extends ContentProvider {
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         final int code = contentHelper.matchUri(uri);
-        final boolean undeleting = checkUndeleting(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
                 logger.LogD(clazz, "*update* sync uri: " + uri.toString());
@@ -312,22 +316,21 @@ public abstract class BaseContentProvider extends ContentProvider {
                 final String newSelection;
                 final String[] newSelectionArgs;
                 if (isItemRowIDCode(code)) {
-                    newSelection = (undeleting ? "" : "isDeleted=0 AND ") + tab.rowIdAlias + "=?";
+                    newSelection = "isDeleted=0 AND " + tab.rowIdAlias + "=?";
                     newSelectionArgs = new String[]{uri.getPathSegments().get(2)};
                 } else {
                     newSelectionArgs = new String[tab.primaryKey.length];
                     for (int i = 0; i < tab.primaryKey.length; i++) {
                         newSelectionArgs[i] = uri.getPathSegments().get(i + 1);
                     }
-                    newSelection = (undeleting ? "1=1 " : "isDeleted=0 ") + tab.getSelection();
+                    newSelection =  "isDeleted=0 " + tab.getSelection();
                 }
                 selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
                 selectionArgs = DatabaseUtilsCompat
                         .appendSelectionArgs(selectionArgs, newSelectionArgs);
             } else {
-                selection = DatabaseUtilsCompat.concatenateWhere(selection, undeleting ? "" : "isDeleted=0");
+                selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
             }
-            values.put("isDirty", undeleting ? 0 : 1);
             int ret = getWritableDatabase().update(tab.name, values, selection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {

@@ -77,11 +77,7 @@ public class UnusedTagListFragment extends DialogFragment {
                 values.put(TagItemMapping.ITEMID, itemId);
                 values.put(SYNC.isDeleted, 0);
                 final Uri uri = ListProvider.getHelper().getDirUri(TagItemMapping.TABLE_NAME, false, true);
-                if (0 == getContext().getContentResolver().update(uri, values,
-                        String.format("%s=? AND %s=? AND %s=?", TagItemMapping.TAGID, TagItemMapping.USERID, TagItemMapping.ITEMID),
-                        new String[]{Long.toString(tagId), userId, itemId})) {
-                    getContext().getContentResolver().insert(uri, values);
-                }
+                getContext().getContentResolver().insert(uri, values);
             }
         }).setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
             @Override

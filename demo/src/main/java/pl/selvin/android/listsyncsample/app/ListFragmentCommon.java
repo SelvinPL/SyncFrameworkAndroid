@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
 import android.support.annotation.StringRes;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
@@ -32,6 +33,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
@@ -39,13 +41,15 @@ import pl.selvin.android.listsyncsample.utils.StaticHelpers;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
 
-public abstract class ListFragmentCommon extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor>, IListFragmentCommon {
+public abstract class ListFragmentCommon extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor>, IListFragmentCommon, GenericDialogFragment.ConfirmDelete.Callback {
     public final static String EXTRA_ID = "EXTRA_ID";
     public final static String EXTRA_POS = "EXTRA_POS";
     public final static String EXTRA_ROW = "EXTRA_ROW";
     public final static String EXTRA_PASS_THROUGH = "EXTRA_PASS_THROUGH";
     private final static String ID = "LIST_COMMON_ID";
-    private final static int OK_CANCEL_NEW_VERSION = 10;
+
+    private final static int DELETE_CALLBACK_ID = 111111;
+
     private static final String IS_NEW_ELEMENT = "IS_NEW_ELEMENT";
     private static final String TRUE = "true";
     protected final String tableName;
@@ -208,8 +212,8 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
                         final Cursor cursor = (Cursor) parent.getItemAtPosition(position);
                         if (supportEdit) {
                             if (getEditable(cursor)) {
-                                GenericDialogFragment.ConfirmDelete.newInstance(deletionTitle, deletionMessage, getItemUri(cursor, id))
-                                        .show(getFragmentManager(), GenericDialogFragment.DIALOG_FRAGMENT_TAG);
+                                GenericDialogFragment.ConfirmDelete.newInstance(DELETE_CALLBACK_ID, deletionTitle, deletionMessage, getItemUri(cursor, id))
+                                        .show(getChildFragmentManager(), GenericDialogFragment.DIALOG_FRAGMENT_TAG);
                             }
                             return true;
                         }
@@ -396,5 +400,22 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 
     public static boolean checkIsNewElement(Uri base){
         return base != null && TRUE.equals(base.getQueryParameter(IS_NEW_ELEMENT));
+    }
+
+    public boolean onAction(int ID, boolean canceled) {
+        if(DELETE_CALLBACK_ID == ID) {
+            final View view = getView();
+            if(view != null) {
+                final int snackBarText;
+                if (canceled) {
+                    snackBarText = R.string.deletion_cancelled;
+                } else {
+                    snackBarText = R.string.deleted;
+                }
+                Snackbar.make(view, snackBarText, Snackbar.LENGTH_SHORT).show();
+            }
+            return true;
+        }
+        return false;
     }
 }

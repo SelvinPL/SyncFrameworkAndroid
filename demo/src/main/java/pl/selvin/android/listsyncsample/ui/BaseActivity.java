@@ -159,7 +159,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         if (menu.findItem(R.id.menu_refresh) == null) {
             getMenuInflater().inflate(R.menu.refresh, menu);
             menu.findItem(R.id.menu_refresh)
-                    .setIcon(R.drawable.ic_refresh_white_36dp)
+                    .setIcon(R.drawable.ic_refresh_white_24dp)
                     .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
                         @Override
                         public boolean onMenuItemClick(MenuItem item) {

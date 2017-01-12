@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="label">@string/app_name</string>
+    <!-- not for translation -->
+    <string name="label" translatable="false">@string/app_name</string>
+    <string name="fragments_list_list" translatable="false">pl.selvin.android.listsyncsample.ui.ListsListFragment</string>
+    <string name="move_upward_behavior" translatable="false">pl.selvin.android.listsyncsample.app.MoveUpwardBehavior</string>
+
+
     <string name="listslist_activity_title">Lists</string>
     <string name="login_activity_title">Sign-in</string>
     <string name="label_status">Status</string>
@@ -23,19 +28,20 @@
     <string name="menu_refresh_title">Refresh</string>
 
 
-    <string name="fragments_list_list">pl.selvin.android.listsyncsample.ui.ListsListFragment</string>
+
     <string name="welcome">Welcome!</string>
     <string name="login_error_invalid_login_or_password">Invalid user or password</string>
     <string name="login_error_field_required">This field is required</string>
-    <string name="login_login_hint">Login</string>
+    <string name="login_login_hint">User name</string>
     <string name="login_password_hint">Password</string>
     <string name="login_error_invalid_password">Wrong password - try: %s</string>
     <string name="lists_search_hint">Find list</string>
 
-    <string name="fake_password">password</string>
-    <string name="account_exists">ListSyncSample account already exists. Only one account is supported.</string>
+    <string name="fake_password" translatable="false">password</string>
+    <string name="account_exists">List Sync Sample account already exists. Only one account is supported.</string>
     <string name="cannot_create_account">Cannot create account</string>
     <string name="label_tags">Tags:</string>
     <string name="label_items">Items:</string>
     <string name="add_new_tag">Add new tag</string>
+
 </resources>

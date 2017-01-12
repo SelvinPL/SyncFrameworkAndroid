@@ -79,6 +79,10 @@ android {
             dimension "theme"
             themes.useTheme 0xF57C00, 0xE65100, 0xFF9519, 0x78909C, colorDisabled
         }
+        BrownRed {
+            dimension "theme"
+            themes.useTheme 0x795548, 0x5D4037, 0xD7CCC8, 0xFF5252, colorDisabled
+        }
         PurpleGreen {
             dimension "theme"
             themes.useTheme 0x9B26AF, 0x691A99, 0xB43FC8, 0x68EFAD, colorDisabled
