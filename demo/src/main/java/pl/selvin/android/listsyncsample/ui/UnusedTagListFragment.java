@@ -13,18 +13,21 @@ package pl.selvin.android.listsyncsample.ui;
 
 import android.app.Dialog;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.content.res.ResourcesCompat;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.app.AlertDialog;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import android.support.v7.view.ContextThemeWrapper;
 
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.Database.Tag;
@@ -32,10 +35,11 @@ import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.syncframework.content.SYNC;
 
-public class UnusedTagListFragment extends DialogFragment {
+public class UnusedTagListFragment extends DialogFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String USER_ID = "USER_ID";
     private static final String ITEM_ID = "ITEM_ID";
+    private SimpleCursorAdapter adapter;
 
     public static UnusedTagListFragment newInstance(String itemId, String userId) {
         final UnusedTagListFragment frag = new UnusedTagListFragment();
@@ -47,25 +51,22 @@ public class UnusedTagListFragment extends DialogFragment {
     }
 
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        final Context ctx = new ContextThemeWrapper(getContext(), R.style.AppTheme_Dialog_Alert);
+        adapter = new SimpleCursorAdapter(ctx,
+                android.support.v7.appcompat.R.layout.support_simple_spinner_dropdown_item, null,
+                new String[]{Tag.NAME}, new int[]{android.R.id.text1}, 1);
+        getLoaderManager().initLoader(0, null, this);
+    }
+
+
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        final SimpleCursorAdapter adapter = new SimpleCursorAdapter(getContext(),
-                android.support.v7.appcompat.R.layout.support_simple_spinner_dropdown_item,
-                getContext().getContentResolver().query(ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
-                        new String[]{BaseColumns._ID, Tag.NAME}, null,
-                        new String[]{getArguments().getString(ITEM_ID)}, Tag.NAME),
-                new String[]{Tag.NAME}, new int[]{android.R.id.text1}, 1) {
-            @Override
-            public View getView(int position, View convertView, ViewGroup parent) {
-                View root = super.getView(position, convertView, parent);
-                ((TextView) root).setTextColor(ResourcesCompat.getColor(getContext().getResources(),
-                        android.R.color.white,
-                        getContext().getTheme()));
-                return root;
-            }
-        };
-        return new AlertDialog.Builder(getContext()).setAdapter(adapter, new DialogInterface.OnClickListener() {
+
+        return new AlertDialog.Builder(getContext(), R.style.AppTheme_Dialog_Alert).setAdapter(adapter, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int position) {
                 final ContentValues values = new ContentValues(3);
@@ -85,5 +86,22 @@ public class UnusedTagListFragment extends DialogFragment {
                 dialogInterface.cancel();
             }
         }).setCancelable(true).setTitle(R.string.add_new_tag).create();
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return new CursorLoader(getContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
+                new String[]{BaseColumns._ID, Tag.NAME}, null,
+                new String[]{getArguments().getString(ITEM_ID)}, Tag.NAME);
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        adapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        adapter.swapCursor(null);
     }
 }
