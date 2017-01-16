@@ -331,6 +331,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             } else {
                 selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
             }
+            values.put("isDirty", 1);
             int ret = getWritableDatabase().update(tab.name, values, selection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {
