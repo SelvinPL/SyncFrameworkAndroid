@@ -21,7 +21,7 @@ publishing {
     publications {
         myPublication(MavenPublication) {
             groupId 'pl.selvin.android'
-            version '0.6.3'
+            version '0.6.4'
             artifactId 'sync-framework'
 
             from components.java

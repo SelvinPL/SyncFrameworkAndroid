@@ -172,8 +172,8 @@ public class ContentHelper {
         final Uri.Builder builder = getDirUriBuilder(tableName);
         if(undeleting)
             builder.appendQueryParameter(PARAMETER_UNDELETING, Boolean.toString(true));
-        if(syncToNetwork)
-            builder.appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(true));
+        if(!syncToNetwork)
+            builder.appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(false));
         return builder;
     }
 
