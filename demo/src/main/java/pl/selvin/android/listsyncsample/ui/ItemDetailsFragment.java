@@ -60,6 +60,7 @@ public class ItemDetailsFragment extends Fragment implements
     private static final int PRIORITIES_LOADER_ID = 61001;
     private static final int STATUSES_LOADER_ID = 61002;
     private static final int TAGS_LOADER_ID = 61003;
+    private static final int UNUSED_LOADER_ID = 61004;
     private EditText mName, mDescription;
     private TextView mStartDate, mStartTime, mEndDate, mEndTime;
     private SpinnerHelper mPriority, mStatus;
@@ -133,9 +134,11 @@ public class ItemDetailsFragment extends Fragment implements
             case TAGS_LOADER_ID:
                 return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(TagItemMapping.TagItemMappingWithNames, false), new String[]{BaseColumns._ID,
                         Tag.NAME}, TagItemMapping.ITEMID + "=?", new String[]{mItemID}, Tag.NAME);
-            default:
-                return null;
+            case UNUSED_LOADER_ID:
+                return new CursorLoader(getContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
+                        new String[]{BaseColumns._ID}, null, new String[]{mItemID}, null);
         }
+        return null;
     }
 
     @Override
@@ -172,11 +175,15 @@ public class ItemDetailsFragment extends Fragment implements
                     mItemID = cursor.getString(6);
                     mTagsAdapter.setItemId(mItemID);
                     getLoaderManager().initLoader(TAGS_LOADER_ID, null, this);
+                    getLoaderManager().initLoader(UNUSED_LOADER_ID, null, this);
                 } else
                     getActivity().finish();
                 break;
             case TAGS_LOADER_ID:
                 mTagsAdapter.swapCursor(cursor);
+                break;
+            case UNUSED_LOADER_ID:
+                mTagsAdapter.setNewItemVisible(cursor.moveToFirst());
                 break;
         }
     }
@@ -283,15 +290,15 @@ public class ItemDetailsFragment extends Fragment implements
         private final FragmentManager mManager;
         private final String mUserId;
         private String mItemId;
-        private NewItemViewHolder newItemViewHolder;
+        private boolean mNewItemVisibility = false;
 
         @Override
         public int getItemCount() {
-            return super.getItemCount() + 1;
+            return super.getItemCount() + (mNewItemVisibility ? 1 : 0);
         }
 
         public int getItemViewType(int position) {
-            return position == 0 ? R.layout.tags_row_new : R.layout.tags_row;
+            return position == 0 && mNewItemVisibility ? R.layout.tags_row_new : R.layout.tags_row;
         }
 
         TagsAdapter(Context context, FragmentManager manager, String userId) {
@@ -301,11 +308,17 @@ public class ItemDetailsFragment extends Fragment implements
             setHasStableIds(true);
         }
 
+        void setNewItemVisible(boolean newItemVisibility) {
+            final boolean old = mNewItemVisibility;
+            mNewItemVisibility = newItemVisibility;
+            if (old != newItemVisibility) {
+                notifyDataSetChanged();
+            }
+        }
+
         @Override
         public long getItemId(int position) {
-            if (position == 0)
-                return -1;
-            return super.getItemId(position - 1);
+            return position == 0 && mNewItemVisibility ? -1 : super.getItemId(realPosition(position));
         }
 
         @Override
@@ -313,10 +326,15 @@ public class ItemDetailsFragment extends Fragment implements
             ((TextView) viewHolder.itemView).setText(cursor.getString(1));
         }
 
+        private int realPosition(int position) {
+            return mNewItemVisibility ? position - 1 : position;
+        }
+
         @Override
         public void onBindViewHolder(ViewHolderBase viewHolder, int position) {
-            if (position != 0)
-                super.onBindViewHolder(viewHolder, position - 1);
+            if (position == 0 && mNewItemVisibility)
+                return;
+            super.onBindViewHolder(viewHolder, realPosition(position));
         }
 
         @Override
@@ -325,14 +343,12 @@ public class ItemDetailsFragment extends Fragment implements
             if (viewType == R.layout.tags_row) {
                 return new ItemViewHolder(itemView);
             } else {
-                return newItemViewHolder = new NewItemViewHolder(itemView, mManager, mItemId, mUserId);
+                return new NewItemViewHolder(itemView);
             }
         }
 
         void setItemId(String itemId) {
             mItemId = itemId;
-            if (newItemViewHolder != null)
-                newItemViewHolder.setItemId(mItemId);
         }
 
         static abstract class ViewHolderBase extends RecyclerView.ViewHolder implements android.view.View.OnClickListener {
@@ -342,25 +358,14 @@ public class ItemDetailsFragment extends Fragment implements
             }
         }
 
-        private static class NewItemViewHolder extends ViewHolderBase {
-            private final FragmentManager mManager;
-            private final String mUserId;
-            private String mItemId;
-
-            NewItemViewHolder(View itemView, FragmentManager manager, String itemId, String userId) {
+        private class NewItemViewHolder extends ViewHolderBase {
+            NewItemViewHolder(View itemView) {
                 super(itemView);
-                mItemId = itemId;
-                mUserId = userId;
-                mManager = manager;
             }
 
             @Override
             public void onClick(final View view) {
                 UnusedTagListFragment.newInstance(mItemId, mUserId).show(mManager, "TAG");
-            }
-
-            void setItemId(String itemId) {
-                mItemId = itemId;
             }
         }
 

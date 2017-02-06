@@ -130,11 +130,15 @@ public class ListProvider extends BaseContentProvider {
                 builder.appendWhere(TagItemMapping.TABLE_NAME + "." + SYNC.isDeleted + "=0");
                 break;
             case TAG_NOT_USED_MATCH:
-                return super.query(contentHelper.getDirUri(Tag.TABLE_NAME), projection,
+                final Cursor cursor = super.query(contentHelper.getDirUri(Tag.TABLE_NAME), projection,
                         "(NOT EXISTS(SELECT 1 FROM " + TagItemMapping.TABLE_NAME + " WHERE " + TagItemMapping.TAGID
                         + "=" + Tag.ID + " AND " + TagItemMapping.ITEMID + "=? AND [" +
                                 TagItemMapping.TABLE_NAME + "]." + SYNC.isDeleted + "=0))",
                         selectionArgs, sortOrder);
+                if (cursor != null && getContext() != null) {
+                    cursor.setNotificationUri(getContext().getContentResolver(), uri);
+                }
+                return cursor;
             default:
                 return super.query(uri, projection, selection, selectionArgs, sortOrder);
         }
