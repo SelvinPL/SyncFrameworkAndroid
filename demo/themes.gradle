@@ -1,40 +1,110 @@
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.OutputKeys
+class C2M {
+    final map = [:];
+    C2M(Closure closure) {
+        closure.delegate = this
+        closure()
+    }
+    def methodMissing(String name, args) { map[name] = args[0] }
+}
+
 public class ThemesExtension {
-    def parent
+    final static String dimension = "default_theme_extension_dimension_name"
+    protected def parent
+    protected def tasks
+    private Project project
+    public boolean hasTheme = false
+    public def generateTask = null
+    protected String path
 
-
-    public ThemesExtension(parentIn) {
-        parent = parentIn
-    }
-
-    public ThemesExtension(parentIn, int colorPrimary, int colorPrimaryDark, int colorPrimaryLight, int colorAccent, int colorDisabled) {
-        parent = parentIn
-        useTheme(colorPrimary, colorPrimaryDark, colorPrimaryLight, colorAccent, colorDisabled)
-    }
-
-    public useTheme(int colorPrimary, int colorPrimaryDark, int colorPrimaryLight, int colorAccent, int colorDisabled) {
-        def colors = [:]
-        colors["colorPrimary"] = String.format("#%06X", colorPrimary)
-        colors["colorPrimaryDark"] = String.format("#%06X", colorPrimaryDark)
-        colors["colorPrimaryLight"] = String.format("#%06X", colorPrimaryLight)
-        colors["colorAccent"] = String.format("#%06X", colorAccent)
-        colors["colorDisabled"] = String.format("#%06X", colorDisabled)
-        for (i in 1..9) {
-            def alpha = (int) (i * 25.5)
-            colors["colorPrimary" + "A" + i + "0"] = String.format("#%02X%06X", alpha, colorPrimary)
-            colors["colorPrimaryDark" + "A" + i + "0"] = String.format("#%02X%06X", alpha, colorPrimaryDark)
-            colors["colorAccent" + "A" + i + "0"] = String.format("#%02X%06X", alpha, colorAccent)
-            colors["colorDisabled" + "A" + i + "0"] = String.format("#%02X%06X", alpha, colorDisabled)
-        }
-        colors.each {n, v ->
-            this.parent.resValue("color", n, v)
+    public ThemesExtension(project, parent, tasks) {
+        this.project = project
+        this.parent = parent
+        this.tasks = tasks
+        def parentName = parent.name.capitalize()
+        path = "/build/themes/${parentName}/res"
+        project.file(path).mkdirs()
+        colorsMap = [:]
+        def taskName = "generate${parentName}Themes"
+        def output = project.file("${path}/values/colors.xml")
+        def cm = colorsMap
+        generateTask = project.task(taskName, type: Generate) {
+            outputFile output
+            colorsMap cm
+/*
+            doLast {
+                println "++++++++++++++++ executed: ${taskName}"
+            }*/
         }
     }
-}
-ext {
-    themes_createExtension = { parent, colorPrimary, colorPrimaryDark, colorPrimaryLight, colorAccent, colorDisabled ->
-        parent.extensions.create("themes", ThemesExtension, parent, colorPrimary, colorPrimaryDark, colorPrimaryLight, colorAccent, colorDisabled)
+
+    public HashMap<String, String> colorsMap
+
+    public void createTask(variantName) {
+        if(hasTheme) {
+            tasks.findByName("generate${variantName.capitalize()}ResValues").dependsOn(generateTask)
+        }
     }
-    themes_createExtension = { parent ->
-        parent.extensions.create("themes", ThemesExtension, parent)
+
+    public def colors(Closure closure) {
+        def format = { v, a=255 -> String.format("#%02X%06X", a, v) }
+        new C2M(closure).map.collectEntries { k, v ->
+            [(k): format(v)] + (1..9).collectEntries { i ->
+                [(k + "A" + i + "0"): format(v, (int) (i * 25.5))]
+            }
+        }.each { k, v -> colorsMap.put(k, v)}
+        if(!parent.getDimension()?.trim()) {
+            List<String> dim = project.android.getFlavorDimensionList()
+            if(dim == null)
+                project.android.flavorDimensions([dimension] as String[])
+            else if(!dim.contains(dimension))
+                project.android.flavorDimensions((dim + dimension) as String[])
+            parent.setDimension(dimension)
+        }
+        //generateTask.hash = colorsMap.hashCode()
+
+        hasTheme = true
+        def sourceSets = project.android.sourceSets
+        sourceSets[parent.name].res.srcDirs(path)
     }
 }
+
+class Generate extends DefaultTask {
+    @OutputFile
+    File outputFile
+    @Input
+    def colorsMap
+    @TaskAction
+    void execute(IncrementalTaskInputs inputs){
+        def docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+        def doc = docBuilder.newDocument();
+        doc.setXmlStandalone(true)
+        def resources = doc.createElement('resources')
+        doc.appendChild(resources)
+        colorsMap.each { n, v ->
+            def color = doc.createElement('color')
+            color.setAttribute('name', n)
+            color.appendChild(doc.createTextNode(v))
+            resources.appendChild(color)
+        }
+        def domSource= new DOMSource(doc)
+        outputFile.getParentFile().mkdirs();
+        def result = new StreamResult(outputFile);
+        def tf = TransformerFactory.newInstance()
+        def transformer = tf.newTransformer()
+        transformer.setOutputProperty(OutputKeys.INDENT, 'yes')
+        transformer.transform(domSource, result)
+        //println writer.toString()
+    }
+}
+
+project.android.productFlavors.whenObjectAdded { parent ->
+    parent.extensions.create("themes", ThemesExtension, project, parent, tasks)
+}
+
+
+

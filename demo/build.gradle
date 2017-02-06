@@ -1,11 +1,10 @@
 apply plugin: 'com.android.application'
 apply from: 'themes.gradle'
 
-def colorDisabled = 0xADADAD
+def cDisabled = 0xADADAD
 
 android {
-
-    flavorDimensions "different_appid", "theme"
+    flavorDimensions "different_appid"
 
     signingConfigs {
         release {
@@ -38,14 +37,12 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
 
-    //it's needed for my easy theming
-    productFlavors.whenObjectAdded { flavor ->
-        themes_createExtension(flavor)
-    }
-
     afterEvaluate {
         android.applicationVariants.all { variant ->
             variant.resValue 'string', 'application_id', variant.applicationId
+            for(flavor in variant.getProductFlavors()){
+                flavor.themes.createTask(variant.name)
+            }
         }
     }
 
@@ -62,30 +59,73 @@ android {
         }
 
         IndigoPink {
-            dimension "theme"
-            themes.useTheme 0x3F51B5, 0x1A237E, 0x586ACE, 0xF50057, colorDisabled
+            themes {
+                colors {
+                    colorPrimary 0x3F51B5
+                    colorPrimaryDark 0x1A237E
+                    colorPrimaryLight 0x586ACE
+                    colorAccent 0xF50057
+                    colorDisabled cDisabled
+                }
+            }
         }
 
         GrayBlackWhite {
-            dimension "theme"
-            themes.useTheme 0x3a3a3a, 0x111111, 0x535353, 0x78909C, colorDisabled
+            themes {
+                colors {
+                    colorPrimary 0x3a3a3a
+                    colorPrimaryDark 0x111111
+                    colorPrimaryLight 0x535353
+                    colorAccent 0x78909C
+                    colorDisabled cDisabled
+                }
+            }
         }
 
         TealLime {
-            dimension "theme"
-            themes.useTheme 0x009688, 0x00796B, 0x19AFA1, 0xC6FF00, colorDisabled
+            themes {
+                colors {
+                    colorPrimary 0x009688
+                    colorPrimaryDark 0x00796B
+                    colorPrimaryLight 0x19AFA1
+                    colorAccent 0xC6FF00
+                    colorDisabled cDisabled
+                }
+            }
         }
         OrangeBlueGrey {
-            dimension "theme"
-            themes.useTheme 0xF57C00, 0xE65100, 0xFF9519, 0x78909C, colorDisabled
+            themes {
+                colors {
+                    colorPrimary 0xF57C00
+                    colorPrimaryDark 0xE65100
+                    colorPrimaryLight 0xFF9519
+                    colorAccent 0x78909C
+                    colorDisabled cDisabled
+                }
+            }
         }
         BrownRed {
-            dimension "theme"
-            themes.useTheme 0x795548, 0x5D4037, 0xD7CCC8, 0xFF5252, colorDisabled
+            themes {
+                colors {
+                    //*
+                    colorPrimary 0x795548
+                    colorPrimaryDark 0x5D4037
+                    colorPrimaryLight 0xD7CCC8
+                    colorAccent 0xFF5252
+                    colorDisabled cDisabled
+                }
+            }
         }
         PurpleGreen {
-            dimension "theme"
-            themes.useTheme 0x9B26AF, 0x691A99, 0xB43FC8, 0x68EFAD, colorDisabled
+            themes {
+                colors {
+                    colorPrimary 0x9B26AF
+                    colorPrimaryDark 0x691A99
+                    colorPrimaryLight 0xB43FC8
+                    colorAccent 0x68EFAD
+                    colorDisabled cDisabled
+                }
+            }
         }
     }
 }
