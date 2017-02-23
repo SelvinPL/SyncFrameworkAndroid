@@ -148,6 +148,16 @@ public class ContentHelper {
         }
     }
 
+    public void clearScope(SQLiteDatabase db, String scope, String scopeServerBlob){
+        for (TableInfo tab : AllTableInfo.values()) {
+            if (tab.scope.toLowerCase().equals(scope.toLowerCase())) {
+                db.execSQL(tab.DropStatement());
+                db.execSQL(tab.CreateStatement());
+            }
+        }
+        db.delete(BlobsTable.NAME, BlobsTable.C_NAME +"=?", new String[] {scopeServerBlob});
+    }
+
     public static ContentHelper getInstance(Class<? extends SetupInterface> clazz, Logger logger) {
         if (instances.containsKey(clazz))
             return instances.get(clazz);
