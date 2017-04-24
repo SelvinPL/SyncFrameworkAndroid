@@ -21,6 +21,8 @@ import android.util.Base64;
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -182,6 +184,9 @@ public final class TableInfo {
                                     break;
                                 case ColumnType.NUMERIC:
                                     generator.writeNumberField(columns[i].name, c.getDouble(i));
+                                    break;
+                                case ColumnType.DECIMAL:
+                                    generator.writeNumberField(columns[i].name, new BigDecimal(c.getDouble(i)));
                                     break;
                                 default:
                                     generator.writeStringField(columns[i].name, c.getString(i));

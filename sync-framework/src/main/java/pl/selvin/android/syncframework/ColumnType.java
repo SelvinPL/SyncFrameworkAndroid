@@ -19,7 +19,8 @@ public class ColumnType {
     public final static int NUMERIC = 4;
     public final static int BOOLEAN = 5;
     public final static int BLOB = 6;
-    private final static String[] names = new String[]{"INTEGER", "VARCHAR", "GUID", "DATETIME", "NUMERIC", "BOOLEAN", "BLOB"};
+    public final static int DECIMAL = 7;
+    private final static String[] names = new String[]{"INTEGER", "VARCHAR", "GUID", "DATETIME", "NUMERIC", "BOOLEAN", "BLOB", "DECIMAL"};
 
     public static String getName(int type) {
         return names[type];

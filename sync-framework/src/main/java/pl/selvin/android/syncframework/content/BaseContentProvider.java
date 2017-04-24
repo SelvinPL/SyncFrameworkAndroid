@@ -747,6 +747,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 
         public void writeTo(final OutputStream outputStream) throws IOException {
             final JsonGenerator generator = factory.createGenerator(outputStream);
+            generator.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
             generator.writeStartObject();
             generator.writeObjectFieldStart(SYNC.d);
             generator.writeObjectFieldStart(SYNC.__sync);
