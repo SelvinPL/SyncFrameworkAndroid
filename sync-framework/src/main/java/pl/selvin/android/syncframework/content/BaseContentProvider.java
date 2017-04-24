@@ -576,23 +576,27 @@ public abstract class BaseContentProvider extends ContentProvider {
                         else
                             logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
                     } else {
+                        boolean fixed = false;
                         final String error = result.getError();
-                        if (error != null){
-                            if(error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException) {
+                        if (error != null) {
+                            if (error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException) {
                                 //nasty 500: System.Runtime.Serialization.SerializationException ...  using upload instead download with the same serverBlob should help
                                 logger.LogE(clazz, "*Sync* SerializationException first time - retrying", RuntimeSerializationException.Instance);
                                 noChanges = false;
                                 moreChanges = true;
+                                fixed = true;
                                 serializationException = true;
                             }
-                            if(error.contains("Cannot find a valid scope with the name") && !serializationException){
+                            if (error.contains("Cannot find a valid scope with the name") && !serializationException) {
                                 //500 Cannot find a valid scope with the name 'table_xxxx-xxxx-guid-xxxxx' in table '[scope_info]'... delete tables in scope and blob then rescync
                                 contentHelper.clearScope(db, scope, scopeServerBlob);
                                 serverBlob = null;
                                 moreChanges = true;
+                                fixed = true;
                                 serializationException = true;
                             }
-                        } else
+                        }
+                        if (!fixed)
                             throw new IOException(String.format("%s, Server error: %d, error: %s, blob: %s", serviceRequestUrl, result.status, error, originalBlob == null ? "null" : originalBlob));
                     }
                 } catch (Exception e) {
