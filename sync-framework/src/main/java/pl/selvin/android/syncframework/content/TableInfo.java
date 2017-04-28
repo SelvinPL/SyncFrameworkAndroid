@@ -186,7 +186,7 @@ public final class TableInfo {
                                     generator.writeNumberField(columns[i].name, c.getDouble(i));
                                     break;
                                 case ColumnType.DECIMAL:
-                                    generator.writeNumberField(columns[i].name, new BigDecimal(c.getDouble(i)));
+                                    generator.writeNumberField(columns[i].name, new BigDecimal(c.getDouble(i)).setScale(columns[i].precision, BigDecimal.ROUND_HALF_UP));
                                     break;
                                 default:
                                     generator.writeStringField(columns[i].name, c.getString(i));
@@ -226,6 +226,7 @@ public final class TableInfo {
                     case ColumnType.BOOLEAN:
                     case ColumnType.INTEGER:
                     case ColumnType.NUMERIC:
+                    case ColumnType.DECIMAL:
                         if (obj instanceof Double)
                             vals.put(column, (Double) obj);
                         else

@@ -32,6 +32,7 @@ public @interface Column {
     String EMPTY = "";
 
     int type() default ColumnType.INTEGER;
+    int precision() default 4;
 
     boolean nullable() default false;
 

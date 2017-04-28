@@ -20,6 +20,7 @@ final class ColumnInfo {
     public final String computed;
     public final String scope;
     public final boolean nullable;
+    public final int precision;
 
     public ColumnInfo(final String scope, final String name, final Column column) {
         this.scope = scope;
@@ -28,6 +29,7 @@ final class ColumnInfo {
         nullable = column.nullable();
         extras = column.extras();
         computed = column.computed();
+        precision = column.precision();
     }
 
     @Override
