@@ -13,7 +13,7 @@ package pl.selvin.android.listsyncsample.provider;
 
 import android.content.UriMatcher;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteQueryBuilder;
+import net.sqlcipher.database.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
@@ -39,7 +39,7 @@ import pl.selvin.android.syncframework.content.SYNC;
 import pl.selvin.android.syncframework.content.TableInfo;
 
 public class ListProvider extends BaseContentProvider {
-    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null);
+    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null, "test");
     private final HashMap<String, String> TAG_ITEM_MAPPING_WITH_NAMES = new HashMap<>();
     private final static int TAG_ITEM_MAPPING_WITH_NAMES_MATCH = 1;
     private final static int TAG_NOT_USED_MATCH = 2;

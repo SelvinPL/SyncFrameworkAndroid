@@ -6,6 +6,7 @@ def android_platform = 25
 dependencies {
     compileOnly  "com.fasterxml.jackson.core:jackson-core:2.8.5"
     compileOnly files("${System.env.ANDROID_HOME}/platforms/android-${android_platform}/android.jar")
+    compileOnly files('/libs/android-database-sqlcipher.3.5.7.jar')
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_7

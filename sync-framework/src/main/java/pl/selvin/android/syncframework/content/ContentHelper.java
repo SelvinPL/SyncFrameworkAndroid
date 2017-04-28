@@ -12,7 +12,7 @@
 package pl.selvin.android.syncframework.content;
 
 import android.content.UriMatcher;
-import android.database.sqlite.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteDatabase;
 import android.net.Uri;
 import android.util.SparseArray;
 
@@ -55,9 +55,11 @@ public class ContentHelper {
     private final SparseArray<TableInfo> AllTableInfoCode = new SparseArray<>();
     private final HashMap<String, TableInfo> AllTableInfo = new HashMap<>();
     private final Logger logger;
+    public final String PASSWORD;
 
-    protected ContentHelper(Class<? extends SetupInterface> setupClass, Logger logger) {
+    protected ContentHelper(Class<? extends SetupInterface> setupClass, Logger logger, String password) {
         this.logger = logger;
+        PASSWORD = password;
         SetupInterface setupInterface = null;
         try {
             setupInterface = setupClass.newInstance();
@@ -158,10 +160,10 @@ public class ContentHelper {
         db.delete(BlobsTable.NAME, BlobsTable.C_NAME +"=?", new String[] {scopeServerBlob});
     }
 
-    public static ContentHelper getInstance(Class<? extends SetupInterface> clazz, Logger logger) {
+    public static ContentHelper getInstance(Class<? extends SetupInterface> clazz, Logger logger, String password) {
         if (instances.containsKey(clazz))
             return instances.get(clazz);
-        final ContentHelper ret = new ContentHelper(clazz, logger == null ? new Logger() : logger);
+        final ContentHelper ret = new ContentHelper(clazz, logger == null ? new Logger() : logger, password);
         instances.put(clazz, ret);
         return ret;
     }

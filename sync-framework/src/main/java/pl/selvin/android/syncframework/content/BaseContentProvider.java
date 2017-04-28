@@ -19,10 +19,10 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteQueryBuilder;
+import net.sqlcipher.SQLException;
+import net.sqlcipher.database.SQLiteDatabase;
+import net.sqlcipher.database.SQLiteOpenHelper;
+import net.sqlcipher.database.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -73,6 +73,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     public boolean onCreate() {
+        SQLiteDatabase.loadLibs(getContext());
         mDB = new OpenHelper();
         return true;
     }
@@ -358,11 +359,11 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     final public SQLiteDatabase getReadableDatabase() {
-        return mDB.getReadableDatabase();
+        return mDB.getReadableDatabase(contentHelper.PASSWORD);
     }
 
     final public SQLiteDatabase getWritableDatabase() {
-        return mDB.getWritableDatabase();
+        return mDB.getWritableDatabase(contentHelper.PASSWORD);
     }
 
     @SuppressLint("DefaultLocale")
@@ -370,7 +371,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         final long start = System.currentTimeMillis();
         boolean hasError = false;
         if (params == null) params = "";
-        final SQLiteDatabase db = mDB.getWritableDatabase();
+        final SQLiteDatabase db = getWritableDatabase();
         final ArrayList<TableInfo> notifyTableInfo = new ArrayList<>();
         final JsonFactory jsonFactory = new JsonFactory();
         JsonToken current;
@@ -661,10 +662,6 @@ public abstract class BaseContentProvider extends ContentProvider {
         return executor.execute(requestMethod, serviceRequestUrl, syncContentProducer);
     }
 
-    public void onDowngradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
-        mDB.superOnDowngrade(db, oldVersion, newVersion);
-    }
-
     protected void onCreateDataBase(SQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
@@ -780,19 +777,8 @@ public abstract class BaseContentProvider extends ContentProvider {
         }
 
         @Override
-        public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            onDowngradeDatabase(db, oldVersion, newVersion);
-        }
-
-        @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             onUpgradeDatabase(db, oldVersion, newVersion);
         }
-
-        void superOnDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-                super.onDowngrade(db, oldVersion, newVersion);
-        }
-
     }
 }
