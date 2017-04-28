@@ -11,8 +11,8 @@
 
 package pl.selvin.android.syncframework.content;
 
+import android.content.Context;
 import android.content.UriMatcher;
-import net.sqlcipher.database.SQLiteDatabase;
 import android.net.Uri;
 import android.util.SparseArray;
 
@@ -26,6 +26,7 @@ import pl.selvin.android.syncframework.SetupInterface;
 import pl.selvin.android.syncframework.annotation.Column;
 import pl.selvin.android.syncframework.annotation.Table;
 import pl.selvin.android.syncframework.annotation.TableName;
+import pl.selvin.android.syncframework.database.ISQLiteDatabase;
 
 public class ContentHelper {
     // why this name... to ensure that your never call your table like this
@@ -55,12 +56,14 @@ public class ContentHelper {
     private final SparseArray<TableInfo> AllTableInfoCode = new SparseArray<>();
     private final HashMap<String, TableInfo> AllTableInfo = new HashMap<>();
     private final Logger logger;
-    public final String PASSWORD;
+    static SetupInterface setupInterface = null;
 
-    protected ContentHelper(Class<? extends SetupInterface> setupClass, Logger logger, String password) {
+    public String getPassword(Context context){
+        return setupInterface.getDatabasePassword(context);
+    }
+
+    protected ContentHelper(Class<? extends SetupInterface> setupClass, Logger logger) {
         this.logger = logger;
-        PASSWORD = password;
-        SetupInterface setupInterface = null;
         try {
             setupInterface = setupClass.newInstance();
         } catch (Exception ignored) {
@@ -150,7 +153,7 @@ public class ContentHelper {
         }
     }
 
-    public void clearScope(SQLiteDatabase db, String scope, String scopeServerBlob){
+    public void clearScope(ISQLiteDatabase db, String scope, String scopeServerBlob){
         for (TableInfo tab : AllTableInfo.values()) {
             if (tab.scope.toLowerCase().equals(scope.toLowerCase())) {
                 db.execSQL(tab.DropStatement());
@@ -160,10 +163,10 @@ public class ContentHelper {
         db.delete(BlobsTable.NAME, BlobsTable.C_NAME +"=?", new String[] {scopeServerBlob});
     }
 
-    public static ContentHelper getInstance(Class<? extends SetupInterface> clazz, Logger logger, String password) {
+    public static ContentHelper getInstance(Class<? extends SetupInterface> clazz, Logger logger) {
         if (instances.containsKey(clazz))
             return instances.get(clazz);
-        final ContentHelper ret = new ContentHelper(clazz, logger == null ? new Logger() : logger, password);
+        final ContentHelper ret = new ContentHelper(clazz, logger == null ? new Logger() : logger);
         instances.put(clazz, ret);
         return ret;
     }
@@ -255,7 +258,7 @@ public class ContentHelper {
         return matcher.match(uri);
     }
 
-    public boolean hasDirtTable(SQLiteDatabase db, String scope) {
+    public boolean hasDirtTable(ISQLiteDatabase db, String scope) {
         boolean ret = false;
         for (TableInfo tab : AllTableInfo.values()) {
             if (tab.scope.toLowerCase().equals(scope.toLowerCase())) {

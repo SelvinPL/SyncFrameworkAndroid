@@ -13,7 +13,6 @@ package pl.selvin.android.listsyncsample.provider;
 
 import android.content.UriMatcher;
 import android.database.Cursor;
-import net.sqlcipher.database.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
@@ -37,9 +36,10 @@ import pl.selvin.android.syncframework.content.ContentHelper;
 import pl.selvin.android.syncframework.content.RequestExecutor;
 import pl.selvin.android.syncframework.content.SYNC;
 import pl.selvin.android.syncframework.content.TableInfo;
+import pl.selvin.android.syncframework.database.ISQLiteQueryBuilder;
 
 public class ListProvider extends BaseContentProvider {
-    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null, "test");
+    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null);
     private final HashMap<String, String> TAG_ITEM_MAPPING_WITH_NAMES = new HashMap<>();
     private final static int TAG_ITEM_MAPPING_WITH_NAMES_MATCH = 1;
     private final static int TAG_NOT_USED_MATCH = 2;
@@ -118,7 +118,7 @@ public class ListProvider extends BaseContentProvider {
     @Override
     public Cursor query(Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
-        final SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+        final ISQLiteQueryBuilder builder = createQueryBuilder();
         final HashMap<String, String> projectionMap;
         String limit = uri.getQueryParameter(ContentHelper.PARAMETER_LIMIT);
         switch (MATCHER.match(uri)) {

@@ -11,6 +11,8 @@
 
 package pl.selvin.android.listsyncsample;
 
+import android.content.Context;
+
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.syncframework.SetupInterface;
 
@@ -39,5 +41,10 @@ public class Setup implements SetupInterface {
     @Override
     public int getDatabaseVersion() {
         return 17;
+    }
+
+    @Override
+    public String getDatabasePassword(Context context) {
+        return "test";
     }
 }

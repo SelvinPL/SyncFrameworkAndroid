@@ -12,6 +12,8 @@
 package pl.selvin.android.syncframework;
 
 
+import android.content.Context;
+
 public interface SetupInterface {
     String getServiceUrl();
 
@@ -22,4 +24,6 @@ public interface SetupInterface {
     String getDatabaseName();
 
     int getDatabaseVersion();
+
+    String getDatabasePassword(Context context);
 }

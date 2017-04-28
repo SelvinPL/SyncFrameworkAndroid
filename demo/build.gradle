@@ -16,7 +16,7 @@ android {
         }
     }
     compileSdkVersion 25
-    buildToolsVersion '25.0.2'
+    buildToolsVersion '25.0.3'
     defaultConfig {
         applicationId "pl.selvin.android.listsyncsample"
         minSdkVersion 10
@@ -98,5 +98,6 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.6.0'
     compile 'com.fasterxml.jackson.core:jackson-core:2.8.6'
     compile 'com.google.android:flexbox:0.3.0-alpha2'
-    compile 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
+    //uncomment line bellow to use sqlcipher support
+    //compile 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
 }
