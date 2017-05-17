@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2017 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -15,6 +15,7 @@ package pl.selvin.android.syncframework.database;
 import android.content.ContentValues;
 import android.database.Cursor;
 
+@SuppressWarnings("unused")
 public interface ISQLiteDatabase extends IObjectWrapper {
     int update(String table, ContentValues values, String whereClause, String[] whereArgs);
 

@@ -1,0 +1,23 @@
+apply plugin: 'java'
+
+def android_platform = 25
+ext.common_java_android_runtime_path = "${System.env.ANDROID_HOME}/platforms/android-${android_platform}/android.jar"
+
+
+repositories {
+    maven {
+        url uri("${System.env.ANDROID_HOME}/extras/android/m2repository")
+    }
+}
+
+dependencies {
+    compileOnly files(common_java_android_runtime_path)
+}
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+
+tasks.withType(JavaCompile) {
+    options.bootClasspath = common_java_android_runtime_path
+}

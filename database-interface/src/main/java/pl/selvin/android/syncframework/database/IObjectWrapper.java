@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2017 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -11,18 +11,7 @@
 
 package pl.selvin.android.syncframework.database;
 
-import android.database.Cursor;
-
-import java.util.HashMap;
-
-public interface ISQLiteQueryBuilder extends IObjectWrapper {
-    String buildQuery(String[] projectionIn, String selection, String[] selectionArgs, String groupBy, String having, String sortOrder, String limit);
-
-    Cursor query(ISQLiteDatabase readableDatabase, String[] projectionIn, String selection, String[] selectionArgs, String groupBy, String having, String sortOrder, String limit);
-
-    void setProjectionMap(HashMap<String, String> columnMap);
-
-    void appendWhere(CharSequence inWhere);
-
-    void setTables(String inTables);
+@SuppressWarnings("WeakerAccess")
+public interface IObjectWrapper {
+    Object getWrappedObject();
 }

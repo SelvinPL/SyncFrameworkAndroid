@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2016 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -15,6 +15,7 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.support.annotation.NonNull;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -100,7 +101,7 @@ public class ListProvider extends BaseContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         switch (MATCHER.match(uri)) {
             case TAG_ITEM_MAPPING_WITH_NAMES_MATCH:
                 return super.getType(contentHelper.getDirUri(TagItemMapping.TABLE_NAME));
@@ -116,7 +117,7 @@ public class ListProvider extends BaseContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection,
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
                         String[] selectionArgs, String sortOrder) {
         final ISQLiteQueryBuilder builder = createQueryBuilder();
         final HashMap<String, String> projectionMap;

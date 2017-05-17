@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2017 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -9,7 +9,7 @@
  * language governing permissions and limitations under the License.
  */
 
-package pl.selvin.android.syncframework.database.sqlcipher;
+package pl.selvin.android.syncframework.database;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -20,22 +20,17 @@ import net.sqlcipher.database.SQLiteQueryBuilder;
 
 import java.util.HashMap;
 
-import pl.selvin.android.syncframework.content.BaseContentProvider;
-import pl.selvin.android.syncframework.content.ContentHelper;
-import pl.selvin.android.syncframework.database.ISQLiteDatabase;
-import pl.selvin.android.syncframework.database.ISQLiteOpenHelper;
-import pl.selvin.android.syncframework.database.ISQLiteQueryBuilder;
+import pl.selvin.android.syncframework.content.IBaseContentProvider;
 
+@SuppressWarnings("unused")
 public class OpenHelper extends SQLiteOpenHelper implements ISQLiteOpenHelper {
     final private HashMap<SQLiteDatabase, ISQLiteDatabase> wrappedDatabase = new HashMap<>();
-    final private BaseContentProvider provider;
-    final private ContentHelper contentHelper;
+    final private IBaseContentProvider provider;
 
-    public OpenHelper(BaseContentProvider provider, ContentHelper contentHelper) {
-        super(provider.getContext(), contentHelper.DATABASE_NAME, null, contentHelper.DATABASE_VERSION);
+    public OpenHelper(IBaseContentProvider provider, String name, int version) {
+        super(provider.getContext(), name, null, version);
         SQLiteDatabase.loadLibs(provider.getContext());
         this.provider = provider;
-        this.contentHelper = contentHelper;
     }
 
     private synchronized ISQLiteDatabase wrapObject(SQLiteDatabase database) {
@@ -75,12 +70,12 @@ public class OpenHelper extends SQLiteOpenHelper implements ISQLiteOpenHelper {
 
     @Override
     public synchronized ISQLiteDatabase getReadableISQLiteDatabase() {
-        return wrapObject(super.getReadableDatabase(contentHelper.getPassword(provider.getContext())));
+        return wrapObject(super.getReadableDatabase(provider.getDatabasePassword()));
     }
 
     @Override
     public synchronized ISQLiteDatabase getWritableISQLiteDatabase() {
-        return wrapObject(super.getWritableDatabase(contentHelper.getPassword(provider.getContext())));
+        return wrapObject(super.getWritableDatabase(provider.getDatabasePassword()));
     }
 
     @Override

@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2017 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -9,7 +9,7 @@
  * language governing permissions and limitations under the License.
  */
 
-package pl.selvin.android.syncframework.database.android;
+package pl.selvin.android.syncframework.database;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -20,18 +20,14 @@ import android.os.Build;
 
 import java.util.HashMap;
 
-import pl.selvin.android.syncframework.content.BaseContentProvider;
-import pl.selvin.android.syncframework.content.ContentHelper;
-import pl.selvin.android.syncframework.database.ISQLiteDatabase;
-import pl.selvin.android.syncframework.database.ISQLiteOpenHelper;
-import pl.selvin.android.syncframework.database.ISQLiteQueryBuilder;
+import pl.selvin.android.syncframework.content.IBaseContentProvider;
 
 public class OpenHelper extends SQLiteOpenHelper implements ISQLiteOpenHelper {
     final private HashMap<SQLiteDatabase, ISQLiteDatabase> wrappedDatabase = new HashMap<>();
-    final private BaseContentProvider provider;
+    final private IBaseContentProvider provider;
 
-    public OpenHelper(BaseContentProvider provider, ContentHelper contentHelper) {
-        super(provider.getContext(), contentHelper.DATABASE_NAME, null, contentHelper.DATABASE_VERSION);
+    public OpenHelper(IBaseContentProvider provider, String name, int version) {
+        super(provider.getContext(), name, null, version);
         this.provider = provider;
     }
 
@@ -62,7 +58,7 @@ public class OpenHelper extends SQLiteOpenHelper implements ISQLiteOpenHelper {
 
     @Override
     public void onDowngrade(ISQLiteDatabase db, int oldVersion, int newVersion) {
-        provider.onUpgradeDatabase(db, oldVersion, newVersion);
+        provider.onDowngradeDatabase(db, oldVersion, newVersion);
     }
 
     @Override
@@ -174,6 +170,7 @@ public class OpenHelper extends SQLiteOpenHelper implements ISQLiteOpenHelper {
             return builder;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public String buildQuery(String[] projectionIn, String selection, String[] selectionArgs, String groupBy, String having, String sortOrder, String limit) {
             return builder.buildQuery(projectionIn, selection, selectionArgs, groupBy, having, sortOrder, limit);

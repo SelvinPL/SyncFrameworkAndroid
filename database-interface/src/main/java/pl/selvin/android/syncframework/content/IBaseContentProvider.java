@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2017 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -9,18 +9,20 @@
  * language governing permissions and limitations under the License.
  */
 
-package pl.selvin.android.syncframework.database;
+package pl.selvin.android.syncframework.content;
 
-public interface ISQLiteOpenHelper extends IObjectWrapper {
-    void onCreate(ISQLiteDatabase db);
-    void onUpgrade(ISQLiteDatabase db, int oldVersion, int newVersion);
-    void onDowngrade(ISQLiteDatabase db, int oldVersion, int newVersion);
+import android.content.Context;
 
-    ISQLiteDatabase getReadableISQLiteDatabase();
+import pl.selvin.android.syncframework.database.ISQLiteDatabase;
 
-    ISQLiteDatabase getWritableISQLiteDatabase();
+public interface IBaseContentProvider {
+    Context getContext();
 
-    ISQLiteQueryBuilder createQueryBuilder();
+    void onCreateDataBase(ISQLiteDatabase db);
 
-    void superOnDowngrade(ISQLiteDatabase db, int oldVersion, int newVersion);
+    void onUpgradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion);
+
+    void onDowngradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion);
+
+    String getDatabasePassword();
 }

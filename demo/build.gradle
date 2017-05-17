@@ -1,8 +1,26 @@
 apply plugin: 'com.android.application'
 apply from: 'themes.gradle'
 
-def colorDisabled = 0xADADAD
+//set to true for sqlcipher support
+ext.demo_use_sqlcipher = false
 
+dependencies {
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:recyclerview-v7:25.3.1'
+    compile 'com.squareup.okhttp3:okhttp:3.8.0'
+    compile 'com.fasterxml.jackson.core:jackson-core:2.8.8'
+    compile 'com.google.android:flexbox:0.3.0-alpha2'
+    compile project(':sync-framework')
+    if (demo_use_sqlcipher) {
+        compile project(':database-sqlcipher')
+    } else {
+        compile project(':database-android')
+        compile 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
+    }
+}
+
+def colorDisabled = 0xADADAD
 android {
 
     flavorDimensions "different_appid", "theme"
@@ -88,16 +106,4 @@ android {
             themes.useTheme 0x9B26AF, 0x691A99, 0xB43FC8, 0x68EFAD, colorDisabled
         }
     }
-}
-
-dependencies {
-    compile 'com.android.support:appcompat-v7:25.2.0'
-    compile 'com.android.support:design:25.2.0'
-    compile 'com.android.support:recyclerview-v7:25.2.0'
-    compile project(':sync-framework')
-    compile 'com.squareup.okhttp3:okhttp:3.6.0'
-    compile 'com.fasterxml.jackson.core:jackson-core:2.8.6'
-    compile 'com.google.android:flexbox:0.3.0-alpha2'
-    //uncomment line bellow to use sqlcipher support
-    //compile 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
 }

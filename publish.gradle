@@ -1,0 +1,40 @@
+apply plugin: 'maven-publish'
+
+ext.sync_framework_version = '0.8.0'
+
+ext {
+    sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
+}
+
+// gradle publish ... for my needs
+def File propsFile = file("${rootProject.projectDir}/maven-url.properties")
+
+if (propsFile.exists()) {
+    def props = new Properties()
+    props.load(new FileInputStream(propsFile))
+    sync_framework_maven_url = props['sync_framework_maven']
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.allJava
+}
+
+publishing {
+    publications {
+        myPublication(MavenPublication) {
+            groupId 'pl.selvin.android'
+            version sync_framework_version
+            artifactId sync_framework_artifact_id
+
+            from components.java
+            artifact sourceJar {
+                classifier "sources"
+            }
+        }
+    }
+    repositories {
+        maven {
+            url sync_framework_maven_url
+        }
+    }
+}

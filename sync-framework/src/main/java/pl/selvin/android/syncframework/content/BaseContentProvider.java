@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -16,12 +16,14 @@ import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -42,10 +44,10 @@ import java.util.UUID;
 import pl.selvin.android.syncframework.database.ISQLiteDatabase;
 import pl.selvin.android.syncframework.database.ISQLiteOpenHelper;
 import pl.selvin.android.syncframework.database.ISQLiteQueryBuilder;
-import pl.selvin.android.syncframework.database.OpenHelperFactory;
+import pl.selvin.android.syncframework.database.OpenHelper;
 import pl.selvin.android.syncframework.support.v4.database.DatabaseUtilsCompat;
 
-public abstract class BaseContentProvider extends ContentProvider {
+public abstract class BaseContentProvider extends ContentProvider implements IBaseContentProvider {
     public static final String SYNC_SYNCSTATS = "SYNC_PARAM_IN_SYNCSTATS";
     public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
     public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
@@ -73,12 +75,12 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     public boolean onCreate() {
-        mDB = OpenHelperFactory.getSQLiteOpenHelper(this, contentHelper);
+        mDB = new OpenHelper(this, contentHelper.DATABASE_NAME, contentHelper.DATABASE_VERSION);
         return true;
     }
 
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         logger.LogD(clazz, "*delete* " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
@@ -163,7 +165,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             ret += getWritableDatabase().delete(tab.name, deleteSelection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " -del: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + deleteSelection);
             if (ret > 0) {
-                final ContentResolver cr = getContext().getContentResolver();
+                final ContentResolver cr = getContextOrThrow().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -175,7 +177,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -188,7 +190,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues values) {
+    public Uri insert(@NonNull Uri uri, ContentValues values) {
         logger.LogD(clazz, "*insert* " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
@@ -215,7 +217,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             if (rowId > 0) {
                 boolean syncToNetwork = checkSyncToNetwork(uri);
                 Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
-                final ContentResolver cr = getContext().getContentResolver();
+                final ContentResolver cr = getContextOrThrow().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -232,7 +234,12 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    public String getDatabasePassword() {
+        return contentHelper.getPassword(getContext());
+    }
+
+    @Override
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -267,7 +274,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             final Cursor cursor = builder
                     .query(getReadableDatabase(), projection, selection, selectionArgs, null, null,
                             sortOrder, limit);
-            cursor.setNotificationUri(getContext().getContentResolver(), uri);
+            cursor.setNotificationUri(getContextOrThrow().getContentResolver(), uri);
             return cursor;
         }
         throw new IllegalArgumentException("Unknown Uri " + uri);
@@ -284,7 +291,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
-    public Bundle call(String method, String arg, Bundle syncParams) {
+    public Bundle call(@NonNull String method, String arg, Bundle syncParams) {
         try {
             Uri uri = Uri.parse(method);
             if (contentHelper.matchUri(uri) == ContentHelper.uriSyncCode) {
@@ -303,7 +310,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -340,7 +347,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {
                 boolean syncToNetwork = checkSyncToNetwork(uri);
-                final ContentResolver cr = getContext().getContentResolver();
+                final ContentResolver cr = getContextOrThrow().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -657,6 +664,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         return stats;
     }
 
+    @SuppressWarnings("UnusedParameters")
     public long doPing(long startTime, long currentTime) {
         return currentTime;
     }
@@ -668,7 +676,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     public void onCreateDataBase(ISQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
-        getContext().sendBroadcast(intent);
+        getContextOrThrow().sendBroadcast(intent);
         try {
             for (TableInfo table : contentHelper.getAllTables()) {
                 String create = table.CreateStatement();
@@ -684,10 +692,18 @@ public abstract class BaseContentProvider extends ContentProvider {
         }
     }
 
+    public Context getContextOrThrow() {
+        final Context ctx = getContext();
+        if (ctx == null)
+            throw new RuntimeException("Context is null");
+        return ctx;
+    }
+
+
     public void onUpgradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
-        getContext().sendBroadcast(intent);
+        getContextOrThrow().sendBroadcast(intent);
         Cursor c = db.query("sqlite_master", new String[]{"'DROP TABLE ' || name || ';' AS cmd"},
                 "type=? AND name<>?", new String[]{"table", "android_metadata"}, null, null, null);
         final ArrayList<String> commands = new ArrayList<>();
@@ -718,8 +734,9 @@ public abstract class BaseContentProvider extends ContentProvider {
         void writeTo(final OutputStream outputStream) throws IOException;
     }
 
-    public static class RuntimeSerializationException extends Exception {
-        public static final RuntimeSerializationException Instance = new RuntimeSerializationException();
+    private static class RuntimeSerializationException extends Exception {
+        @SuppressWarnings("ThrowableInstanceNeverThrown")
+        static final RuntimeSerializationException Instance = new RuntimeSerializationException();
     }
 
     private static class SyncContentProducer implements ISyncContentProducer {
@@ -732,10 +749,10 @@ public abstract class BaseContentProvider extends ContentProvider {
         JsonFactory factory;
         int counter = 0;
 
-        public SyncContentProducer(JsonFactory factory, ISQLiteDatabase db, String scope,
-                                   String serverBlob, boolean upload,
-                                   ArrayList<TableInfo> notifyTableInfo,
-                                   ContentHelper ch) {
+        SyncContentProducer(JsonFactory factory, ISQLiteDatabase db, String scope,
+                            String serverBlob, boolean upload,
+                            ArrayList<TableInfo> notifyTableInfo,
+                            ContentHelper ch) {
             this.factory = factory;
             this.db = db;
             this.scope = scope;

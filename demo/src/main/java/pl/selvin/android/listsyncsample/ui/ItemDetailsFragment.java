@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2016 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -79,7 +79,7 @@ public class ItemDetailsFragment extends Fragment implements
         mDescription = Ui.getView(root, R.id.description);
         mPriority = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.priority), PRIORITIES_LOADER_ID,
                 new SimpleCursorAdapter(getActivity(), spinnerRowResource, null, new String[]{Priority.NAME},
-                        new int[]{android.R.id.text1}, 1), android.R.layout.simple_spinner_dropdown_item) {
+                        new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
             public Loader<Cursor> getCursorLoader() {
                 return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(Priority.TABLE_NAME, false),
@@ -89,7 +89,7 @@ public class ItemDetailsFragment extends Fragment implements
 
         mStatus = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.status), STATUSES_LOADER_ID,
                 new SimpleCursorAdapter(getActivity(), spinnerRowResource, null, new String[]{Status.NAME},
-                        new int[]{android.R.id.text1}, 1), android.R.layout.simple_spinner_dropdown_item) {
+                        new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
             public Loader<Cursor> getCursorLoader() {
                 return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(Status.TABLE_NAME, false),
