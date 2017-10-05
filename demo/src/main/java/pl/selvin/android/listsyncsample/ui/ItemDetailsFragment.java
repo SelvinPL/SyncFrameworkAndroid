@@ -98,7 +98,7 @@ public class ItemDetailsFragment extends Fragment implements
         };
 
         final RecyclerView recyclerView = Ui.getView(root, R.id.tags);
-        final FlexboxLayoutManager layoutManager = new FlexboxLayoutManager();
+        final FlexboxLayoutManager layoutManager = new FlexboxLayoutManager(getContext());
         layoutManager.setFlexDirection(FlexDirection.ROW);
         recyclerView.setLayoutManager(layoutManager);
         mTagsAdapter = new TagsAdapter(getActivity(), getChildFragmentManager(), SyncService.getUserId(getContext()));
