@@ -1,6 +1,6 @@
 apply plugin: 'maven-publish'
 
-ext.sync_framework_version = '0.8.0'
+ext.sync_framework_version = '0.8.1'
 
 ext {
     sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
