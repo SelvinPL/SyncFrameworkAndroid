@@ -1,4 +1,4 @@
-/***
+/*
  Copyright (c) 2014 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
@@ -19,7 +19,8 @@ public class ColumnType {
     public final static int NUMERIC = 4;
     public final static int BOOLEAN = 5;
     public final static int BLOB = 6;
-    private final static String[] names = new String[]{"INTEGER", "VARCHAR", "GUID", "DATETIME", "NUMERIC", "BOOLEAN", "BLOB"};
+    public final static int DECIMAL = 7;
+    private final static String[] names = new String[]{"INTEGER", "VARCHAR", "GUID", "DATETIME", "NUMERIC", "BOOLEAN", "BLOB", "DECIMAL"};
 
     public static String getName(int type) {
         return names[type];

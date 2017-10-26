@@ -1,51 +1,12 @@
-apply plugin: 'java'
-apply plugin: 'maven-publish'
+apply from: '../common-java-android.gradle'
 
-def android_platform = 25
-	    
 dependencies {
-    compileOnly  "com.fasterxml.jackson.core:jackson-core:2.8.5"
-    compileOnly files("${System.env.ANDROID_HOME}/platforms/android-${android_platform}/android.jar")
+    compile project(':database-interface')
+    compileOnly project(':database-android')
+    compileOnly  "com.fasterxml.jackson.core:jackson-core:2.9.2"
+    compile 'com.android.support:support-annotations:27.0.0'
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_7
-targetCompatibility = JavaVersion.VERSION_1_7
+ext.sync_framework_artifact_id = 'sync-framework'
 
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
-}
-
-
-
-publishing {
-    publications {
-        myPublication(MavenPublication) {
-            groupId 'pl.selvin.android'
-            version '0.6.4'
-            artifactId 'sync-framework'
-
-            from components.java
-            artifact sourceJar {
-                classifier "sources"
-            }
-        }
-    }
-    repositories {
-        maven {
-            url sync_framework_maven_url
-        }
-    }
-}
-ext {
-    sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-}
-
-// gradle publish ... for my needs
-def File propsFile = file('maven-url.properties')
-
-if (propsFile.exists()) {
-    def props = new Properties()
-    props.load(new FileInputStream(propsFile))
-    sync_framework_maven_url = props['sync_framework_maven']
-}
-
+apply from: '../publish.gradle'

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -16,16 +16,14 @@ import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
-import android.database.SQLException;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -43,19 +41,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import pl.selvin.android.syncframework.database.ISQLiteDatabase;
+import pl.selvin.android.syncframework.database.ISQLiteOpenHelper;
+import pl.selvin.android.syncframework.database.ISQLiteQueryBuilder;
+import pl.selvin.android.syncframework.database.OpenHelper;
 import pl.selvin.android.syncframework.support.v4.database.DatabaseUtilsCompat;
 
-public abstract class BaseContentProvider extends ContentProvider {
+public abstract class BaseContentProvider extends ContentProvider implements IBaseContentProvider {
     public static final String SYNC_SYNCSTATS = "SYNC_PARAM_IN_SYNCSTATS";
+    public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
+    public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
+    public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
     private static final String DATABASE_OPERATION_TYPE = "DATABASE_OPERATION_TYPE";
     protected final RequestExecutor executor;
     protected final ContentHelper contentHelper;
     private final Class<?> clazz;
     private final Logger logger;
-    private OpenHelper mDB;
-    public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
-    public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
-    public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
+    private ISQLiteOpenHelper mDB;
 
     public BaseContentProvider(ContentHelper contentHelper, RequestExecutor executor) {
         clazz = getClass();
@@ -73,12 +75,12 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     public boolean onCreate() {
-        mDB = new OpenHelper();
+        mDB = new OpenHelper(this, contentHelper.DATABASE_NAME, contentHelper.DATABASE_VERSION);
         return true;
     }
 
     @Override
-    public int delete(Uri uri, String selection, String[] selectionArgs) {
+    public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         logger.LogD(clazz, "*delete* " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
@@ -163,7 +165,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             ret += getWritableDatabase().delete(tab.name, deleteSelection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " -del: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + deleteSelection);
             if (ret > 0) {
-                final ContentResolver cr = getContext().getContentResolver();
+                final ContentResolver cr = getContextOrThrow().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -175,7 +177,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public String getType(Uri uri) {
+    public String getType(@NonNull Uri uri) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -188,7 +190,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public Uri insert(Uri uri, ContentValues values) {
+    public Uri insert(@NonNull Uri uri, ContentValues values) {
         logger.LogD(clazz, "*insert* " + uri);
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
@@ -215,7 +217,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             if (rowId > 0) {
                 boolean syncToNetwork = checkSyncToNetwork(uri);
                 Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
-                final ContentResolver cr = getContext().getContentResolver();
+                final ContentResolver cr = getContextOrThrow().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -223,19 +225,28 @@ public abstract class BaseContentProvider extends ContentProvider {
                 return ret_uri;
             }
         }
-        throw new SQLException("Failed to insert row into " + uri);
+        throw new RuntimeException("Failed to insert row into " + uri);
 
     }
 
+    protected ISQLiteQueryBuilder createQueryBuilder() {
+        return mDB.createQueryBuilder();
+    }
+
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
+    public String getDatabasePassword() {
+        return contentHelper.getPassword(getContext());
+    }
+
+    @Override
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
                 return null;
             }
             final String limit;
-            final SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+            final ISQLiteQueryBuilder builder = createQueryBuilder();
             final TableInfo tab = contentHelper.getTableFromCode(code & ContentHelper.uriCode);
             builder.setTables(tab.name);
             if (isItemCode(code)) {
@@ -263,13 +274,13 @@ public abstract class BaseContentProvider extends ContentProvider {
             final Cursor cursor = builder
                     .query(getReadableDatabase(), projection, selection, selectionArgs, null, null,
                             sortOrder, limit);
-            cursor.setNotificationUri(getContext().getContentResolver(), uri);
+            cursor.setNotificationUri(getContextOrThrow().getContentResolver(), uri);
             return cursor;
         }
         throw new IllegalArgumentException("Unknown Uri " + uri);
     }
 
-    protected void LogQuery(Uri uri, SQLiteQueryBuilder builder, String[] projection,
+    protected void LogQuery(Uri uri, ISQLiteQueryBuilder builder, String[] projection,
                             String selection, String[] selectionArgs, String groupBy, String having,
                             String sortOrder, String limit) {
         logger.LogD(clazz, uri + "");
@@ -280,7 +291,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
-    public Bundle call(String method, String arg, Bundle syncParams) {
+    public Bundle call(@NonNull String method, String arg, Bundle syncParams) {
         try {
             Uri uri = Uri.parse(method);
             if (contentHelper.matchUri(uri) == ContentHelper.uriSyncCode) {
@@ -299,7 +310,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     }
 
     @Override
-    public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+    public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         final int code = contentHelper.matchUri(uri);
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriSyncCode) {
@@ -323,7 +334,7 @@ public abstract class BaseContentProvider extends ContentProvider {
                     for (int i = 0; i < tab.primaryKey.length; i++) {
                         newSelectionArgs[i] = uri.getPathSegments().get(i + 1);
                     }
-                    newSelection =  "isDeleted=0 " + tab.getSelection();
+                    newSelection = "isDeleted=0 " + tab.getSelection();
                 }
                 selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
                 selectionArgs = DatabaseUtilsCompat
@@ -336,7 +347,7 @@ public abstract class BaseContentProvider extends ContentProvider {
             logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {
                 boolean syncToNetwork = checkSyncToNetwork(uri);
-                final ContentResolver cr = getContext().getContentResolver();
+                final ContentResolver cr = getContextOrThrow().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -357,12 +368,12 @@ public abstract class BaseContentProvider extends ContentProvider {
         return undeleting != null && Boolean.parseBoolean(undeleting);
     }
 
-    final public SQLiteDatabase getReadableDatabase() {
-        return mDB.getReadableDatabase();
+    final public ISQLiteDatabase getReadableDatabase() {
+        return mDB.getReadableISQLiteDatabase();
     }
 
-    final public SQLiteDatabase getWritableDatabase() {
-        return mDB.getWritableDatabase();
+    final public ISQLiteDatabase getWritableDatabase() {
+        return mDB.getWritableISQLiteDatabase();
     }
 
     @SuppressLint("DefaultLocale")
@@ -370,7 +381,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         final long start = System.currentTimeMillis();
         boolean hasError = false;
         if (params == null) params = "";
-        final SQLiteDatabase db = mDB.getWritableDatabase();
+        final ISQLiteDatabase db = getWritableDatabase();
         final ArrayList<TableInfo> notifyTableInfo = new ArrayList<>();
         final JsonFactory jsonFactory = new JsonFactory();
         JsonToken current;
@@ -576,14 +587,27 @@ public abstract class BaseContentProvider extends ContentProvider {
                         else
                             logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
                     } else {
+                        boolean fixed = false;
                         final String error = result.getError();
-                        if (error != null && error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException) {
-                            //nasty 500: System.Runtime.Serialization.SerializationException ...  using upload instead download with the same serverBlob should help
-                            logger.LogE(clazz, "*Sync* SerializationException first time - retrying", RuntimeSerializationException.Instance);
-                            noChanges = false;
-                            moreChanges = true;
-                            serializationException = true;
-                        } else
+                        if (error != null) {
+                            if (error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException) {
+                                //nasty 500: System.Runtime.Serialization.SerializationException ...  using upload instead download with the same serverBlob should help
+                                logger.LogE(clazz, "*Sync* SerializationException first time - retrying", RuntimeSerializationException.Instance);
+                                noChanges = false;
+                                moreChanges = true;
+                                fixed = true;
+                                serializationException = true;
+                            }
+                            if (error.contains("Cannot find a valid scope with the name") && !serializationException) {
+                                //500 Cannot find a valid scope with the name 'table_xxxx-xxxx-guid-xxxxx' in table '[scope_info]'... delete tables in scope and blob then rescync
+                                contentHelper.clearScope(db, scope, scopeServerBlob);
+                                serverBlob = null;
+                                moreChanges = true;
+                                fixed = true;
+                                serializationException = true;
+                            }
+                        }
+                        if (!fixed)
                             throw new IOException(String.format("%s, Server error: %d, error: %s, blob: %s", serviceRequestUrl, result.status, error, originalBlob == null ? "null" : originalBlob));
                     }
                 } catch (Exception e) {
@@ -640,6 +664,7 @@ public abstract class BaseContentProvider extends ContentProvider {
         return stats;
     }
 
+    @SuppressWarnings("UnusedParameters")
     public long doPing(long startTime, long currentTime) {
         return currentTime;
     }
@@ -648,14 +673,10 @@ public abstract class BaseContentProvider extends ContentProvider {
         return executor.execute(requestMethod, serviceRequestUrl, syncContentProducer);
     }
 
-    public void onDowngradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
-        mDB.superOnDowngrade(db, oldVersion, newVersion);
-    }
-
-    protected void onCreateDataBase(SQLiteDatabase db) {
+    public void onCreateDataBase(ISQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
-        getContext().sendBroadcast(intent);
+        getContextOrThrow().sendBroadcast(intent);
         try {
             for (TableInfo table : contentHelper.getAllTables()) {
                 String create = table.CreateStatement();
@@ -671,14 +692,18 @@ public abstract class BaseContentProvider extends ContentProvider {
         }
     }
 
-    public static class RuntimeSerializationException extends Exception {
-        public static final RuntimeSerializationException Instance = new RuntimeSerializationException();
+    public Context getContextOrThrow() {
+        final Context ctx = getContext();
+        if (ctx == null)
+            throw new RuntimeException("Context is null");
+        return ctx;
     }
 
-    protected void onUpgradeDatabase(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+    public void onUpgradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
-        getContext().sendBroadcast(intent);
+        getContextOrThrow().sendBroadcast(intent);
         Cursor c = db.query("sqlite_master", new String[]{"'DROP TABLE ' || name || ';' AS cmd"},
                 "type=? AND name<>?", new String[]{"table", "android_metadata"}, null, null, null);
         final ArrayList<String> commands = new ArrayList<>();
@@ -699,14 +724,23 @@ public abstract class BaseContentProvider extends ContentProvider {
         onCreateDataBase(db);
     }
 
+    public void onDowngradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion) {
+        mDB.superOnDowngrade(db, oldVersion, newVersion);
+    }
+
     public interface ISyncContentProducer {
         int getChanges();
 
         void writeTo(final OutputStream outputStream) throws IOException;
     }
 
+    private static class RuntimeSerializationException extends Exception {
+        @SuppressWarnings("ThrowableInstanceNeverThrown")
+        static final RuntimeSerializationException Instance = new RuntimeSerializationException();
+    }
+
     private static class SyncContentProducer implements ISyncContentProducer {
-        final SQLiteDatabase db;
+        final ISQLiteDatabase db;
         final String scope;
         final String serverBlob;
         final boolean upload;
@@ -715,10 +749,10 @@ public abstract class BaseContentProvider extends ContentProvider {
         JsonFactory factory;
         int counter = 0;
 
-        public SyncContentProducer(JsonFactory factory, SQLiteDatabase db, String scope,
-                                   String serverBlob, boolean upload,
-                                   ArrayList<TableInfo> notifyTableInfo,
-                                   ContentHelper ch) {
+        SyncContentProducer(JsonFactory factory, ISQLiteDatabase db, String scope,
+                            String serverBlob, boolean upload,
+                            ArrayList<TableInfo> notifyTableInfo,
+                            ContentHelper ch) {
             this.factory = factory;
             this.db = db;
             this.scope = scope;
@@ -734,6 +768,7 @@ public abstract class BaseContentProvider extends ContentProvider {
 
         public void writeTo(final OutputStream outputStream) throws IOException {
             final JsonGenerator generator = factory.createGenerator(outputStream);
+            generator.enable(JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN);
             generator.writeStartObject();
             generator.writeObjectFieldStart(SYNC.d);
             generator.writeObjectFieldStart(SYNC.__sync);
@@ -752,33 +787,5 @@ public abstract class BaseContentProvider extends ContentProvider {
             generator.writeEndObject();
             generator.close();
         }
-    }
-
-    final class OpenHelper extends SQLiteOpenHelper {
-
-        public OpenHelper() {
-            super(getContext(), contentHelper.DATABASE_NAME, null, contentHelper.DATABASE_VERSION);
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            onCreateDataBase(db);
-        }
-
-        @Override
-        public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            onDowngradeDatabase(db, oldVersion, newVersion);
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            onUpgradeDatabase(db, oldVersion, newVersion);
-        }
-
-        void superOnDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
-                super.onDowngrade(db, oldVersion, newVersion);
-        }
-
     }
 }

@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2016 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -25,13 +25,17 @@ import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import com.google.android.flexbox.AlignSelf;
+import com.google.android.flexbox.FlexDirection;
+import com.google.android.flexbox.FlexboxLayoutManager;
+import com.google.android.flexbox.JustifyContent;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -75,7 +79,7 @@ public class ItemDetailsFragment extends Fragment implements
         mDescription = Ui.getView(root, R.id.description);
         mPriority = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.priority), PRIORITIES_LOADER_ID,
                 new SimpleCursorAdapter(getActivity(), spinnerRowResource, null, new String[]{Priority.NAME},
-                        new int[]{android.R.id.text1}, 1), android.R.layout.simple_spinner_dropdown_item) {
+                        new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
             public Loader<Cursor> getCursorLoader() {
                 return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(Priority.TABLE_NAME, false),
@@ -85,7 +89,7 @@ public class ItemDetailsFragment extends Fragment implements
 
         mStatus = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.status), STATUSES_LOADER_ID,
                 new SimpleCursorAdapter(getActivity(), spinnerRowResource, null, new String[]{Status.NAME},
-                        new int[]{android.R.id.text1}, 1), android.R.layout.simple_spinner_dropdown_item) {
+                        new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
             public Loader<Cursor> getCursorLoader() {
                 return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(Status.TABLE_NAME, false),
@@ -93,9 +97,10 @@ public class ItemDetailsFragment extends Fragment implements
             }
         };
 
-        RecyclerView recyclerView = Ui.getView(root, R.id.tags);
-        final StaggeredGridLayoutManager gridLayoutManager = new StaggeredGridLayoutManager(4, StaggeredGridLayoutManager.HORIZONTAL);
-        recyclerView.setLayoutManager(gridLayoutManager);
+        final RecyclerView recyclerView = Ui.getView(root, R.id.tags);
+        final FlexboxLayoutManager layoutManager = new FlexboxLayoutManager(getContext());
+        layoutManager.setFlexDirection(FlexDirection.ROW);
+        recyclerView.setLayoutManager(layoutManager);
         mTagsAdapter = new TagsAdapter(getActivity(), getChildFragmentManager(), SyncService.getUserId(getContext()));
         recyclerView.setAdapter(mTagsAdapter);
         mStartDate = Ui.getView(root, R.id.start_date);
@@ -324,6 +329,12 @@ public class ItemDetailsFragment extends Fragment implements
         @Override
         public void onBindViewHolder(ViewHolderBase viewHolder, Cursor cursor) {
             ((TextView) viewHolder.itemView).setText(cursor.getString(1));
+            ViewGroup.LayoutParams lp = viewHolder.itemView.getLayoutParams();
+            if (lp instanceof FlexboxLayoutManager.LayoutParams) {
+                FlexboxLayoutManager.LayoutParams flexboxLp = (FlexboxLayoutManager.LayoutParams) viewHolder.itemView.getLayoutParams();
+                flexboxLp.setFlexGrow(1.0f);
+                flexboxLp.setAlignSelf(AlignSelf.STRETCH);
+            }
         }
 
         private int realPosition(int position) {

@@ -1,4 +1,4 @@
-/***
+/*
  Copyright (c) 2014-2016 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
@@ -38,7 +38,7 @@ public class HomeActivity extends AppCompatActivity {
 
     static void startRealHome(Activity activity) {
         final Intent intent = new Intent();
-        intent.setAction("pl.selvin.android.intent.action.MAIN");
+        intent.setAction(activity.getString(R.string.application_id)  + ".intent.action.MAIN");
         activity.startActivity(intent);
         activity.finish();
     }

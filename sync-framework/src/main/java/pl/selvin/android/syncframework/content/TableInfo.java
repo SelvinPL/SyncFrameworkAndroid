@@ -14,13 +14,13 @@ package pl.selvin.android.syncframework.content;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Base64;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,6 +31,7 @@ import java.util.TimeZone;
 import pl.selvin.android.syncframework.ColumnType;
 import pl.selvin.android.syncframework.annotation.Cascade;
 import pl.selvin.android.syncframework.annotation.Table;
+import pl.selvin.android.syncframework.database.ISQLiteDatabase;
 
 public final class TableInfo {
 
@@ -54,13 +55,13 @@ public final class TableInfo {
     public final boolean readonly;
     public final String[] notifyUris;
     public final ColumnInfo[] columns;
+    public final String rowIdAlias;
     final ColumnInfo[] columnsComputed;
     final CascadeInfo[] cascadeDelete;
     final ContentValues vals = new ContentValues(2);
     private final Class<?> clazz;
     private final Logger logger;
     String selection = null;
-    public final String rowIdAlias;
 
     TableInfo(String scope, String name, ArrayList<ColumnInfo> columns,
               ArrayList<ColumnInfo> columnsComputed,
@@ -109,7 +110,7 @@ public final class TableInfo {
         return selection;
     }
 
-    public boolean hasDirtData(SQLiteDatabase db) {
+    public boolean hasDirtData(ISQLiteDatabase db) {
         Cursor c = db.query(name, null, SYNC.isDirtyP, new String[]{"1"}, null, null, null);
         if (c.moveToFirst()) {
             c.close();
@@ -119,7 +120,7 @@ public final class TableInfo {
         return false;
     }
 
-    public int getChanges(final SQLiteDatabase db, final JsonGenerator generator) throws IOException {
+    public int getChanges(final ISQLiteDatabase db, final JsonGenerator generator) throws IOException {
         String[] cols = new String[columns.length + 3];
         int i = 0;
         for (; i < columns.length; i++)
@@ -183,6 +184,9 @@ public final class TableInfo {
                                 case ColumnType.NUMERIC:
                                     generator.writeNumberField(columns[i].name, c.getDouble(i));
                                     break;
+                                case ColumnType.DECIMAL:
+                                    generator.writeNumberField(columns[i].name, new BigDecimal(c.getDouble(i)).setScale(columns[i].precision, BigDecimal.ROUND_HALF_UP));
+                                    break;
                                 default:
                                     generator.writeStringField(columns[i].name, c.getString(i));
                                     break;
@@ -200,20 +204,19 @@ public final class TableInfo {
         return counter;
     }
 
-    final public void DeleteWithUri(String uri, SQLiteDatabase db) {
+    final public void DeleteWithUri(String uri, ISQLiteDatabase db) {
         db.delete(name, SYNC.uriP, new String[]{uri});
     }
 
-    final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final SQLiteDatabase db) {
+    final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final ISQLiteDatabase db) {
         int i = 0;
         vals.clear();
         for (; i < columns.length; i++) {
             final String column = columns[i].name;
             final Object obj = hval.get(column);
-            if(obj == null) {
+            if (obj == null) {
                 vals.putNull(column);
-            }
-            else {
+            } else {
                 switch (columns[i].type) {
                     case ColumnType.BLOB:
                         vals.put(column, Base64.decode((String) obj, Base64.DEFAULT));
@@ -221,6 +224,7 @@ public final class TableInfo {
                     case ColumnType.BOOLEAN:
                     case ColumnType.INTEGER:
                     case ColumnType.NUMERIC:
+                    case ColumnType.DECIMAL:
                         if (obj instanceof Double)
                             vals.put(column, (Double) obj);
                         else
@@ -292,7 +296,7 @@ public final class TableInfo {
             this.uri = uri;
         }
 
-        public long execute(SQLiteDatabase db) {
+        public long execute(ISQLiteDatabase db) {
             switch (operation) {
                 case DELETE:
                     return db.delete(table, SYNC.uriP, new String[]{uri});

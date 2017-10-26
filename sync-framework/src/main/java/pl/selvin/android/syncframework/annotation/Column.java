@@ -1,4 +1,4 @@
-/***
+/*
  Copyright (c) 2014 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
@@ -28,10 +28,13 @@ import pl.selvin.android.syncframework.ColumnType;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface Column {
-    String COLLATE = "COLLATE LOCALIZED";
+    String COLLATE_NO_CASE = "COLLATE NOCASE";
+    /* Not working with sqlicipher! */
+    String COLLATE_LOCALIZED = "COLLATE LOCALIZED";
     String EMPTY = "";
 
     int type() default ColumnType.INTEGER;
+    int precision() default 4;
 
     boolean nullable() default false;
 

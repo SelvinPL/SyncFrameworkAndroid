@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 apply from: 'themes.gradle'
 
-def cDisabled = 0xADADAD
-
+def colorDisabled = 0xADADAD
 android {
-    flavorDimensions "different_appid"
+
+    flavorDimensions "different_appid", "theme", "db_impl"
 
     signingConfigs {
         release {
@@ -14,14 +14,14 @@ android {
             storePassword 'android'
         }
     }
-    compileSdkVersion 25
-    buildToolsVersion '25.0.2'
+    compileSdkVersion 27
+    buildToolsVersion '27.0.0'
     defaultConfig {
         applicationId "pl.selvin.android.listsyncsample"
-        minSdkVersion 10
-        targetSdkVersion 25
-        versionCode 9000
-        versionName "0.9.0"
+        minSdkVersion 14
+        targetSdkVersion 27
+        versionCode 9001
+        versionName "0.9.1"
     }
     buildTypes {
         release {
@@ -37,6 +37,11 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
 
+    //it's needed for my easy theming
+    productFlavors.whenObjectAdded { flavor ->
+        themes_createExtension(flavor)
+    }
+
     afterEvaluate {
         android.applicationVariants.all { variant ->
             variant.resValue 'string', 'application_id', variant.applicationId
@@ -47,6 +52,19 @@ android {
     }
 
     productFlavors {
+        android{
+            dimension "db_impl"
+            configurations {
+                androidImplementation
+            }
+        }
+        cipher{
+            dimension "db_impl"
+            versionNameSuffix "(cipher)"
+            configurations {
+                cipherImplementation
+            }
+        }
         prod {
             dimension "different_appid"
             resValue 'string', 'app_name', "List Sync Sample"
@@ -130,11 +148,17 @@ android {
     }
 }
 
+def supportV = '27.0.0'
 dependencies {
-    compile 'com.android.support:appcompat-v7:25.1.0'
-    compile 'com.android.support:design:25.1.0'
-    compile 'com.android.support:recyclerview-v7:25.1.0'
-    compile project(':sync-framework')
-    compile 'com.squareup.okhttp3:okhttp:3.5.0'
-    compile 'com.fasterxml.jackson.core:jackson-core:2.8.5'
+    implementation "com.android.support:appcompat-v7:$supportV"
+    implementation "com.android.support:design:$supportV"
+    implementation "com.android.support:recyclerview-v7:$supportV"
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'com.squareup.okhttp3:okhttp:3.9.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.9.2'
+    implementation 'com.google.android:flexbox:0.3.1'
+    implementation project(':sync-framework')
+    cipherImplementation project(':database-sqlcipher')
+    cipherImplementation 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
+    androidImplementation project(':database-android')
 }

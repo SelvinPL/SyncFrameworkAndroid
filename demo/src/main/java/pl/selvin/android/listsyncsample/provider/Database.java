@@ -1,4 +1,4 @@
-/***
+/*
  * Copyright (c) 2014-2016 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -21,7 +21,7 @@ import pl.selvin.android.syncframework.annotation.TableName;
 @SuppressWarnings("unused")
 public class Database {
 
-    static final String DS = "DefaultScope";
+    private static final String DS = "DefaultScope";
 
     @Table(primaryKeys = {Status.ID}, scope = Status.SCOPE, readonly = true)
     public interface Status {
@@ -33,7 +33,7 @@ public class Database {
         @Column
         String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
     }
 
@@ -47,7 +47,7 @@ public class Database {
         @Column
         String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
 
         String TagNotUsed = "TagNotUsed";
@@ -65,10 +65,11 @@ public class Database {
         @Column
         String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
     }
 
+    @SuppressWarnings("WeakerAccess")
     @Table(primaryKeys = {User.ID}, scope = User.SCOPE, readonly = true)
     public interface User {
         String SCOPE = DS;
@@ -79,7 +80,7 @@ public class Database {
         @Column(type = ColumnType.GUID)
         String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
     }
 
@@ -94,10 +95,10 @@ public class Database {
         @Column(type = ColumnType.GUID)
         String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE, nullable = true)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE, nullable = true)
         String DESCRIPTION = "Description";
 
         @Column(type = ColumnType.GUID)
@@ -135,10 +136,10 @@ public class Database {
         @Column(type = ColumnType.GUID)
         String USERID = "UserID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE, nullable = true)
+        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE, nullable = true)
         String DESCRIPTION = "Description";
 
         @Column(type = ColumnType.INTEGER, nullable = true)
