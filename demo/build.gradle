@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 apply from: 'themes.gradle'
 
-def colorDisabled = 0xADADAD
+def cDisabled = 0xADADAD
 android {
 
-    flavorDimensions "different_appid", "theme", "db_impl"
+    flavorDimensions "different_appid", "db_impl"
 
     signingConfigs {
         release {
@@ -37,11 +37,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_7
     }
 
-    //it's needed for my easy theming
-    productFlavors.whenObjectAdded { flavor ->
-        themes_createExtension(flavor)
-    }
-
     afterEvaluate {
         android.applicationVariants.all { variant ->
             variant.resValue 'string', 'application_id', variant.applicationId
@@ -52,19 +47,6 @@ android {
     }
 
     productFlavors {
-        android{
-            dimension "db_impl"
-            configurations {
-                androidImplementation
-            }
-        }
-        cipher{
-            dimension "db_impl"
-            versionNameSuffix "(cipher)"
-            configurations {
-                cipherImplementation
-            }
-        }
         prod {
             dimension "different_appid"
             resValue 'string', 'app_name', "List Sync Sample"
@@ -75,7 +57,14 @@ android {
             applicationIdSuffix ".dev"
             resValue 'string', 'app_name', "List Sync Sample(dev)"
         }
-
+        android{
+            dimension "db_impl"
+        }
+        cipher{
+            dimension "db_impl"
+            versionNameSuffix "(cipher)"
+            applicationIdSuffix ".cipher"
+        }
         IndigoPink {
             themes {
                 colors {

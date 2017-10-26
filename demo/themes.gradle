@@ -4,7 +4,7 @@ import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.OutputKeys
 class C2M {
-    final map = [:];
+    final map = [:]
     C2M(Closure closure) {
         closure.delegate = this
         closure()
@@ -12,7 +12,7 @@ class C2M {
     def methodMissing(String name, args) { map[name] = args[0] }
 }
 
-public class ThemesExtension {
+class ThemesExtension {
     final static String dimension = "default_theme_extension_dimension_name"
     protected def parent
     protected def tasks
@@ -21,7 +21,7 @@ public class ThemesExtension {
     public def generateTask = null
     protected String path
 
-    public ThemesExtension(project, parent, tasks) {
+    ThemesExtension(project, parent, tasks) {
         this.project = project
         this.parent = parent
         this.tasks = tasks
@@ -35,22 +35,18 @@ public class ThemesExtension {
         generateTask = project.task(taskName, type: Generate) {
             outputFile output
             colorsMap cm
-/*
-            doLast {
-                println "++++++++++++++++ executed: ${taskName}"
-            }*/
         }
     }
 
     public HashMap<String, String> colorsMap
 
-    public void createTask(variantName) {
+    void createTask(variantName) {
         if(hasTheme) {
             tasks.findByName("generate${variantName.capitalize()}ResValues").dependsOn(generateTask)
         }
     }
 
-    public def colors(Closure closure) {
+    def colors(Closure closure) {
         def format = { v, a=255 -> String.format("#%02X%06X", a, v) }
         new C2M(closure).map.collectEntries { k, v ->
             [(k): format(v)] + (1..9).collectEntries { i ->
@@ -65,8 +61,6 @@ public class ThemesExtension {
                 project.android.flavorDimensions((dim + dimension) as String[])
             parent.setDimension(dimension)
         }
-        //generateTask.hash = colorsMap.hashCode()
-
         hasTheme = true
         def sourceSets = project.android.sourceSets
         sourceSets[parent.name].res.srcDirs(path)
@@ -81,7 +75,7 @@ class Generate extends DefaultTask {
     @TaskAction
     void execute(IncrementalTaskInputs inputs){
         def docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-        def doc = docBuilder.newDocument();
+        def doc = docBuilder.newDocument()
         doc.setXmlStandalone(true)
         def resources = doc.createElement('resources')
         doc.appendChild(resources)
@@ -92,13 +86,12 @@ class Generate extends DefaultTask {
             resources.appendChild(color)
         }
         def domSource= new DOMSource(doc)
-        outputFile.getParentFile().mkdirs();
-        def result = new StreamResult(outputFile);
+        outputFile.getParentFile().mkdirs()
+        def result = new StreamResult(outputFile)
         def tf = TransformerFactory.newInstance()
         def transformer = tf.newTransformer()
         transformer.setOutputProperty(OutputKeys.INDENT, 'yes')
         transformer.transform(domSource, result)
-        //println writer.toString()
     }
 }
 
