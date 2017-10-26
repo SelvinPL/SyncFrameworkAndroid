@@ -52,14 +52,14 @@ android {
         android{
             dimension "db_impl"
             configurations {
-                androidCompile
+                androidImplementation
             }
         }
         cipher{
             dimension "db_impl"
             versionNameSuffix "(cipher)"
             configurations {
-                cipherCompile
+                cipherImplementation
             }
         }
         prod {
@@ -104,15 +104,15 @@ android {
 
 def supportV = '27.0.0'
 dependencies {
-    compile "com.android.support:appcompat-v7:$supportV"
-    compile "com.android.support:design:$supportV"
-    compile "com.android.support:recyclerview-v7:$supportV"
-    compile 'com.google.code.findbugs:jsr305:3.0.2'
-    compile 'com.squareup.okhttp3:okhttp:3.9.0'
-    compile 'com.fasterxml.jackson.core:jackson-core:2.9.2'
-    compile 'com.google.android:flexbox:0.3.1'
-    compile project(':sync-framework')
-    cipherCompile project(':database-sqlcipher')
-    cipherCompile 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
-    androidCompile project(':database-android')
+    implementation "com.android.support:appcompat-v7:$supportV"
+    implementation "com.android.support:design:$supportV"
+    implementation "com.android.support:recyclerview-v7:$supportV"
+    implementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'com.squareup.okhttp3:okhttp:3.9.0'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.9.2'
+    implementation 'com.google.android:flexbox:0.3.1'
+    implementation project(':sync-framework')
+    cipherImplementation project(':database-sqlcipher')
+    cipherImplementation 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
+    androidImplementation project(':database-android')
 }
