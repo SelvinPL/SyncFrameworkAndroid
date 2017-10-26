@@ -195,5 +195,10 @@ public class OpenHelper extends SQLiteOpenHelper implements ISQLiteOpenHelper {
         public void setTables(String inTables) {
             builder.setTables(inTables);
         }
+
+        @Override
+        public void setDistinct(boolean distinct) {
+            builder.setDistinct(distinct);
+        }
     }
 }

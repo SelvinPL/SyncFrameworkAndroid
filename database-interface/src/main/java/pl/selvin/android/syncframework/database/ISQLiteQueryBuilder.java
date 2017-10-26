@@ -25,4 +25,6 @@ public interface ISQLiteQueryBuilder extends IObjectWrapper {
     void appendWhere(CharSequence inWhere);
 
     void setTables(String inTables);
+
+    void setDistinct(boolean distinct);
 }

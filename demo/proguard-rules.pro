@@ -10,3 +10,5 @@
 -dontnote android.net.**
 -dontnote org.apache.**
 -dontnote pl.selvin.android.syncframework.content.**
+-keep class net.sqlcipher.** { *; }
+-keep public class net.sqlcipher.database.** { *; }
