@@ -65,9 +65,10 @@ android {
             versionNameSuffix "(cipher)"
             applicationIdSuffix ".cipher"
         }
+
         IndigoPink {
             themes {
-                colors {
+                colorsWithAlpha {
                     colorPrimary 0x3F51B5
                     colorPrimaryDark 0x1A237E
                     colorPrimaryLight 0x586ACE
@@ -79,7 +80,7 @@ android {
 
         GrayBlackWhite {
             themes {
-                colors {
+                colorsWithAlpha {
                     colorPrimary 0x3a3a3a
                     colorPrimaryDark 0x111111
                     colorPrimaryLight 0x535353
@@ -91,7 +92,7 @@ android {
 
         TealLime {
             themes {
-                colors {
+                colorsWithAlpha {
                     colorPrimary 0x009688
                     colorPrimaryDark 0x00796B
                     colorPrimaryLight 0x19AFA1
@@ -102,7 +103,7 @@ android {
         }
         OrangeBlueGrey {
             themes {
-                colors {
+                colorsWithAlpha {
                     colorPrimary 0xF57C00
                     colorPrimaryDark 0xE65100
                     colorPrimaryLight 0xFF9519
@@ -113,8 +114,7 @@ android {
         }
         BrownRed {
             themes {
-                colors {
-                    //*
+                colorsWithAlpha {
                     colorPrimary 0x795548
                     colorPrimaryDark 0x5D4037
                     colorPrimaryLight 0xD7CCC8
@@ -125,7 +125,7 @@ android {
         }
         PurpleGreen {
             themes {
-                colors {
+                colorsWithAlpha {
                     colorPrimary 0x9B26AF
                     colorPrimaryDark 0x691A99
                     colorPrimaryLight 0xB43FC8
