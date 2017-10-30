@@ -149,5 +149,5 @@ dependencies {
     implementation project(':sync-framework')
     cipherImplementation project(':database-sqlcipher')
     cipherImplementation 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
-    androidImplementation project(':database-android')
+    compile 'android.arch.persistence:db-framework:1.0.0-rc1'
 }

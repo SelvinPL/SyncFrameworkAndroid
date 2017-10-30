@@ -26,7 +26,7 @@ import pl.selvin.android.syncframework.SetupInterface;
 import pl.selvin.android.syncframework.annotation.Column;
 import pl.selvin.android.syncframework.annotation.Table;
 import pl.selvin.android.syncframework.annotation.TableName;
-import pl.selvin.android.syncframework.database.ISQLiteDatabase;
+import android.arch.persistence.db.SupportSQLiteDatabase;
 
 public class ContentHelper {
     // why this name... to ensure that your never call your table like this
@@ -153,7 +153,7 @@ public class ContentHelper {
         }
     }
 
-    public void clearScope(ISQLiteDatabase db, String scope, String scopeServerBlob){
+    public void clearScope(SupportSQLiteDatabase db, String scope, String scopeServerBlob){
         for (TableInfo tab : AllTableInfo.values()) {
             if (tab.scope.toLowerCase().equals(scope.toLowerCase())) {
                 db.execSQL(tab.DropStatement());
@@ -258,7 +258,7 @@ public class ContentHelper {
         return matcher.match(uri);
     }
 
-    public boolean hasDirtTable(ISQLiteDatabase db, String scope) {
+    public boolean hasDirtTable(SupportSQLiteDatabase db, String scope) {
         boolean ret = false;
         for (TableInfo tab : AllTableInfo.values()) {
             if (tab.scope.toLowerCase().equals(scope.toLowerCase())) {

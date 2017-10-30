@@ -20,6 +20,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,13 +43,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import pl.selvin.android.syncframework.database.ISQLiteDatabase;
-import pl.selvin.android.syncframework.database.ISQLiteOpenHelper;
-import pl.selvin.android.syncframework.database.ISQLiteQueryBuilder;
-import pl.selvin.android.syncframework.database.OpenHelper;
+import android.arch.persistence.db.SupportSQLiteDatabase;
+import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import android.arch.persistence.db.SupportSQLiteQueryBuilder;
+
 import pl.selvin.android.syncframework.support.v4.database.DatabaseUtilsCompat;
 
-public abstract class BaseContentProvider extends ContentProvider implements IBaseContentProvider {
+public abstract class BaseContentProvider extends ContentProvider {
     public static final String SYNC_SYNCSTATS = "SYNC_PARAM_IN_SYNCSTATS";
     public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
     public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
@@ -57,13 +59,29 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
     protected final ContentHelper contentHelper;
     private final Class<?> clazz;
     private final Logger logger;
-    private ISQLiteOpenHelper mDB;
+    private SupportSQLiteOpenHelper mDB;
 
     public BaseContentProvider(ContentHelper contentHelper, RequestExecutor executor) {
         clazz = getClass();
         this.logger = contentHelper.getLogger();
         this.executor = executor;
         this.contentHelper = contentHelper;
+
+    }
+    protected abstract SupportSQLiteOpenHelper.Factory getHelperFactory();
+    protected SupportSQLiteOpenHelper.Configuration getHelperConfiguration() {
+        return SupportSQLiteOpenHelper.Configuration.builder(getContext()).name(contentHelper.DATABASE_NAME)
+                .callback(new SupportSQLiteOpenHelper.Callback(contentHelper.DATABASE_VERSION) {
+            @Override
+            public void onCreate(SupportSQLiteDatabase db) {
+                onCreateDataBase(db);
+            }
+
+            @Override
+            public void onUpgrade(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+                onUpgradeDatabase(db, oldVersion, newVersion);
+            }
+        }).build();
     }
 
     public static boolean isItemCode(int code) {
@@ -75,9 +93,11 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
     }
 
     public boolean onCreate() {
-        mDB = new OpenHelper(this, contentHelper.DATABASE_NAME, contentHelper.DATABASE_VERSION);
+        mDB = getHelperFactory().create(getHelperConfiguration());
         return true;
     }
+
+    SupportSQLiteOpenHelper.Callback callback;
 
     @Override
     public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
@@ -86,7 +106,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         if (code != UriMatcher.NO_MATCH) {
             if (code == ContentHelper.uriClearCode) {
                 logger.LogD(clazz, "delete uriClearCode");
-                mDB.onUpgrade(getWritableDatabase(), 1, contentHelper.DATABASE_VERSION);
+                callback.onUpgrade(getWritableDatabase(), 1, contentHelper.DATABASE_VERSION);
                 return 0;
             }
             if (code == ContentHelper.uriSyncCode) {
@@ -159,7 +179,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
             values.put("isDirty", 1);
             values.put("isDeleted", 1);
             final String updateSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NULL", selection);
-            ret = getWritableDatabase().update(tab.name, values, updateSelection, selectionArgs);
+            ret = getWritableDatabase().update(tab.name, SQLiteDatabase.CONFLICT_FAIL, values, updateSelection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " -upd: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + updateSelection + " values: " + String.valueOf(values));
             final String deleteSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NOT NULL", selection);
             ret += getWritableDatabase().delete(tab.name, deleteSelection, selectionArgs);
@@ -209,9 +229,9 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
             values.put("isDeleted", 0);
             final long rowId;
             if (!checkUndeleting(uri)) {
-                rowId = getWritableDatabase().insert(tab.name, null, values);
+                rowId = getWritableDatabase().insert(tab.name, SQLiteDatabase.CONFLICT_FAIL, values);
             } else {
-                rowId = getWritableDatabase().replace(tab.name, null, values);
+                rowId = getWritableDatabase().insert(tab.name, SQLiteDatabase.CONFLICT_REPLACE, values);
             }
             logger.LogD(clazz, "rowId:" + rowId + ", values: " + String.valueOf(values));
             if (rowId > 0) {
@@ -229,11 +249,11 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
 
     }
 
-    protected ISQLiteQueryBuilder createQueryBuilder() {
+    /*protected ISQLiteQueryBuilder createQueryBuilder() {
         return mDB.createQueryBuilder();
-    }
+    }*/
 
-    @Override
+    //@Override
     public String getDatabasePassword() {
         return contentHelper.getPassword(getContext());
     }
@@ -246,7 +266,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
                 return null;
             }
             final String limit;
-            final ISQLiteQueryBuilder builder = createQueryBuilder();
+            final SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
             final TableInfo tab = contentHelper.getTableFromCode(code & ContentHelper.uriCode);
             builder.setTables(tab.name);
             if (isItemCode(code)) {
@@ -269,24 +289,24 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
                 builder.appendWhere(SYNC.isDeleted + "=0");
             }
             builder.setProjectionMap(tab.map);
-            LogQuery(uri, builder, projection, selection, selectionArgs, null, null, sortOrder,
-                    limit);
-            final Cursor cursor = builder
-                    .query(getReadableDatabase(), projection, selection, selectionArgs, null, null,
-                            sortOrder, limit);
+            //LogQuery(uri, builder, projection, selection, selectionArgs, null, null, sortOrder,
+              //      limit);
+            final String query = builder.buildQuery(projection,selection, null, null, sortOrder, limit);
+
+            final Cursor cursor = getReadableDatabase().query(query, selectionArgs);
             cursor.setNotificationUri(getContextOrThrow().getContentResolver(), uri);
             return cursor;
         }
         throw new IllegalArgumentException("Unknown Uri " + uri);
     }
 
-    protected void LogQuery(Uri uri, ISQLiteQueryBuilder builder, String[] projection,
+    protected void LogQuery(Uri uri, SupportSQLiteQueryBuilder builder, String[] projection,
                             String selection, String[] selectionArgs, String groupBy, String having,
                             String sortOrder, String limit) {
-        logger.LogD(clazz, uri + "");
+        //logger.LogD(clazz, uri + "");
         //noinspection deprecation
-        logger.LogD(clazz, builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
-        logger.LogD(clazz, Arrays.toString(selectionArgs));
+        //logger.LogD(clazz, builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
+        //logger.LogD(clazz, Arrays.toString(selectionArgs));
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
@@ -343,7 +363,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
                 selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
             }
             values.put("isDirty", 1);
-            int ret = getWritableDatabase().update(tab.name, values, selection, selectionArgs);
+            int ret = getWritableDatabase().update(tab.name, SQLiteDatabase.CONFLICT_FAIL, values, selection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
             if (ret > 0) {
                 boolean syncToNetwork = checkSyncToNetwork(uri);
@@ -368,12 +388,12 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         return undeleting != null && Boolean.parseBoolean(undeleting);
     }
 
-    final public ISQLiteDatabase getReadableDatabase() {
-        return mDB.getReadableISQLiteDatabase();
+    final public SupportSQLiteDatabase getReadableDatabase() {
+        return mDB.getReadableDatabase();
     }
 
-    final public ISQLiteDatabase getWritableDatabase() {
-        return mDB.getWritableISQLiteDatabase();
+    final public SupportSQLiteDatabase getWritableDatabase() {
+        return mDB.getWritableDatabase();
     }
 
     @SuppressLint("DefaultLocale")
@@ -381,7 +401,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         final long start = System.currentTimeMillis();
         boolean hasError = false;
         if (params == null) params = "";
-        final ISQLiteDatabase db = getWritableDatabase();
+        final SupportSQLiteDatabase db = getWritableDatabase();
         final ArrayList<TableInfo> notifyTableInfo = new ArrayList<>();
         final JsonFactory jsonFactory = new JsonFactory();
         JsonToken current;
@@ -389,8 +409,9 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         final String upload = String.format(contentHelper.UPLOAD_SERVICE_URI, service, scope, params);
         final String scopeServerBlob = String.format("%s.%s.%s", service, scope, SYNC.serverBlob);
         String serverBlob = null;
-        Cursor cur = db.query(BlobsTable.NAME, new String[]{BlobsTable.C_VALUE}, BlobsTable.C_NAME + "=?",
-                new String[]{scopeServerBlob}, null, null, null);
+        final Cursor cur = db.query(
+        SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
+                .selection(BlobsTable.C_NAME + "=?",new Object[]{scopeServerBlob}).create());
         String originalBlob;
         if (cur.moveToFirst()) {
             originalBlob = serverBlob = cur.getString(0);
@@ -622,7 +643,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
                         cv.put(BlobsTable.C_VALUE, serverBlob);
                         cv.put(BlobsTable.C_DATE, Calendar.getInstance().getTimeInMillis());
                         cv.put(BlobsTable.C_STATE, 0);
-                        db.replace(BlobsTable.NAME, null, cv);
+                        db.insert(BlobsTable.NAME, SQLiteDatabase.CONFLICT_REPLACE, cv);
                         db.setTransactionSuccessful();
                         db.endTransaction();
                         originalBlob = serverBlob;
@@ -658,7 +679,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
             cv.put(BlobsTable.C_VALUE, originalBlob);
             cv.put(BlobsTable.C_DATE, Calendar.getInstance().getTimeInMillis());
             cv.put(BlobsTable.C_STATE, -1);
-            db.replace(BlobsTable.NAME, null, cv);
+            db.insert(BlobsTable.NAME, SQLiteDatabase.CONFLICT_REPLACE, cv);
         }
         logger.LogTimeD(clazz, "*Sync* time", start);
         return stats;
@@ -673,7 +694,9 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         return executor.execute(requestMethod, serviceRequestUrl, syncContentProducer);
     }
 
-    public void onCreateDataBase(ISQLiteDatabase db) {
+
+
+    public void onCreateDataBase(SupportSQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
         getContextOrThrow().sendBroadcast(intent);
@@ -700,12 +723,11 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
     }
 
 
-    public void onUpgradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion) {
+    public void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
         getContextOrThrow().sendBroadcast(intent);
-        Cursor c = db.query("sqlite_master", new String[]{"'DROP TABLE ' || name || ';' AS cmd"},
-                "type=? AND name<>?", new String[]{"table", "android_metadata"}, null, null, null);
+        Cursor c = db.query("SELECT 'DROP TABLE ' || name || ';' AS cmd FROM sqlite_master WHERE type='table' AND name<>'android_metadata'");
         final ArrayList<String> commands = new ArrayList<>();
         if (c.moveToFirst()) {
             do {
@@ -724,8 +746,8 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         onCreateDataBase(db);
     }
 
-    public void onDowngradeDatabase(ISQLiteDatabase db, int oldVersion, int newVersion) {
-        mDB.superOnDowngrade(db, oldVersion, newVersion);
+    public void onDowngradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+        //mDB.superOnDowngrade(db, oldVersion, newVersion);
     }
 
     public interface ISyncContentProducer {
@@ -740,7 +762,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
     }
 
     private static class SyncContentProducer implements ISyncContentProducer {
-        final ISQLiteDatabase db;
+        final SupportSQLiteDatabase db;
         final String scope;
         final String serverBlob;
         final boolean upload;
@@ -749,7 +771,7 @@ public abstract class BaseContentProvider extends ContentProvider implements IBa
         JsonFactory factory;
         int counter = 0;
 
-        SyncContentProducer(JsonFactory factory, ISQLiteDatabase db, String scope,
+        SyncContentProducer(JsonFactory factory, SupportSQLiteDatabase db, String scope,
                             String serverBlob, boolean upload,
                             ArrayList<TableInfo> notifyTableInfo,
                             ContentHelper ch) {

@@ -11,9 +11,12 @@
 
 package pl.selvin.android.syncframework.content;
 
+import android.arch.persistence.db.SupportSQLiteQuery;
+import android.arch.persistence.db.SupportSQLiteQueryBuilder;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Base64;
 
@@ -31,7 +34,7 @@ import java.util.TimeZone;
 import pl.selvin.android.syncframework.ColumnType;
 import pl.selvin.android.syncframework.annotation.Cascade;
 import pl.selvin.android.syncframework.annotation.Table;
-import pl.selvin.android.syncframework.database.ISQLiteDatabase;
+import android.arch.persistence.db.SupportSQLiteDatabase;
 
 public final class TableInfo {
 
@@ -110,8 +113,8 @@ public final class TableInfo {
         return selection;
     }
 
-    public boolean hasDirtData(ISQLiteDatabase db) {
-        Cursor c = db.query(name, null, SYNC.isDirtyP, new String[]{"1"}, null, null, null);
+    public boolean hasDirtData(SupportSQLiteDatabase db) {
+        Cursor c = db.query("SELECT 1 FROM " + name + " WHERE " + SYNC.isDirty + "=1");
         if (c.moveToFirst()) {
             c.close();
             return true;
@@ -120,7 +123,7 @@ public final class TableInfo {
         return false;
     }
 
-    public int getChanges(final ISQLiteDatabase db, final JsonGenerator generator) throws IOException {
+    public int getChanges(final SupportSQLiteDatabase db, final JsonGenerator generator) throws IOException {
         String[] cols = new String[columns.length + 3];
         int i = 0;
         for (; i < columns.length; i++)
@@ -128,7 +131,8 @@ public final class TableInfo {
         cols[i] = SYNC.uri;
         cols[i + 1] = SYNC.tempId;
         cols[i + 2] = SYNC.isDeleted;
-        Cursor c = db.query(name, cols, SYNC.isDirtyP, new String[]{"1"}, null, null, null);
+        SupportSQLiteQuery q = SupportSQLiteQueryBuilder.builder(name).columns(cols).selection(SYNC.isDirty + "=1", null).create();
+        Cursor c = db.query(q);
         int counter = 0;
         //to fix startPos  > actual rows for large cursors db operations should be done after
         // cursor is closed ...
@@ -204,11 +208,11 @@ public final class TableInfo {
         return counter;
     }
 
-    final public void DeleteWithUri(String uri, ISQLiteDatabase db) {
+    final public void DeleteWithUri(String uri, SupportSQLiteDatabase db) {
         db.delete(name, SYNC.uriP, new String[]{uri});
     }
 
-    final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final ISQLiteDatabase db) {
+    final public boolean SyncJSON(final HashMap<String, Object> hval, final Metadata meta, final SupportSQLiteDatabase db) {
         int i = 0;
         vals.clear();
         for (; i < columns.length; i++) {
@@ -244,10 +248,10 @@ public final class TableInfo {
         vals.putNull(SYNC.tempId);
         vals.put(SYNC.isDirty, 0);
         if (meta.tempId != null) {
-            db.update(name, vals, SYNC.tempIdP, new String[]{meta.tempId});
+            db.update(name, SQLiteDatabase.CONFLICT_FAIL, vals, SYNC.tempIdP, new String[]{meta.tempId});
             return true;
         } else {
-            db.replace(name, null, vals);
+            db.insert(name, SQLiteDatabase.CONFLICT_REPLACE, vals);
         }
         return false;
     }
@@ -296,14 +300,14 @@ public final class TableInfo {
             this.uri = uri;
         }
 
-        public long execute(ISQLiteDatabase db) {
+        public long execute(SupportSQLiteDatabase db) {
             switch (operation) {
                 case DELETE:
                     return db.delete(table, SYNC.uriP, new String[]{uri});
                 case UPDATE:
-                    return db.update(table, values, SYNC.uriP, new String[]{uri});
+                    return db.update(table, SQLiteDatabase.CONFLICT_FAIL, values, SYNC.uriP, new String[]{uri});
                 case INSERT:
-                    return db.insert(table, null, values);
+                    return db.insert(table, SQLiteDatabase.CONFLICT_FAIL, values);
                 default:
                     return 0;
             }
