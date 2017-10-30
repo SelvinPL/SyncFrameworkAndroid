@@ -11,6 +11,7 @@
 
 package pl.selvin.android.listsyncsample;
 
+import android.arch.persistence.db.SupportSQLiteOpenHelper.Factory;
 import android.content.Context;
 
 import pl.selvin.android.listsyncsample.provider.Database;
@@ -44,7 +45,11 @@ public class Setup implements SetupInterface {
     }
 
     @Override
-    public String getDatabasePassword(Context context) {
-        return "test";
+    public Factory getHelperFactory(Context ctx) {
+        return BuildConfig.buildHelperFactory.create(ctx);
+    }
+
+    public interface BuildHelperFactory{
+        Factory create(Context ctx);
     }
 }

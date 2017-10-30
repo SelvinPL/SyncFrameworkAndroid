@@ -4,7 +4,7 @@ apply from: 'themes.gradle'
 def cDisabled = 0xADADAD
 android {
 
-    flavorDimensions "different_appid", "db_impl"
+    flavorDimensions "db_impl"
 
     signingConfigs {
         release {
@@ -40,33 +40,14 @@ android {
     afterEvaluate {
         android.applicationVariants.all { variant ->
             variant.resValue 'string', 'application_id', variant.applicationId
-            for(flavor in variant.getProductFlavors()){
-                flavor.themes.createTask(variant.name)
-            }
         }
     }
 
     productFlavors {
-        prod {
-            dimension "different_appid"
-            resValue 'string', 'app_name', "List Sync Sample"
-        }
-        dev {
-            dimension "different_appid"
-            versionNameSuffix "(dev)"
-            applicationIdSuffix ".dev"
-            resValue 'string', 'app_name', "List Sync Sample(dev)"
-        }
         android{
             dimension "db_impl"
-        }
-        cipher{
-            dimension "db_impl"
-            versionNameSuffix "(cipher)"
-            applicationIdSuffix ".cipher"
-        }
-
-        IndigoPink {
+            resValue 'string', 'app_name', "ListSyncSample"
+            buildConfigField "pl.selvin.android.listsyncsample.Setup.BuildHelperFactory", "buildHelperFactory", "new pl.selvin.android.listsyncsample.Setup.BuildHelperFactory() { public android.arch.persistence.db.SupportSQLiteOpenHelper.Factory create(android.content.Context ctx){ return new android.arch.persistence.db.framework.FrameworkSQLiteOpenHelperFactory();} }"
             themes {
                 colorsWithAlpha {
                     colorPrimary 0x3F51B5
@@ -77,59 +58,18 @@ android {
                 }
             }
         }
-
-        GrayBlackWhite {
+        cipher{
+            dimension "db_impl"
+            resValue 'string', 'app_name', "ListSyncSample(cipher)"
+            buildConfigField "pl.selvin.android.listsyncsample.Setup.BuildHelperFactory", "buildHelperFactory", "new pl.selvin.android.listsyncsample.Setup.BuildHelperFactory() { public android.arch.persistence.db.SupportSQLiteOpenHelper.Factory create(android.content.Context ctx){ return new pl.selvin.android.db.sqlcipher.SqlCipherOpenHelperFactory(\"test\");} }"
+            versionNameSuffix "(cipher)"
+            applicationIdSuffix ".cipher"
             themes {
                 colorsWithAlpha {
                     colorPrimary 0x3a3a3a
                     colorPrimaryDark 0x111111
                     colorPrimaryLight 0x535353
                     colorAccent 0x78909C
-                    colorDisabled cDisabled
-                }
-            }
-        }
-
-        TealLime {
-            themes {
-                colorsWithAlpha {
-                    colorPrimary 0x009688
-                    colorPrimaryDark 0x00796B
-                    colorPrimaryLight 0x19AFA1
-                    colorAccent 0xC6FF00
-                    colorDisabled cDisabled
-                }
-            }
-        }
-        OrangeBlueGrey {
-            themes {
-                colorsWithAlpha {
-                    colorPrimary 0xF57C00
-                    colorPrimaryDark 0xE65100
-                    colorPrimaryLight 0xFF9519
-                    colorAccent 0x78909C
-                    colorDisabled cDisabled
-                }
-            }
-        }
-        BrownRed {
-            themes {
-                colorsWithAlpha {
-                    colorPrimary 0x795548
-                    colorPrimaryDark 0x5D4037
-                    colorPrimaryLight 0xD7CCC8
-                    colorAccent 0xFF5252
-                    colorDisabled cDisabled
-                }
-            }
-        }
-        PurpleGreen {
-            themes {
-                colorsWithAlpha {
-                    colorPrimary 0x9B26AF
-                    colorPrimaryDark 0x691A99
-                    colorPrimaryLight 0xB43FC8
-                    colorAccent 0x68EFAD
                     colorDisabled cDisabled
                 }
             }
@@ -147,7 +87,6 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-core:2.9.2'
     implementation 'com.google.android:flexbox:0.3.1'
     implementation project(':sync-framework')
-    cipherImplementation project(':database-sqlcipher')
-    cipherImplementation 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
-    compile 'android.arch.persistence:db-framework:1.0.0-rc1'
+    androidImplementation 'android.arch.persistence:db-framework:1.0.0-rc1'
+    cipherImplementation project(':db-sqlcipher')
 }

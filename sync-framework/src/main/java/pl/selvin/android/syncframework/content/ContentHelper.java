@@ -11,6 +11,7 @@
 
 package pl.selvin.android.syncframework.content;
 
+import android.arch.persistence.db.SupportSQLiteOpenHelper;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.net.Uri;
@@ -57,10 +58,6 @@ public class ContentHelper {
     private final HashMap<String, TableInfo> AllTableInfo = new HashMap<>();
     private final Logger logger;
     static SetupInterface setupInterface = null;
-
-    public String getPassword(Context context){
-        return setupInterface.getDatabasePassword(context);
-    }
 
     protected ContentHelper(Class<? extends SetupInterface> setupClass, Logger logger) {
         this.logger = logger;
@@ -281,5 +278,9 @@ public class ContentHelper {
 
     public Logger getLogger() {
         return logger;
+    }
+
+    public SupportSQLiteOpenHelper.Factory getHelperFactory(Context ctx){
+        return setupInterface.getHelperFactory(ctx);
     }
 }

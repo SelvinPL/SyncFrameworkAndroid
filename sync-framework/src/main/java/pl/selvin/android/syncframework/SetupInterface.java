@@ -12,6 +12,7 @@
 package pl.selvin.android.syncframework;
 
 
+import android.arch.persistence.db.SupportSQLiteOpenHelper;
 import android.content.Context;
 
 public interface SetupInterface {
@@ -25,5 +26,5 @@ public interface SetupInterface {
 
     int getDatabaseVersion();
 
-    String getDatabasePassword(Context context);
+    SupportSQLiteOpenHelper.Factory getHelperFactory(Context context);
 }

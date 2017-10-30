@@ -1,5 +1,0 @@
-apply from: '../common-java-android.gradle'
-
-ext.sync_framework_artifact_id = 'sync-framework-database-interface'
-
-apply from: '../publish.gradle'

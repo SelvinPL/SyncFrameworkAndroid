@@ -31,7 +31,7 @@ class ThemesExtension {
         this.parent = parent
         this.tasks = tasks
         def parentName = parent.name.capitalize()
-        path = "/build/themes/${parentName}/res"
+        path = "/build/themed/${parentName}/res"
         colorsMap = [:]
         colorsMapVector = [:]
         def generateColorsTask = project.task("generate${parentName}Themes", type: GenerateColors) {
@@ -198,8 +198,15 @@ class GenerateColors extends DefaultTask {
     }
 }
 
-project.android.productFlavors.whenObjectAdded { parent ->
-    parent.extensions.create("themes", ThemesExtension, project, parent, tasks)
+android {
+    productFlavors.whenObjectAdded { parent ->
+        parent.extensions.create("themes", ThemesExtension, project, parent, tasks)
+    }
+    afterEvaluate {
+        android.applicationVariants.each { variant ->
+            variant.getProductFlavors().each{it.themes.createTask(variant.name)}
+        }
+    }
 }
 
 buildscript {

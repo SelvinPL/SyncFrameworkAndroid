@@ -1,9 +1,7 @@
-apply plugin: 'maven-publish'
-
-ext.sync_framework_version = '0.8.2'
-
 ext {
     sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
+    sync_framework_version = '0.9.0'
+    sync_framework_version_int = 9000
 }
 
 // gradle publish ... for my needs
@@ -12,21 +10,17 @@ def File propsFile = file("${rootProject.projectDir}/maven-url.properties")
 if (propsFile.exists()) {
     def props = new Properties()
     props.load(new FileInputStream(propsFile))
-    sync_framework_maven_url = props['sync_framework_maven']
-}
-
-task sourceJar(type: Jar) {
-    from sourceSets.main.allJava
+    if(props['sync_framework_maven'] != null)
+        sync_framework_maven_url = props['sync_framework_maven']
 }
 
 publishing {
     publications {
-        myPublication(MavenPublication) {
+        mavenAar(MavenPublication) {
+            from components.android
             groupId 'pl.selvin.android'
             version sync_framework_version
             artifactId sync_framework_artifact_id
-
-            from components.java
             artifact sourceJar {
                 classifier "sources"
             }
@@ -38,3 +32,8 @@ publishing {
         }
     }
 }
+
+task sourceJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+}
+

@@ -1,1 +1,1 @@
-include ':demo', ':sync-framework', ':database-interface', ':database-android', ':database-sqlcipher'
+include ':demo', ':sync-framework', ':db-sqlcipher'

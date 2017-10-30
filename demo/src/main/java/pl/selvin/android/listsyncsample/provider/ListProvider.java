@@ -11,9 +11,6 @@
 
 package pl.selvin.android.listsyncsample.provider;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
-import android.arch.persistence.db.framework.FrameworkSQLiteOpenHelperFactory;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteQueryBuilder;
@@ -101,11 +98,6 @@ public class ListProvider extends BaseContentProvider {
                 TAG_ITEM_MAPPING_WITH_NAMES.put(key, tableInfo.map.get(key));
             }
         }
-    }
-
-    @Override
-    protected SupportSQLiteOpenHelper.Factory getHelperFactory() {
-        return new FrameworkSQLiteOpenHelperFactory();
     }
 
     @Override
