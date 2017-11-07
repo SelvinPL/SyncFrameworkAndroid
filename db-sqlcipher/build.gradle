@@ -28,6 +28,6 @@ android {
 }
 
 dependencies {
-    api 'android.arch.persistence:db:1.0.0-rc1'
+    api 'android.arch.persistence:db:1.0.0'
     api 'net.zetetic:android-database-sqlcipher:3.5.7@aar'
 }

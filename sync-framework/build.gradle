@@ -24,6 +24,6 @@ android {
 dependencies {
     api 'com.fasterxml.jackson.core:jackson-core:2.9.2'
     api 'com.android.support:support-annotations:27.0.0'
-    api 'android.arch.persistence:db:1.0.0-rc1'
+    api 'android.arch.persistence:db:1.0.0'
 }
 
