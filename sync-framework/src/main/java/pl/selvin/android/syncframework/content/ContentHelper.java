@@ -206,7 +206,7 @@ public class ContentHelper {
         builder.appendPath(tableName);
         if (primaryKeys == null || primaryKeys.length == 0) {
             throw new IllegalArgumentException(
-                    "primary_keys should be empty or null");
+                    "primary_keys should not be empty nor null");
         } else {
             for (final Object primaryKey : primaryKeys) {
                 builder.appendPath(primaryKey.toString());
