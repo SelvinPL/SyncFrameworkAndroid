@@ -13,9 +13,6 @@ package pl.selvin.android.syncframework.content;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
-import android.arch.persistence.db.SupportSQLiteQueryBuilder;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -23,7 +20,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.UriMatcher;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
@@ -46,6 +42,12 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import android.arch.persistence.db.SupportSQLiteDatabase;
+import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import android.arch.persistence.db.SupportSQLiteQueryBuilder;
+
+import pl.selvin.android.syncframework.support.v4.database.DatabaseUtilsCompat;
 
 public abstract class BaseContentProvider extends ContentProvider {
     public static final String SYNC_SYNCSTATS = "SYNC_PARAM_IN_SYNCSTATS";
@@ -78,13 +80,12 @@ public abstract class BaseContentProvider extends ContentProvider {
         };
 
     }
-
-    protected SupportSQLiteOpenHelper.Factory getHelperFactory() {
+    protected  SupportSQLiteOpenHelper.Factory getHelperFactory() {
         return contentHelper.getHelperFactory(getContextOrThrow());
     }
 
 
-    protected SupportSQLiteOpenHelper.Callback getHelperCallback() {
+    protected SupportSQLiteOpenHelper.Callback getHelperCallback(){
         return defaultCallback;
     }
 
@@ -137,10 +138,11 @@ public abstract class BaseContentProvider extends ContentProvider {
                     }
                     newSelection = "isDeleted=0 " + tab.getSelection();
                 }
-                selection = DatabaseUtils.concatenateWhere(selection, newSelection);
-                selectionArgs = DatabaseUtils.appendSelectionArgs(selectionArgs, newSelectionArgs);
+                selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
+                selectionArgs = DatabaseUtilsCompat
+                        .appendSelectionArgs(selectionArgs, newSelectionArgs);
             } else {
-                selection = DatabaseUtils.concatenateWhere(selection, "isDeleted=0");
+                selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
             }
             int ret;
             int cascadeResults = 0;
@@ -184,10 +186,10 @@ public abstract class BaseContentProvider extends ContentProvider {
             ContentValues values = new ContentValues(2);
             values.put("isDirty", 1);
             values.put("isDeleted", 1);
-            final String updateSelection = DatabaseUtils.concatenateWhere("tempId IS NULL", selection);
+            final String updateSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NULL", selection);
             ret = getWritableDatabase().update(tab.name, SQLiteDatabase.CONFLICT_FAIL, values, updateSelection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " -upd: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + updateSelection + " values: " + String.valueOf(values));
-            final String deleteSelection = DatabaseUtils.concatenateWhere("tempId IS NOT NULL", selection);
+            final String deleteSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NOT NULL", selection);
             ret += getWritableDatabase().delete(tab.name, deleteSelection, selectionArgs);
             logger.LogD(clazz, "ret:" + ret + " -del: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + deleteSelection);
             if (ret > 0) {
@@ -271,13 +273,15 @@ public abstract class BaseContentProvider extends ContentProvider {
                 final List<String> pathSegments = uri.getPathSegments();
                 if (isItemRowIDCode(code)) {
                     builder.appendWhere(SYNC.isDeleted + "=0 AND " + tab.rowIdAlias + "=?");
-                    selectionArgs = DatabaseUtils.appendSelectionArgs(new String[]{pathSegments.get(2)}, selectionArgs);
+                    selectionArgs = DatabaseUtilsCompat
+                            .appendSelectionArgs(new String[]{pathSegments.get(2)}, selectionArgs);
                 } else {
                     builder.appendWhere(SYNC.isDeleted + "=0" + tab.getSelection());
                     final String[] querySelection = new String[tab.primaryKey.length];
                     for (int i = 0; i < tab.primaryKey.length; i++)
                         querySelection[i] = pathSegments.get(i + 1);
-                    selectionArgs = DatabaseUtils.appendSelectionArgs(querySelection, selectionArgs);
+                    selectionArgs = DatabaseUtilsCompat
+                            .appendSelectionArgs(querySelection, selectionArgs);
                 }
             } else {
                 limit = uri.getQueryParameter(ContentHelper.PARAMETER_LIMIT);
@@ -285,7 +289,8 @@ public abstract class BaseContentProvider extends ContentProvider {
             }
             builder.setProjectionMap(tab.map);
             LogQuery(uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit);
-            final String query = builder.buildQuery(projection, selection, null, null, sortOrder, limit);
+            final String query = builder.buildQuery(projection,selection, null, null, sortOrder, limit);
+
             final Cursor cursor = getReadableDatabase().query(query, selectionArgs);
             cursor.setNotificationUri(getContextOrThrow().getContentResolver(), uri);
             return cursor;
@@ -350,10 +355,11 @@ public abstract class BaseContentProvider extends ContentProvider {
                     }
                     newSelection = "isDeleted=0 " + tab.getSelection();
                 }
-                selection = DatabaseUtils.concatenateWhere(selection, newSelection);
-                selectionArgs = DatabaseUtils.appendSelectionArgs(selectionArgs, newSelectionArgs);
+                selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
+                selectionArgs = DatabaseUtilsCompat
+                        .appendSelectionArgs(selectionArgs, newSelectionArgs);
             } else {
-                selection = DatabaseUtils.concatenateWhere(selection, "isDeleted=0");
+                selection = DatabaseUtilsCompat.concatenateWhere(selection, "isDeleted=0");
             }
             values.put("isDirty", 1);
             int ret = getWritableDatabase().update(tab.name, SQLiteDatabase.CONFLICT_FAIL, values, selection, selectionArgs);
@@ -403,8 +409,8 @@ public abstract class BaseContentProvider extends ContentProvider {
         final String scopeServerBlob = String.format("%s.%s.%s", service, scope, SYNC.serverBlob);
         String serverBlob = null;
         final Cursor cur = db.query(
-                SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
-                        .selection(BlobsTable.C_NAME + "=?", new Object[]{scopeServerBlob}).create());
+        SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
+                .selection(BlobsTable.C_NAME + "=?",new Object[]{scopeServerBlob}).create());
         String originalBlob;
         if (cur.moveToFirst()) {
             originalBlob = serverBlob = cur.getString(0);
@@ -686,6 +692,7 @@ public abstract class BaseContentProvider extends ContentProvider {
     protected RequestExecutor.Result executeRequest(int requestMethod, String serviceRequestUrl, final ISyncContentProducer syncContentProducer) throws IOException {
         return executor.execute(requestMethod, serviceRequestUrl, syncContentProducer);
     }
+
 
 
     private void onCreateDataBase(SupportSQLiteDatabase db) {
