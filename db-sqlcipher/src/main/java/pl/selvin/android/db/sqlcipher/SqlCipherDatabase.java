@@ -1,6 +1,7 @@
 /*
  Copyright (C) 2016 The Android Open Source Project
- Copyright (c) 2014-2016 Selvin
+ Copyright (c) 2017 CommonsWare, LLC
+ Copyright (c) 2017 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
  of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -12,6 +13,7 @@
 
 package pl.selvin.android.db.sqlcipher;
 
+import android.annotation.SuppressLint;
 import android.arch.persistence.db.SimpleSQLiteQuery;
 import android.arch.persistence.db.SupportSQLiteDatabase;
 import android.arch.persistence.db.SupportSQLiteQuery;
@@ -180,12 +182,19 @@ class SqlCipherDatabase implements SupportSQLiteDatabase {
     }
 
     @Override
+    //we shouldn't worry about AutoClosable nor try-with-resources - they are working fine on API lower than 19
+    @SuppressLint("NewApi")
     public int delete(String table, String whereClause, Object[] whereArgs) {
         String query = "DELETE FROM " + table
                 + (isEmpty(whereClause) ? "" : " WHERE " + whereClause);
-        SupportSQLiteStatement statement = compileStatement(query);
-        SimpleSQLiteQuery.bind(statement, whereArgs);
-        return statement.executeUpdateDelete();
+        try {
+            try (SupportSQLiteStatement statement = compileStatement(query)) {
+                SimpleSQLiteQuery.bind(statement, whereArgs);
+                return statement.executeUpdateDelete();
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
 
