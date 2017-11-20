@@ -63,7 +63,7 @@ public class ItemsListFragment extends ListFragmentCommon {
                 ListProvider.getHelper().getDirUri(Item.TABLE_NAME),
                 new String[]{BaseColumns._ID, Item.ID,
                         Item.NAME, Item.DESCRIPTION},
-                Item.LISTID + "=?", new String[]{getShownId()},
+                Item.LIST_ID + "=?", new String[]{getShownId()},
                 Item.NAME);
     }
 
@@ -80,12 +80,12 @@ public class ItemsListFragment extends ListFragmentCommon {
         values.put(Item.PRIORITY, 1);
         values.put(Item.STATUS, 1);
         Calendar cal = DateTimeUtils.getToday();
-        values.put(Item.STARTDATE, DateTimeUtils.toLong(cal));
+        values.put(Item.START_DATE, DateTimeUtils.toLong(cal));
         cal.add(Calendar.DATE, 1);
-        values.put(Item.ENDDATE, DateTimeUtils.toLong(cal));
+        values.put(Item.END_DATE, DateTimeUtils.toLong(cal));
         values.put(Item.ID, UUID.randomUUID().toString());
-        values.put(Item.LISTID, getShownId());
-        values.put(Item.USERID, SyncService.getUserId(getActivity()));
+        values.put(Item.LIST_ID, getShownId());
+        values.put(Item.USER_ID, SyncService.getUserId(getActivity()));
         return getActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(Item.TABLE_NAME), values);
     }
 

@@ -1,7 +1,7 @@
 -keepattributes *Annotation*
--keep, allowobfuscation @pl.selvin.android.syncframework.annotation.Table public interface * {
-          @pl.selvin.android.syncframework.annotation.Column static <fields>;
-          @pl.selvin.android.syncframework.annotation.TableName static <fields>;
+-keep, allowobfuscation @pl.selvin.android.autocontentprovider.annotation.Table public interface * {
+          @pl.selvin.android.autocontentprovider.annotation.Column static <fields>;
+          @pl.selvin.android.autocontentprovider.annotation.TableName static <fields>;
 }
 -keepnames class pl.selvin.android.listsyncsample.ui.** extends android.support.v4.app.Fragment
 -keep class pl.selvin.android.listsyncsample.ui.** extends pl.selvin.android.listsyncsample.app.ListFragmentCommon

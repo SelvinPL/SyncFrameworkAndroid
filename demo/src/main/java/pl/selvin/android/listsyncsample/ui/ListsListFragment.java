@@ -52,7 +52,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
         return new CursorLoader(getActivity(),
                 ListProvider.getHelper().getDirUri(List.TABLE_NAME), new String[]{
                 BaseColumns._ID, List.ID, List.NAME,
-                List.DESCRIPTION, List.CREATEDATE
+                List.DESCRIPTION, List.CREATED_DATE
         }, String.format("%s LIKE ?1 OR %s LIKE ?1", List.NAME, List.DESCRIPTION),
                 new String[]{"%" + mCurrentFilter + "%"}, List.NAME);
     }
@@ -67,7 +67,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
     protected ListAdapter createListAdapter() {
         return new SimpleCursorAdapter(getActivity(), R.layout.list_row,
                 null, new String[]{List.NAME,
-                List.DESCRIPTION, List.CREATEDATE},
+                List.DESCRIPTION, List.CREATED_DATE},
                 new int[]{R.id.name, R.id.description, R.id.created_date},
                 0);
     }
@@ -147,8 +147,8 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
         values.put(Database.List.NAME, StringUtil.EMPTY);
         values.put(Database.List.DESCRIPTION, StringUtil.EMPTY);
         values.put(Database.List.ID, UUID.randomUUID().toString());
-        values.put(Database.List.USERID, SyncService.getUserId(getActivity()));
-        values.put(Database.List.CREATEDATE, DateTimeUtils.getNowLong());
+        values.put(Database.List.USER_ID, SyncService.getUserId(getActivity()));
+        values.put(Database.List.CREATED_DATE, DateTimeUtils.getNowLong());
         return getActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
     }
 

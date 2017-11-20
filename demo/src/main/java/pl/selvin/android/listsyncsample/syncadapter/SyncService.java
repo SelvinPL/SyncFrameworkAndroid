@@ -29,8 +29,9 @@ import android.util.Log;
 
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.authenticator.AuthenticatorActivity;
+import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
-import pl.selvin.android.syncframework.content.SyncStats;
+import pl.selvin.android.syncframework.content.Stats;
 
 public class SyncService extends Service {
     public static final String ISYNCSERVICE_BINDER = "ISYNCSERVICE_BINDER";
@@ -144,21 +145,22 @@ public class SyncService extends Service {
         synchronized public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
             mService.mLastStatus = SYNC_ACTIVE;
             mService.fireStatusChanged();
-            SyncStats stats = new SyncStats();
+            Stats stats = new Stats();
 
             String parameters = null;
             try {
                 parameters = String.format("?userid=%s", getUserId(getContext()));
             } catch (Exception ex) {
-                stats.numIoExceptions++;
+                stats.stats.numIoExceptions++;
             }
             if (parameters != null) {
                 final ListProvider mtProvider = (ListProvider) provider.getLocalContentProvider();
                 if (mtProvider != null) {
                     try {
-                        mtProvider.sync("DefaultScopeSyncService", "defaultscope", parameters, stats);
+                        mtProvider.sync("DefaultScopeSyncService", Database.DS, parameters, stats);
                     } catch (Exception ex) {
-                        stats.numIoExceptions++;
+                        stats.stats.numIoExceptions++;
+                        ex.printStackTrace();
                     }
                 } else {
                     try {
@@ -166,29 +168,30 @@ public class SyncService extends Service {
 
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                             Bundle syncParams = new Bundle();
-                            syncParams.putParcelable(ListProvider.SYNC_SYNCSTATS, stats);
+                            syncParams.putParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS, stats);
                             syncParams = provider.call(uri.toString(), parameters, syncParams);
-                            stats = syncParams.getParcelable(ListProvider.SYNC_SYNCSTATS);
+                            stats = syncParams.getParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS);
                         } else {
                             if (provider.update(uri, null, parameters, null) != 0) {
-                                stats.numParseExceptions++;
+                                stats.stats.numParseExceptions++;
                             }
                         }
                     } catch (RemoteException e) {
-                        stats.numParseExceptions++;
+                        stats.stats.numParseExceptions++;
+                        e.printStackTrace();
                     }
                 }
             }
-            syncResult.stats.numAuthExceptions = stats.numAuthExceptions;
-            syncResult.stats.numConflictDetectedExceptions = stats.numConflictDetectedExceptions;
-            syncResult.stats.numDeletes = stats.numDeletes;
-            syncResult.stats.numEntries = stats.numEntries;
-            syncResult.stats.numInserts = stats.numInserts;
-            syncResult.stats.numIoExceptions = stats.numIoExceptions;
-            syncResult.stats.numParseExceptions = stats.numParseExceptions;
-            syncResult.stats.numSkippedEntries = stats.numSkippedEntries;
-            syncResult.stats.numUpdates = stats.numUpdates;
-            Log.v("SyncStats: ", stats.toString());
+            syncResult.stats.numAuthExceptions = stats.stats.numAuthExceptions;
+            syncResult.stats.numConflictDetectedExceptions = stats.stats.numConflictDetectedExceptions;
+            syncResult.stats.numDeletes = stats.stats.numDeletes;
+            syncResult.stats.numEntries = stats.stats.numEntries;
+            syncResult.stats.numInserts = stats.stats.numInserts;
+            syncResult.stats.numIoExceptions = stats.stats.numIoExceptions;
+            syncResult.stats.numParseExceptions = stats.stats.numParseExceptions;
+            syncResult.stats.numSkippedEntries = stats.stats.numSkippedEntries;
+            syncResult.stats.numUpdates = stats.stats.numUpdates;
+            Log.v("SyncStats: ", stats.stats.toString());
             Log.d("SyncResult: ", syncResult.toString());
 
             mService.mLastStatus = SYNC_IDLE;

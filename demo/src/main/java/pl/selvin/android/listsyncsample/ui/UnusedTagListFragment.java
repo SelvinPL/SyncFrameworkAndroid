@@ -73,9 +73,9 @@ public class UnusedTagListFragment extends DialogFragment implements LoaderManag
                 final long tagId = adapter.getItemId(position);
                 final String userId = getArguments().getString(USER_ID);
                 final String itemId = getArguments().getString(ITEM_ID);
-                values.put(TagItemMapping.TAGID, tagId);
-                values.put(TagItemMapping.USERID, userId);
-                values.put(TagItemMapping.ITEMID, itemId);
+                values.put(TagItemMapping.TAG_ID, tagId);
+                values.put(TagItemMapping.USER_ID, userId);
+                values.put(TagItemMapping.ITEM_ID, itemId);
                 values.put(SYNC.isDeleted, 0);
                 final Uri uri = ListProvider.getHelper().getDirUri(TagItemMapping.TABLE_NAME, false, true);
                 getContext().getContentResolver().insert(uri, values);

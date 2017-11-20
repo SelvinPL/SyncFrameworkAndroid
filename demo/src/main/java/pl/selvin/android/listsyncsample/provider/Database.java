@@ -11,19 +11,21 @@
 
 package pl.selvin.android.listsyncsample.provider;
 
+import pl.selvin.android.autocontentprovider.annotation.Cascade;
+import pl.selvin.android.autocontentprovider.annotation.Column;
+import pl.selvin.android.autocontentprovider.annotation.Table;
+import pl.selvin.android.autocontentprovider.annotation.TableName;
+import pl.selvin.android.autocontentprovider.db.ColumnType;
 import pl.selvin.android.listsyncsample.Constants;
-import pl.selvin.android.syncframework.ColumnType;
-import pl.selvin.android.syncframework.annotation.Cascade;
-import pl.selvin.android.syncframework.annotation.Column;
-import pl.selvin.android.syncframework.annotation.Table;
-import pl.selvin.android.syncframework.annotation.TableName;
+import pl.selvin.android.syncframework.annotation.SyncScope;
 
 @SuppressWarnings("unused")
 public class Database {
 
-    private static final String DS = "DefaultScope";
+    public static final String DS = "DefaultScope";
 
-    @Table(primaryKeys = {Status.ID}, scope = Status.SCOPE, readonly = true)
+    @SyncScope(DS)
+    @Table(primaryKeys = {Status.ID}, readonly = true)
     public interface Status {
         String SCOPE = DS;
 
@@ -37,7 +39,8 @@ public class Database {
         String NAME = "Name";
     }
 
-    @Table(primaryKeys = {Tag.ID}, scope = Tag.SCOPE, readonly = true, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri})
+    @SyncScope(DS)
+    @Table(primaryKeys = {Tag.ID}, readonly = true, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri})
     public interface Tag {
         String SCOPE = DS;
 
@@ -55,7 +58,8 @@ public class Database {
         String TagNotUsedUri = "content://" + Constants.AUTHORITY + "/" + TagNotUsed;
     }
 
-    @Table(primaryKeys = {Priority.ID}, scope = Priority.SCOPE, readonly = true)
+    @SyncScope(DS)
+    @Table(primaryKeys = {Priority.ID}, readonly = true)
     public interface Priority {
         String SCOPE = DS;
 
@@ -70,7 +74,8 @@ public class Database {
     }
 
     @SuppressWarnings("WeakerAccess")
-    @Table(primaryKeys = {User.ID}, scope = User.SCOPE, readonly = true)
+    @SyncScope(DS)
+    @Table(primaryKeys = {User.ID}, readonly = true)
     public interface User {
         String SCOPE = DS;
 
@@ -84,8 +89,9 @@ public class Database {
         String NAME = "Name";
     }
 
-    @Table(primaryKeys = {List.ID}, scope = List.SCOPE, delete = {@Cascade(table = Item.TABLE_NAME, pk = {
-            List.ID, List.USERID}, fk = {Item.LISTID, Item.USERID})})
+    @SyncScope(DS)
+    @Table(primaryKeys = {List.ID}, delete = {@Cascade(table = Item.TABLE_NAME, pk = {
+            List.ID, List.USER_ID}, fk = {Item.LIST_ID, Item.USER_ID})})
     public interface List {
         String SCOPE = DS;
 
@@ -102,25 +108,26 @@ public class Database {
         String DESCRIPTION = "Description";
 
         @Column(type = ColumnType.GUID)
-        String USERID = "UserID";
+        String USER_ID = "UserID";
 
         @Column(type = ColumnType.DATETIME)
-        String CREATEDATE = "CreatedDate";
+        String CREATED_DATE = "CreatedDate";
 
-        // this is the only sneeky part computed ... but well see @Column doc :)
+        // this is the only sneaky part computed ... but well see @Column doc :)
         @Column(type = ColumnType.VARCHAR, computed = List.NAME + " || ' ' || "
                 + List.DESCRIPTION)
         String NAME_DESCRIPTION = "N_D";
 
-        // this is the only sneeky part computed ... but well see @Column doc :)
+        // this is the only sneaky part computed ... but well see @Column doc :)
         @Column(type = ColumnType.VARCHAR, computed = List.NAME + " || ' ' || "
-                + List.DESCRIPTION + " || ' ' || " + List.CREATEDATE)
+                + List.DESCRIPTION + " || ' ' || " + List.CREATED_DATE)
         String NAME_DESCRIPTION_CREATE = "N_D_C";
     }
 
-    @Table(primaryKeys = {Item.ID}, scope = Item.SCOPE, delete = {@Cascade(table = TagItemMapping.TABLE_NAME, pk = {
-            Item.ID, Item.USERID}, fk = {TagItemMapping.ITEMID,
-            TagItemMapping.USERID})})
+    @SyncScope(DS)
+    @Table(primaryKeys = {Item.ID}, delete = {@Cascade(table = TagItemMapping.TABLE_NAME, pk = {
+            Item.ID, Item.USER_ID}, fk = {TagItemMapping.ITEM_ID,
+            TagItemMapping.USER_ID})})
     public interface Item {
         String SCOPE = DS;
 
@@ -131,10 +138,10 @@ public class Database {
         String ID = "ID";
 
         @Column(type = ColumnType.GUID)
-        String LISTID = "ListID";
+        String LIST_ID = "ListID";
 
         @Column(type = ColumnType.GUID)
-        String USERID = "UserID";
+        String USER_ID = "UserID";
 
         @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
         String NAME = "Name";
@@ -142,21 +149,22 @@ public class Database {
         @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE, nullable = true)
         String DESCRIPTION = "Description";
 
-        @Column(type = ColumnType.INTEGER, nullable = true)
+        @Column(nullable = true)
         String PRIORITY = "Priority";
 
-        @Column(type = ColumnType.INTEGER, nullable = true)
+        @Column(nullable = true)
         String STATUS = "Status";
 
         @Column(type = ColumnType.DATETIME, nullable = true)
-        String STARTDATE = "StartDate";
+        String START_DATE = "StartDate";
 
         @Column(type = ColumnType.DATETIME, nullable = true)
-        String ENDDATE = "EndDate";
+        String END_DATE = "EndDate";
     }
 
-    @Table(primaryKeys = {TagItemMapping.TAGID, TagItemMapping.ITEMID,
-            TagItemMapping.USERID}, scope = TagItemMapping.SCOPE, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri,
+    @SyncScope(DS)
+    @Table(primaryKeys = {TagItemMapping.TAG_ID, TagItemMapping.ITEM_ID,
+            TagItemMapping.USER_ID}, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri,
             Tag.TagNotUsedUri})
     public interface TagItemMapping {
         String SCOPE = DS;
@@ -164,14 +172,14 @@ public class Database {
         @TableName
         String TABLE_NAME = "TagItemMapping";
 
-        @Column(type = ColumnType.INTEGER)
-        String TAGID = "TagID";
+        @Column
+        String TAG_ID = "TagID";
 
         @Column(type = ColumnType.GUID)
-        String ITEMID = "ItemID";
+        String ITEM_ID = "ItemID";
 
         @Column(type = ColumnType.GUID)
-        String USERID = "UserID";
+        String USER_ID = "UserID";
 
         String TagItemMappingWithNames = "TagItemMappingWithNames";
 

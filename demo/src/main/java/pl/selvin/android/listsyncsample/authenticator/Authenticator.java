@@ -44,12 +44,12 @@ class Authenticator extends AbstractAccountAuthenticator {
                 final String[] pckgs = mContext.getPackageManager().getPackagesForUid(1000);
                 for (final String pckg : pckgs) {
                     mContext.grantUriPermission(pckg,
-                            ListProvider.getHelper().getClearUri(),
+                            ListProvider.getHelper().CLEAR_URI,
                             Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 }
-                mContext.getContentResolver().delete(ListProvider.getHelper().getClearUri(),
+                mContext.getContentResolver().delete(ListProvider.getHelper().CLEAR_URI,
                         null, null);
-                mContext.revokeUriPermission(ListProvider.getHelper().getClearUri(),
+                mContext.revokeUriPermission(ListProvider.getHelper().CLEAR_URI,
                         Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
             } catch (Exception ex) {
                 ex.printStackTrace();

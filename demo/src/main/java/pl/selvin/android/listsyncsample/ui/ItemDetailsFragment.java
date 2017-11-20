@@ -35,7 +35,6 @@ import android.widget.TextView;
 import com.google.android.flexbox.AlignSelf;
 import com.google.android.flexbox.FlexDirection;
 import com.google.android.flexbox.FlexboxLayoutManager;
-import com.google.android.flexbox.JustifyContent;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -134,11 +133,11 @@ public class ItemDetailsFragment extends Fragment implements
             case MAIN_LOADER_ID:
                 return new CursorLoader(getActivity(), getItemUri(), new String[]{Item.NAME,
                         Item.DESCRIPTION, Item.PRIORITY,
-                        Item.STATUS, Item.STARTDATE,
-                        Item.ENDDATE, Item.ID}, null, null, null);
+                        Item.STATUS, Item.START_DATE,
+                        Item.END_DATE, Item.ID}, null, null, null);
             case TAGS_LOADER_ID:
                 return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(TagItemMapping.TagItemMappingWithNames, false), new String[]{BaseColumns._ID,
-                        Tag.NAME}, TagItemMapping.ITEMID + "=?", new String[]{mItemID}, Tag.NAME);
+                        Tag.NAME}, TagItemMapping.ITEM_ID + "=?", new String[]{mItemID}, Tag.NAME);
             case UNUSED_LOADER_ID:
                 return new CursorLoader(getContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
                         new String[]{BaseColumns._ID}, null, new String[]{mItemID}, null);
@@ -270,11 +269,11 @@ public class ItemDetailsFragment extends Fragment implements
         values.put(Item.STATUS, status);
         where.append(" OR ").append(Item.STATUS).append("!=?");
         whereArgs.add(Long.toString(status));
-        values.put(Item.STARTDATE, startDate);
-        where.append(" OR IFNULL(").append(Item.STARTDATE).append(", '')!=?");
+        values.put(Item.START_DATE, startDate);
+        where.append(" OR IFNULL(").append(Item.START_DATE).append(", '')!=?");
         whereArgs.add(startDate);
-        values.put(Item.ENDDATE, endDate);
-        where.append(" OR IFNULL(").append(Item.ENDDATE).append(", '')!=?");
+        values.put(Item.END_DATE, endDate);
+        where.append(" OR IFNULL(").append(Item.END_DATE).append(", '')!=?");
         whereArgs.add(endDate);
         getActivity().getContentResolver().update(getItemUri(), values, where.toString(), whereArgs.toArray(new String[whereArgs.size()]));
     }

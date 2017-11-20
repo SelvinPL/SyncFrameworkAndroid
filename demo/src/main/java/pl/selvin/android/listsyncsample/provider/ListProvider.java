@@ -29,18 +29,20 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
+import pl.selvin.android.autocontentprovider.content.ContentHelper;
+import pl.selvin.android.autocontentprovider.db.TableInfo;
+import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.listsyncsample.Constants;
-import pl.selvin.android.listsyncsample.Setup;
-import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
+import pl.selvin.android.listsyncsample.HelperFactoryProvider;
 import pl.selvin.android.listsyncsample.provider.Database.Tag;
+import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
 import pl.selvin.android.syncframework.content.BaseContentProvider;
-import pl.selvin.android.syncframework.content.ContentHelper;
 import pl.selvin.android.syncframework.content.RequestExecutor;
 import pl.selvin.android.syncframework.content.SYNC;
-import pl.selvin.android.syncframework.content.TableInfo;
+import pl.selvin.android.syncframework.content.SyncContentHelper;
 
 public class ListProvider extends BaseContentProvider {
-    private final static ContentHelper helperInstance = ContentHelper.getInstance(Setup.class, null);
+    private final static SyncContentHelper helperInstance = SyncContentHelper.getInstance(Database.class, Constants.AUTHORITY, "list_db", 17, Constants.SERVICE_URI);
     private final HashMap<String, String> TAG_ITEM_MAPPING_WITH_NAMES = new HashMap<>();
     private final static int TAG_ITEM_MAPPING_WITH_NAMES_MATCH = 1;
     private final static int TAG_NOT_USED_MATCH = 2;
@@ -62,7 +64,7 @@ public class ListProvider extends BaseContentProvider {
                         }
 
                         @Override
-                        public void writeTo(BufferedSink sink) throws IOException {
+                        public void writeTo(@NonNull BufferedSink sink) throws IOException {
                             syncContentProducer.writeTo(sink.outputStream());
                         }
                     });
@@ -71,23 +73,26 @@ public class ListProvider extends BaseContentProvider {
             final Response response = client.newCall(requestBuilder.build()).execute();
 
             final ResponseBody body = response.body();
-            String error = null;
-            try {
-                error = response.isSuccessful() ? null : response.body().string();
-            } catch (Exception ignore) {
-
-            }
-            return new Result(new BufferedInputStream(response.body().source().inputStream(), 4 * 1024 * 1024), response.code(), error) {
-                @Override
-                public void close() {
-                    body.close();
+            if (body != null) {
+                final String error;
+                try {
+                    error = response.isSuccessful() ? null : body.string();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
                 }
-            };
+                return new Result(new BufferedInputStream(body.source().inputStream(), 4 * 1024 * 1024), response.code(), error) {
+                    @Override
+                    public void close() {
+                        body.close();
+                    }
+                };
+            }
+            throw new RuntimeException("Response body is null");
         }
     };
 
     public ListProvider() {
-        super(getHelper(), executor);
+        super(getHelper(), new Logger("SYNC"), new HelperFactoryProvider(), executor);
         MATCHER.addURI(Constants.AUTHORITY, TagItemMapping.TagItemMappingWithNames, TAG_ITEM_MAPPING_WITH_NAMES_MATCH);
         MATCHER.addURI(Constants.AUTHORITY, Tag.TagNotUsed, TAG_NOT_USED_MATCH);
         TableInfo tableInfo = contentHelper.getTableFromType(String.format("%s.%s", TagItemMapping.SCOPE, TagItemMapping.TABLE_NAME));
@@ -112,7 +117,7 @@ public class ListProvider extends BaseContentProvider {
         }
     }
 
-    public static synchronized ContentHelper getHelper() {
+    public static synchronized SyncContentHelper getHelper() {
         return helperInstance;
     }
 
@@ -125,15 +130,15 @@ public class ListProvider extends BaseContentProvider {
         switch (MATCHER.match(uri)) {
             case TAG_ITEM_MAPPING_WITH_NAMES_MATCH:
                 builder.setTables(TagItemMapping.TABLE_NAME + "  INNER JOIN "
-                    + Tag.TABLE_NAME + " ON "
-                    + Tag.ID + "=" + TagItemMapping.TAGID );
+                        + Tag.TABLE_NAME + " ON "
+                        + Tag.ID + "=" + TagItemMapping.TAG_ID);
                 projectionMap = TAG_ITEM_MAPPING_WITH_NAMES;
                 builder.appendWhere(TagItemMapping.TABLE_NAME + "." + SYNC.isDeleted + "=0");
                 break;
             case TAG_NOT_USED_MATCH:
                 final Cursor cursor = super.query(contentHelper.getDirUri(Tag.TABLE_NAME), projection,
-                        "(NOT EXISTS(SELECT 1 FROM " + TagItemMapping.TABLE_NAME + " WHERE " + TagItemMapping.TAGID
-                        + "=" + Tag.ID + " AND " + TagItemMapping.ITEMID + "=? AND [" +
+                        "(NOT EXISTS(SELECT 1 FROM " + TagItemMapping.TABLE_NAME + " WHERE " + TagItemMapping.TAG_ID
+                                + "=" + Tag.ID + " AND " + TagItemMapping.ITEM_ID + "=? AND [" +
                                 TagItemMapping.TABLE_NAME + "]." + SYNC.isDeleted + "=0))",
                         selectionArgs, sortOrder);
                 if (cursor != null && getContext() != null) {
@@ -144,10 +149,10 @@ public class ListProvider extends BaseContentProvider {
                 return super.query(uri, projection, selection, selectionArgs, sortOrder);
         }
         builder.setProjectionMap(projectionMap);
-        //LogQuery(uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit);
+        logger.LogQuery(clazz, uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit);
         String q = builder.buildQuery(projection, selection, null, null, sortOrder, limit);
 
-        final Cursor cursor =  getReadableDatabase().query(q, selectionArgs);
+        final Cursor cursor = getReadableDatabase().query(q, selectionArgs);
         if (cursor != null && getContext() != null) {
             cursor.setNotificationUri(getContext().getContentResolver(), uri);
         }

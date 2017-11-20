@@ -50,7 +50,6 @@ android {
         android{
             dimension "db_impl"
             resValue 'string', 'app_name', "ListSyncSample"
-            buildConfigField "pl.selvin.android.listsyncsample.Setup.BuildHelperFactory", "buildHelperFactory", "new pl.selvin.android.listsyncsample.Setup.BuildHelperFactory() { public android.arch.persistence.db.SupportSQLiteOpenHelper.Factory create(android.content.Context ctx){ return new android.arch.persistence.db.framework.FrameworkSQLiteOpenHelperFactory();} }"
             themes {
                 colorsWithAlpha {
                     colorPrimary 0x3F51B5
@@ -64,7 +63,6 @@ android {
         cipher{
             dimension "db_impl"
             resValue 'string', 'app_name', "ListSyncSample(cipher)"
-            buildConfigField "pl.selvin.android.listsyncsample.Setup.BuildHelperFactory", "buildHelperFactory", "new pl.selvin.android.listsyncsample.Setup.BuildHelperFactory() { public android.arch.persistence.db.SupportSQLiteOpenHelper.Factory create(android.content.Context ctx){ return new pl.selvin.android.db.sqlcipher.SqlCipherOpenHelperFactory(\"test\");} }"
             versionNameSuffix "(cipher)"
             applicationIdSuffix ".cipher"
             themes {
@@ -80,7 +78,7 @@ android {
     }
 }
 
-def supportV = '27.0.0'
+def supportV = '27.0.1'
 dependencies {
     implementation "com.android.support:appcompat-v7:$supportV"
     implementation "com.android.support:design:$supportV"
