@@ -282,9 +282,10 @@ public abstract class AutoContentProvider extends ContentProvider {
     protected void onCreateDataBase(SupportSQLiteDatabase db) {
         try {
             for (TableInfo table : contentHelper.getAllTables()) {
-                String create = table.createStatement();
+                final String create = table.createStatement();
                 db.execSQL(create);
                 table.executeAfterOnCreate(db);
+                logger.LogD(clazz, "*onCreateDataBase*: " + create);
             }
         } catch (Exception e) {
             logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);

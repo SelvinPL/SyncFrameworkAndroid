@@ -437,7 +437,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
         getContextOrThrow().sendBroadcast(intent);
         super.onUpgradeDatabase(db, oldVersion, newVersion);
-        onCreateDataBase(db);
     }
 
     public interface ISyncContentProducer {

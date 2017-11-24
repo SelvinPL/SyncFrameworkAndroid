@@ -46,8 +46,8 @@ public class TableInfo {
     public final boolean readonly;
     public final String[] notifyUris;
     public final String rowIdAlias;
-    protected final List<ColumnInfo> columns;
-    protected final List<ColumnInfo> computedColumns;
+    public final List<ColumnInfo> columns;
+    public final List<ColumnInfo> computedColumns;
     public final CascadeInfo[] cascadeDelete;
     private String selection = null;
     protected final Class<?> clazz;
