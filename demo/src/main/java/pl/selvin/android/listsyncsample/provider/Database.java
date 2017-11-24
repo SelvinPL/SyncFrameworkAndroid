@@ -20,13 +20,13 @@ import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.syncframework.annotation.SyncScope;
 
 @SuppressWarnings("unused")
-public class Database {
+public interface Database {
 
-    public static final String DS = "DefaultScope";
+    String DS = "DefaultScope";
 
     @SyncScope(DS)
     @Table(primaryKeys = {Status.ID}, readonly = true)
-    public interface Status {
+    interface Status {
         String SCOPE = DS;
 
         @TableName
@@ -41,7 +41,7 @@ public class Database {
 
     @SyncScope(DS)
     @Table(primaryKeys = {Tag.ID}, readonly = true, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri})
-    public interface Tag {
+    interface Tag {
         String SCOPE = DS;
 
         @TableName
@@ -60,7 +60,7 @@ public class Database {
 
     @SyncScope(DS)
     @Table(primaryKeys = {Priority.ID}, readonly = true)
-    public interface Priority {
+    interface Priority {
         String SCOPE = DS;
 
         @TableName
@@ -73,10 +73,9 @@ public class Database {
         String NAME = "Name";
     }
 
-    @SuppressWarnings("WeakerAccess")
     @SyncScope(DS)
     @Table(primaryKeys = {User.ID}, readonly = true)
-    public interface User {
+    interface User {
         String SCOPE = DS;
 
         @TableName
@@ -92,7 +91,7 @@ public class Database {
     @SyncScope(DS)
     @Table(primaryKeys = {List.ID}, delete = {@Cascade(table = Item.TABLE_NAME, pk = {
             List.ID, List.USER_ID}, fk = {Item.LIST_ID, Item.USER_ID})})
-    public interface List {
+    interface List {
         String SCOPE = DS;
 
         @TableName
@@ -128,7 +127,7 @@ public class Database {
     @Table(primaryKeys = {Item.ID}, delete = {@Cascade(table = TagItemMapping.TABLE_NAME, pk = {
             Item.ID, Item.USER_ID}, fk = {TagItemMapping.ITEM_ID,
             TagItemMapping.USER_ID})})
-    public interface Item {
+    interface Item {
         String SCOPE = DS;
 
         @TableName
@@ -166,7 +165,7 @@ public class Database {
     @Table(primaryKeys = {TagItemMapping.TAG_ID, TagItemMapping.ITEM_ID,
             TagItemMapping.USER_ID}, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri,
             Tag.TagNotUsedUri})
-    public interface TagItemMapping {
+    interface TagItemMapping {
         String SCOPE = DS;
 
         @TableName
