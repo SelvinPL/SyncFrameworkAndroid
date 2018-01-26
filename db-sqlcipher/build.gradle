@@ -29,5 +29,5 @@ android {
 
 dependencies {
     api 'android.arch.persistence:db:1.0.0'
-    api 'net.zetetic:android-database-sqlcipher:3.5.7'
+    api 'net.zetetic:android-database-sqlcipher:3.5.9'
 }
