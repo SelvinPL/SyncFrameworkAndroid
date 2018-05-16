@@ -1,7 +1,7 @@
 ext {
     sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-    sync_framework_version = '0.10.2'
-    sync_framework_version_int = 10002
+    sync_framework_version = '0.11.0'
+    sync_framework_version_int = 11000
 }
 
 // gradle publish ... for my needs

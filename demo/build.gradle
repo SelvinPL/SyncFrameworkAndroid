@@ -15,13 +15,13 @@ android {
         }
     }
     compileSdkVersion 27
-    buildToolsVersion '27.0.0'
+    buildToolsVersion '27.0.3'
     defaultConfig {
         applicationId "pl.selvin.android.listsyncsample"
         minSdkVersion 14
         targetSdkVersion 27
-        versionCode 9001
-        versionName "0.9.1"
+        versionCode 11000
+        versionName "0.11.0"
     }
     buildTypes {
         release {
@@ -78,15 +78,15 @@ android {
     }
 }
 
-def supportV = '27.0.2'
+def supportV = '27.1.1'
 dependencies {
     implementation "com.android.support:appcompat-v7:$supportV"
     implementation "com.android.support:design:$supportV"
     implementation "com.android.support:recyclerview-v7:$supportV"
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'com.squareup.okhttp3:okhttp:3.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
     implementation 'com.google.android:flexbox:0.3.1'
     implementation project(':sync-framework')
-    androidImplementation 'android.arch.persistence:db-framework:1.0.0'
+    androidImplementation 'android.arch.persistence:db-framework:1.1.0'
     cipherImplementation project(':db-sqlcipher')
 }
