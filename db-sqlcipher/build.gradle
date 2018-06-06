@@ -4,7 +4,6 @@ import digital.wup.android_maven_publish.AndroidMavenPublishPlugin
 apply plugin: AndroidMavenPublishPlugin
 apply from: '../publish.gradle'
 
-
 android {
     compileSdkVersion 27
     buildToolsVersion '27.0.3'
@@ -14,7 +13,6 @@ android {
         targetSdkVersion 27
         versionCode sync_framework_version_int
         versionName sync_framework_version
-
     }
 
     buildTypes {
@@ -23,7 +21,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
 }
 
 dependencies {

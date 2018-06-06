@@ -111,7 +111,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             }
             builder.setProjectionMap(tab.map);
             final Cursor cursor = tab.query(getReadableDatabase(), uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit, logger);
-            cursor.setNotificationUri(getContextOrThrow().getContentResolver(), uri);
+            cursor.setNotificationUri(requireContext().getContentResolver(), uri);
             return cursor;
         }
         throw new IllegalArgumentException("Unknown Uri " + uri);
@@ -133,7 +133,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             if (rowId > 0) {
                 boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
                 Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
-                final ContentResolver cr = getContextOrThrow().getContentResolver();
+                final ContentResolver cr = requireContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -215,7 +215,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             }
             ret = tab.delete(getWritableDatabase(), uri, selection, selectionArgs, logger);
             if (ret > 0) {
-                final ContentResolver cr = getContextOrThrow().getContentResolver();
+                final ContentResolver cr = requireContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -254,7 +254,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             final int ret = tab.update(getWritableDatabase(), uri, values, selection, selectionArgs, logger);
             if (ret > 0) {
                 boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
-                final ContentResolver cr = getContextOrThrow().getContentResolver();
+                final ContentResolver cr = requireContext().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -266,7 +266,7 @@ public abstract class AutoContentProvider extends ContentProvider {
     }
 
     protected SupportSQLiteOpenHelper.Factory getHelperFactory() {
-        return supportSQLiteOpenHelperFactoryProvider.createFactory(getContextOrThrow());
+        return supportSQLiteOpenHelperFactoryProvider.createFactory(requireContext());
     }
 
 
@@ -289,10 +289,11 @@ public abstract class AutoContentProvider extends ContentProvider {
             }
         } catch (Exception e) {
             logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
+            throw e;
         }
     }
 
-    public Context getContextOrThrow() {
+    public Context requireContext() {
         final Context ctx = getContext();
         if (ctx == null)
             throw new RuntimeException("Context is null");
@@ -316,6 +317,7 @@ public abstract class AutoContentProvider extends ContentProvider {
                 db.execSQL(command);
             } catch (Exception e) {
                 logger.LogE(clazz, e);
+                throw e;
             }
         }
         onCreateDataBase(db);

@@ -411,7 +411,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
     protected void onCreateDataBase(SupportSQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
-        getContextOrThrow().sendBroadcast(intent);
+        requireContext().sendBroadcast(intent);
         try {
             super.onCreateDataBase(db);
             db.execSQL(String.format(
@@ -424,7 +424,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
         }
     }
 
-    public Context getContextOrThrow() {
+    public Context requireContext() {
         final Context ctx = getContext();
         if (ctx == null)
             throw new RuntimeException("Context is null");
@@ -435,7 +435,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
     protected void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
-        getContextOrThrow().sendBroadcast(intent);
+        requireContext().sendBroadcast(intent);
         super.onUpgradeDatabase(db, oldVersion, newVersion);
     }
 
