@@ -66,6 +66,7 @@ public class SyncContentHelper extends ContentHelper {
         for (SyncTableInfo tab : syncDatabaseInfo.tablesInScope.get(scope)) {
             db.execSQL(tab.dropStatement());
             db.execSQL(tab.createStatement());
+            tab.executeAfterOnCreate(db);
         }
         db.delete(BlobsTable.NAME, BlobsTable.C_NAME + "=?", new String[]{scopeServerBlob});
     }
