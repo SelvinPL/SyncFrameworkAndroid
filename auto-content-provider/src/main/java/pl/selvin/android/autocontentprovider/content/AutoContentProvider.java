@@ -50,12 +50,17 @@ public abstract class AutoContentProvider extends ContentProvider {
         defaultCallback = new SupportSQLiteOpenHelper.Callback(contentHelper.DATABASE_VERSION) {
             @Override
             public void onCreate(SupportSQLiteDatabase db) {
-                onCreateDataBase(db);
+                onCreateDatabase(db);
             }
 
             @Override
             public void onUpgrade(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
                 onUpgradeDatabase(db, oldVersion, newVersion);
+            }
+
+            @Override
+            public void onDowngrade(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+                onDowngradeDatabase(db, oldVersion, newVersion);
             }
         };
     }
@@ -279,7 +284,7 @@ public abstract class AutoContentProvider extends ContentProvider {
                 .callback(getHelperCallback()).build();
     }
 
-    protected void onCreateDataBase(SupportSQLiteDatabase db) {
+    protected void onCreateDatabase(SupportSQLiteDatabase db) {
         try {
             for (TableInfo table : contentHelper.getAllTables()) {
                 final String create = table.createStatement();
@@ -320,6 +325,10 @@ public abstract class AutoContentProvider extends ContentProvider {
                 throw e;
             }
         }
-        onCreateDataBase(db);
+        onCreateDatabase(db);
+    }
+
+    protected void onDowngradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+        onUpgradeDatabase(db, oldVersion, newVersion);
     }
 }

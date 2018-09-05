@@ -6,11 +6,11 @@ apply from: '../publish.gradle'
 
 android {
 
-    compileSdkVersion 27
+    compileSdkVersion 28
     buildToolsVersion '27.0.3'
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode sync_framework_version_int
         versionName sync_framework_version
     }
@@ -25,9 +25,9 @@ android {
     }
 }
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-core:2.9.5'
+    api 'com.fasterxml.jackson.core:jackson-core:2.9.6'
     api 'com.android.support:support-annotations:27.1.1'
-    api 'android.arch.persistence:db:1.1.0'
+    api 'android.arch.persistence:db:1.1.1'
     api project(path: ':auto-content-provider')
 }
 
