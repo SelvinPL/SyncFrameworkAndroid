@@ -408,12 +408,12 @@ public abstract class BaseContentProvider extends AutoContentProvider {
     }
 
 
-    protected void onCreateDataBase(SupportSQLiteDatabase db) {
+    protected void onCreateDatabase(SupportSQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
         requireContext().sendBroadcast(intent);
         try {
-            super.onCreateDataBase(db);
+            super.onCreateDatabase(db);
             db.execSQL(String.format(
                     "CREATE TABLE [%s] ([%s] VARCHAR NOT NULL, [%s] VARCHAR, " + "[%s] LONG NOT " +
                             "NULL, [%s] INT NOT NULL, PRIMARY KEY([%s]))",
