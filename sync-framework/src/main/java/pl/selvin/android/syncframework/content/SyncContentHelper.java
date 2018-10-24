@@ -11,7 +11,7 @@
 
 package pl.selvin.android.syncframework.content;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import android.content.UriMatcher;
 import android.net.Uri;
 

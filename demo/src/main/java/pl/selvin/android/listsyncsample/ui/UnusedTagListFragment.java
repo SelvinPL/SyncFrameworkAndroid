@@ -19,15 +19,15 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.view.ContextThemeWrapper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.view.ContextThemeWrapper;
 
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.Database.Tag;
@@ -56,7 +56,7 @@ public class UnusedTagListFragment extends DialogFragment implements LoaderManag
         super.onCreate(savedInstanceState);
         final Context ctx = new ContextThemeWrapper(getContext(), R.style.AppTheme_Dialog_Alert);
         adapter = new SimpleCursorAdapter(ctx,
-                android.support.v7.appcompat.R.layout.support_simple_spinner_dropdown_item, null,
+                androidx.appcompat.R.layout.support_simple_spinner_dropdown_item, null,
                 new String[]{Tag.NAME}, new int[]{android.R.id.text1}, 1);
         getLoaderManager().initLoader(0, null, this);
     }

@@ -6,25 +6,25 @@
     android:orientation="vertical"
     android:focusableInTouchMode="true">
 
-    <android.support.design.widget.TextInputLayout
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         app:hintAnimationEnabled="false"
         android:layout_height="wrap_content">
 
-        <android.support.design.widget.TextInputEditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/name"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:hint="@string/label_name"
             android:imeOptions="actionNext|flagNoExtractUi" />
-    </android.support.design.widget.TextInputLayout>
+    </com.google.android.material.textfield.TextInputLayout>
 
-    <android.support.design.widget.TextInputLayout
+    <com.google.android.material.textfield.TextInputLayout
         app:hintAnimationEnabled="false"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <android.support.design.widget.TextInputEditText
+        <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/description"
             android:gravity="top"
             android:layout_width="match_parent"
@@ -34,7 +34,7 @@
             android:inputType="textMultiLine"
             android:lines="4"
             android:scrollbars="horizontal|vertical" />
-    </android.support.design.widget.TextInputLayout>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
         android:layout_width="wrap_content"

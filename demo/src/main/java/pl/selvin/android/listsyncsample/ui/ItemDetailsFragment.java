@@ -17,14 +17,14 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
-import android.support.v7.widget.RecyclerView;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
+import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,7 +32,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 
-import com.google.android.flexbox.AlignSelf;
+import com.google.android.flexbox.AlignItems;
 import com.google.android.flexbox.FlexDirection;
 import com.google.android.flexbox.FlexboxLayoutManager;
 
@@ -70,7 +70,7 @@ public class ItemDetailsFragment extends Fragment implements
     private TagsAdapter mTagsAdapter;
     private Uri mItemUri;
     private String mItemID;
-    private static final int spinnerRowResource = android.support.v7.appcompat.R.layout.support_simple_spinner_dropdown_item;
+    private static final int spinnerRowResource = androidx.appcompat.R.layout.support_simple_spinner_dropdown_item;
 
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View root = inflater.inflate(R.layout.item_fragment, container, false);
@@ -332,7 +332,7 @@ public class ItemDetailsFragment extends Fragment implements
             if (lp instanceof FlexboxLayoutManager.LayoutParams) {
                 FlexboxLayoutManager.LayoutParams flexboxLp = (FlexboxLayoutManager.LayoutParams) viewHolder.itemView.getLayoutParams();
                 flexboxLp.setFlexGrow(1.0f);
-                flexboxLp.setAlignSelf(AlignSelf.STRETCH);
+                flexboxLp.setAlignSelf(AlignItems.STRETCH);
             }
         }
 

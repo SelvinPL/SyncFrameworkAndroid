@@ -1,6 +1,6 @@
 package pl.selvin.android.db.sqlcipher;
 
-import android.arch.persistence.db.SupportSQLiteProgram;
+import androidx.sqlite.db.SupportSQLiteProgram;
 import android.util.SparseArray;
 
 class BindingsRecorder implements SupportSQLiteProgram {

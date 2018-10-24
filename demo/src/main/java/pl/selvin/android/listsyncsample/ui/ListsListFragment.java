@@ -16,10 +16,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
-import android.support.v7.widget.SearchView;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
+import androidx.appcompat.widget.SearchView;
 import android.view.View;
 import android.widget.ListAdapter;
 

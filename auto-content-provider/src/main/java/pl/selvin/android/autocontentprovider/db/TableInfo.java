@@ -11,7 +11,7 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;

@@ -6,7 +6,7 @@ apply from: '../publish.gradle'
 
 android {
     compileSdkVersion 28
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.3'
 
     defaultConfig {
         minSdkVersion 14
@@ -24,6 +24,6 @@ android {
 }
 
 dependencies {
-    api 'android.arch.persistence:db:1.1.1'
+    api 'androidx.sqlite:sqlite:2.0.0'
     api 'net.zetetic:android-database-sqlcipher:3.5.9'
 }

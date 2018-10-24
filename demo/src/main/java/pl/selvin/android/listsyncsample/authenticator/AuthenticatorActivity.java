@@ -6,7 +6,7 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.design.widget.TextInputLayout;
+import com.google.android.material.textfield.TextInputLayout;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;

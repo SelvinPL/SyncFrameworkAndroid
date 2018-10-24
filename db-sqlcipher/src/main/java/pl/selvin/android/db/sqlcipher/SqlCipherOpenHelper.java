@@ -12,13 +12,13 @@
 
 package pl.selvin.android.db.sqlcipher;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import android.content.Context;
 import net.sqlcipher.DatabaseErrorHandler;
 import net.sqlcipher.database.SQLiteDatabase;
 import android.os.Build;
-import android.support.annotation.RequiresApi;
+import androidx.annotation.RequiresApi;
 
 import net.sqlcipher.database.SQLiteOpenHelper;
 

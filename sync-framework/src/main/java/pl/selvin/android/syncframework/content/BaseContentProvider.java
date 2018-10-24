@@ -13,8 +13,8 @@ package pl.selvin.android.syncframework.content;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteQueryBuilder;
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -25,7 +25,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;

@@ -10,7 +10,7 @@
  */
 package pl.selvin.android.autocontentprovider.utils;
 
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import android.content.Context;
 
 public interface SupportSQLiteOpenHelperFactoryProvider {

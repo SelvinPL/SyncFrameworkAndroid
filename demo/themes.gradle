@@ -233,7 +233,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools:sdk-common:26.1.2'
+        classpath 'com.android.tools:sdk-common:26.2.1'
         classpath 'org.apache.commons:commons-text:1.1'
     }
 }

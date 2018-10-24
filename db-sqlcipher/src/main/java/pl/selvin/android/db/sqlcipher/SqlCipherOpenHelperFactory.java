@@ -12,7 +12,7 @@
 
 package pl.selvin.android.db.sqlcipher;
 
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 
 import net.sqlcipher.database.SQLiteDatabase;
 

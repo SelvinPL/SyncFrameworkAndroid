@@ -12,7 +12,7 @@
 
 package pl.selvin.android.db.sqlcipher;
 
-import android.arch.persistence.db.SupportSQLiteStatement;
+import androidx.sqlite.db.SupportSQLiteStatement;
 import net.sqlcipher.database.SQLiteStatement;
 
 /**

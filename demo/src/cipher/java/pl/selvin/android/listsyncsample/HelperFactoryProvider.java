@@ -11,7 +11,7 @@
 
 package pl.selvin.android.listsyncsample;
 
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import android.content.Context;
 
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;

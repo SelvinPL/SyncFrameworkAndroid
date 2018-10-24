@@ -21,11 +21,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.support.v4.app.DialogFragment;
-import android.support.v7.app.AlertDialog;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+import androidx.fragment.app.DialogFragment;
+import androidx.appcompat.app.AlertDialog;
 
 import java.util.Calendar;
 
