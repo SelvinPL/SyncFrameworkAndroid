@@ -42,11 +42,12 @@ class Authenticator extends AbstractAccountAuthenticator {
                 //temporary fix for account deletetion and clearing data
                 //next move is to return intent ...
                 final String[] pckgs = mContext.getPackageManager().getPackagesForUid(1000);
-                for (final String pckg : pckgs) {
-                    mContext.grantUriPermission(pckg,
-                            ListProvider.getHelper().CLEAR_URI,
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                }
+                if(pckgs != null)
+                    for (final String pckg : pckgs) {
+                        mContext.grantUriPermission(pckg,
+                                ListProvider.getHelper().CLEAR_URI,
+                                Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                    }
                 mContext.getContentResolver().delete(ListProvider.getHelper().CLEAR_URI,
                         null, null);
                 mContext.revokeUriPermission(ListProvider.getHelper().CLEAR_URI,

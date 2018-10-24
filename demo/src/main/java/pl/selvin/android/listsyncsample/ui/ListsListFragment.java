@@ -16,6 +16,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+
+import androidx.annotation.NonNull;
+import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
 import androidx.cursoradapter.widget.SimpleCursorAdapter;
@@ -35,12 +38,13 @@ import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 import pl.selvin.android.listsyncsample.utils.DateTimeUtils;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
+@SuppressWarnings("unused")
 public class ListsListFragment extends ListFragmentCommon implements SearchView.OnQueryTextListener,
         GenericListActivity.ISearchSupport {
-    final static String SEARCH_VIEW_ICONIFIED = "SEARCH_VIEW_ICONIFIED";
+    private final static String SEARCH_VIEW_ICONIFIED = "SEARCH_VIEW_ICONIFIED";
     private static final String CURRENT_FILTER = "CURRENT_FILTER";
-    SearchView mSearchView = null;
-    String mCurrentFilter = StringUtil.EMPTY;
+    private SearchView mSearchView = null;
+    private String mCurrentFilter = StringUtil.EMPTY;
 
     public ListsListFragment() {
         super(50000, List.TABLE_NAME, R.string.lists_list_empty, ListDetailsFragment.class, R.string.list_deletion_title, R.string.list_deletion_message);
@@ -49,7 +53,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
 
     @Override
     protected Loader<Cursor> getLoader(Bundle args) {
-        return new CursorLoader(getActivity(),
+        return new CursorLoader(requireActivity(),
                 ListProvider.getHelper().getDirUri(List.TABLE_NAME), new String[]{
                 BaseColumns._ID, List.ID, List.NAME,
                 List.DESCRIPTION, List.CREATED_DATE
@@ -65,7 +69,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
 
     @Override
     protected ListAdapter createListAdapter() {
-        return new SimpleCursorAdapter(getActivity(), R.layout.list_row,
+        return new SimpleCursorAdapter(requireActivity(), R.layout.list_row,
                 null, new String[]{List.NAME,
                 List.DESCRIPTION, List.CREATED_DATE},
                 new int[]{R.id.name, R.id.description, R.id.created_date},
@@ -85,7 +89,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mSearchView = Ui.getView(getActivity(), R.id.search_view);
+        mSearchView = Ui.getView(requireActivity(), R.id.search_view);
         mSearchView.setVisibility(View.VISIBLE);
         mSearchView.setQueryHint(getString(R.string.lists_search_hint));
         mSearchView.setOnQueryTextListener(this);
@@ -95,7 +99,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         if (mSearchView != null)
             outState.putBoolean(SEARCH_VIEW_ICONIFIED, mSearchView.isIconified());
@@ -106,7 +110,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
     public boolean onQueryTextChange(String newText) {
         if (!mCurrentFilter.equals(newText)) {
             mCurrentFilter = newText;
-            getLoaderManager().restartLoader(loaderID, null, this);
+            LoaderManager.getInstance(this).restartLoader(loaderID, null, this);
         }
         return true;
     }
@@ -149,7 +153,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
         values.put(Database.List.ID, UUID.randomUUID().toString());
         values.put(Database.List.USER_ID, SyncService.getUserId(getActivity()));
         values.put(Database.List.CREATED_DATE, DateTimeUtils.getNowLong());
-        return getActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
+        return requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
     }
 
     @Override

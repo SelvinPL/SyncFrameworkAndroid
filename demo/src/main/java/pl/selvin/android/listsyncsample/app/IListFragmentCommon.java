@@ -12,6 +12,8 @@
 package pl.selvin.android.listsyncsample.app;
 
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 public interface IListFragmentCommon {
@@ -21,7 +23,8 @@ public interface IListFragmentCommon {
 
     Class<? extends Fragment> getDetailsClass();
 
-    Bundle getArguments();
+    @NonNull
+    Bundle requireArguments();
 
     void setArguments(Bundle fragmentArgs);
 }

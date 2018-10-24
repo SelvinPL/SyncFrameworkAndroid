@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
-import androidx.core.view.MenuItemCompat;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import android.util.Log;
@@ -54,7 +53,7 @@ public abstract class BaseActivity extends AppCompatActivity {
     private final ISyncStatusObserver mObserver = new ISyncStatusObserver.Stub() {
 
         @Override
-        public void onStatusChanged(final int status) throws RemoteException {
+        public void onStatusChanged(final int status) {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -101,15 +100,15 @@ public abstract class BaseActivity extends AppCompatActivity {
             switch (status) {
                 case SyncService.SYNC_IDLE:
                     refreshItem.setEnabled(true);
-                    MenuItemCompat.setActionView(refreshItem, null);
+                    refreshItem.setActionView(null);
                     break;
                 case SyncService.SYNC_ACTIVE:
-                    if (MenuItemCompat.getActionView(refreshItem) == null)
-                        MenuItemCompat.setActionView(refreshItem, R.layout.actionbar_progress);
+                    if (refreshItem.getActionView() == null)
+                        refreshItem.setActionView(R.layout.actionbar_progress);
                     break;
                 case SyncService.SYNC_PENDING:
                     refreshItem.setEnabled(false);
-                    MenuItemCompat.setActionView(refreshItem, null);
+                    refreshItem.setActionView(null);
                     break;
             }
         }
@@ -177,6 +176,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public Toolbar getActionBarToolbar() {
         if (mActionBarToolbar == null) {
             mActionBarToolbar = Ui.getViewOrNull(this, R.id.toolbar1);
@@ -187,6 +187,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         return mActionBarToolbar;
     }
 
+    @SuppressWarnings("unused")
     public Toolbar getActionBarToolbar2() {
         return mActionBarToolbar2;
     }
@@ -233,6 +234,7 @@ public abstract class BaseActivity extends AppCompatActivity {
         setRefreshActionButtonStatus(status);
     }
 
+    @SuppressWarnings("unused")
     public Integer getLastStatus() {
         if (mBound)
             try {

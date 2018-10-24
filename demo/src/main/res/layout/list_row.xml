@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ellipsize="marquee"
-        android:maxLines="1"
+        android:singleLine="true"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <TextView
@@ -24,8 +24,8 @@
         android:id="@+id/created_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:maxLines="1"
         android:ellipsize="marquee"
+        android:singleLine="true"
         android:focusable="false" />
 
 </LinearLayout>

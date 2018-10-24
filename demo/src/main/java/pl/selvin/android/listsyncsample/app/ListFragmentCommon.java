@@ -19,6 +19,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import com.google.android.material.snackbar.Snackbar;
 import androidx.fragment.app.Fragment;
@@ -33,7 +35,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
-import android.widget.ListView;
 
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
@@ -41,6 +42,7 @@ import pl.selvin.android.listsyncsample.utils.StaticHelpers;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
 
+@SuppressWarnings("WeakerAccess")
 public abstract class ListFragmentCommon extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor>, IListFragmentCommon, GenericDialogFragment.ConfirmDelete.Callback {
     public final static String EXTRA_ID = "EXTRA_ID";
     public final static String EXTRA_POS = "EXTRA_POS";
@@ -72,7 +74,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         }
 
         @Override
-        public void onLoadFinished(Loader<Uri> loader, final Uri data) {
+        public void onLoadFinished(@NonNull Loader<Uri> loader, final Uri data) {
             new Handler().post(new Runnable() {
                 @Override
                 public void run() {
@@ -82,7 +84,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         }
 
         @Override
-        public void onLoaderReset(Loader<Uri> loader) {
+        public void onLoaderReset(@NonNull Loader<Uri> loader) {
             ((InsertLoader) loader).cleanUp();
         }
     };
@@ -131,7 +133,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
     }
 
     @Override
-    public void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putLong(ID, currentId);
     }
@@ -178,8 +180,9 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         createNewElementAsync(null);
     }
 
+    @SuppressWarnings("SameParameterValue")
     protected void createNewElementAsync(final Bundle args) {
-        getLoaderManager().restartLoader(insertLoaderID, args, mInsertLoaderCallback);
+        LoaderManager.getInstance(this).restartLoader(insertLoaderID, args, mInsertLoaderCallback);
     }
 
     private void finishCreateNewElement(Uri itemUri) {
@@ -187,14 +190,14 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         if (supportPick)
-            getActivity().setTitle(pickTitle);
+            requireActivity().setTitle(pickTitle);
         setEmptyText(getText(emptyText));
         getListView().setFastScrollEnabled(true);
         final TypedValue typedValue = new TypedValue();
-        getActivity().getTheme().resolveAttribute(R.attr.list_item_background, typedValue, true);
+        requireActivity().getTheme().resolveAttribute(R.attr.list_item_background, typedValue, true);
         getListView().setSelector(typedValue.resourceId);
         getListView().setOnItemLongClickListener(
                 new AdapterView.OnItemLongClickListener() {
@@ -230,12 +233,12 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
                 if (supportPick) {
                     final Intent ret = new Intent();
                     ret.setData(currentUri);
-                    ret.putExtra(EXTRA_PASS_THROUGH, getArguments().getParcelable(LIST_FRAGMENT_PASS_THROUGH));
+                    ret.putExtra(EXTRA_PASS_THROUGH, requireArguments().getParcelable(LIST_FRAGMENT_PASS_THROUGH));
                     ret.putExtra(EXTRA_ID, id);
                     ret.putExtra(EXTRA_POS, position);
                     ret.putExtra(EXTRA_ROW, StaticHelpers.cursorRowToBundle(cursor));
-                    getActivity().setResult(Activity.RESULT_OK, ret);
-                    getActivity().finish();
+                    requireActivity().setResult(Activity.RESULT_OK, ret);
+                    requireActivity().finish();
                     return;
                 }
                 currentId = id;
@@ -253,16 +256,17 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
     public void onResume() {
         super.onResume();
         if (!deferredLoading)
-            getLoaderManager().initLoader(loaderID, null, this);
+            LoaderManager.getInstance(this).initLoader(loaderID, null, this);
     }
 
+    @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         if (id == loaderID) {
             setListShown(false);
             return getLoader(args);
         }
-        return null;
+        throw new RuntimeException("Unknown loader id: " + id);
     }
 
     protected abstract Loader<Cursor> getLoader(Bundle args);
@@ -292,13 +296,13 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
         if (loader.getId() == loaderID)
             finishLoading(data);
     }
 
     @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
         if (loader.getId() == loaderID)
             ((CursorAdapter) getListAdapter()).swapCursor(null);
     }
@@ -318,10 +322,20 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         boolean showDetails(Uri itemUri, Class<? extends Fragment> fragmentClass, Bundle args, boolean editable);
     }
 
+    @NonNull
+    public Bundle requireArguments() {
+        final Bundle args = getArguments();
+        if (args == null) {
+            throw new IllegalStateException("Fragment " + this + " has no arguments.");
+        }
+        return args;
+    }
+
     private static class InsertLoader extends AsyncTaskLoader<Uri> {
         private Bundle args;
         private ListFragmentCommon list;
         private Uri mUri = null;
+        private boolean wasStarted = false;
 
         InsertLoader(Context context, Bundle args, ListFragmentCommon list) {
             super(context);
@@ -332,7 +346,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         @Override
         public Uri loadInBackground() {
             if (list != null) {
-                mUri = appendIsNewElement(list.createNewElement(args));
+                mUri = list.createNewElement(args);
                 cleanUp();
             }
             return mUri;
@@ -340,11 +354,8 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 
         @Override
         protected void onStartLoading() {
-            if (mUri != null) {
-                deliverResult(mUri);
-            }
-
-            if (takeContentChanged() || mUri == null) {
+            if ((takeContentChanged() || mUri == null) && !wasStarted) {
+                wasStarted = true;
                 forceLoad();
             }
         }
@@ -384,6 +395,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
             return this;
         }
 
+        @SuppressWarnings("unused")
         public Builder putPassThrough(Parcelable value) {
             bundle.putParcelable(LIST_FRAGMENT_PASS_THROUGH, value);
             return this;
@@ -394,6 +406,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         }
     }
 
+    @SuppressWarnings("unused")
     public static Uri appendIsNewElement(Uri base){
         return base.buildUpon().appendQueryParameter(IS_NEW_ELEMENT, TRUE).build();
     }

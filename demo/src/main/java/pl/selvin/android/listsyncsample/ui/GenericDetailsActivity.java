@@ -28,20 +28,11 @@ public class GenericDetailsActivity extends BaseActivity {
     private static final String FRAGMENT_CLASS = "fragment_class";
     private static final String FRAGMENT_ARGS = "fragment_args";
 
-    public static boolean isGenericDetails(Fragment fragment) {
-        return fragment.getArguments() != null && fragment.getArguments().getBoolean(GENERIC_DETAILS, false);
-    }
-
     public static Intent createIntent(Context context, Class<?> fragmentClass, Bundle fragmentArgs) {
         final Intent ret = new Intent(context, GenericDetailsActivity.class);
         ret.putExtra(FRAGMENT_CLASS, fragmentClass.getName());
         ret.putExtra(FRAGMENT_ARGS, fragmentArgs);
         return ret;
-    }
-
-    public static Intent addFragmentArguments(final Intent intent, final Bundle fragmentArgs) {
-        intent.putExtra(FRAGMENT_ARGS, fragmentArgs);
-        return intent;
     }
 
     @Override
@@ -54,7 +45,8 @@ public class GenericDetailsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_empty);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if(getSupportActionBar() != null)
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         final Intent intent = getIntent();
         Bundle extras = intent.getExtras();
         if (savedInstanceState == null) {

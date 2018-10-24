@@ -15,12 +15,12 @@ import android.database.Cursor;
 import androidx.cursoradapter.widget.CursorAdapter;
 import android.widget.AdapterView;
 
-public class AdapterViewHelper {
-    public static boolean setSelectionById(final AdapterView spinner, final boolean loaded, long id, final String columnName) {
+class AdapterViewHelper {
+    static boolean setSelectionById(final AdapterView spinner, final boolean loaded, long id, final String columnName) {
         return  setSelectionById(spinner, loaded, id, columnName, false);
     }
 
-    public static boolean setSelectionById(final AdapterView spinner, final boolean loaded, long id, final String columnName, boolean setLastIfDidntFind) {
+    private static boolean setSelectionById(final AdapterView spinner, final boolean loaded, long id, final String columnName, boolean setLastIfDidntFind) {
         if (loaded && id != AdapterView.INVALID_ROW_ID) {
             Cursor c = ((CursorAdapter) spinner.getAdapter()).getCursor();
             if (c != null) {
@@ -43,10 +43,10 @@ public class AdapterViewHelper {
         return false;
     }
 
-    public static boolean setSelectionByValue(final AdapterView spinner, final boolean loaded, String value, final String columnName) {
+    static boolean setSelectionByValue(final AdapterView spinner, final boolean loaded, String value, final String columnName) {
         return  setSelectionByValue(spinner, loaded, value, columnName, false);
     }
-    public static boolean setSelectionByValue(final AdapterView spinner, final boolean loaded, String value, final String columnName, boolean setLastIfDidntFind) {
+    private static boolean setSelectionByValue(final AdapterView spinner, final boolean loaded, String value, final String columnName, boolean setLastIfDidntFind) {
         if (loaded && value != null) {
             Cursor c = ((CursorAdapter) spinner.getAdapter()).getCursor();
             if (c != null) {

@@ -12,11 +12,12 @@
 package pl.selvin.android.listsyncsample.ui;
 
 import android.content.ContentValues;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -72,26 +73,26 @@ public class ItemDetailsFragment extends Fragment implements
     private String mItemID;
     private static final int spinnerRowResource = androidx.appcompat.R.layout.support_simple_spinner_dropdown_item;
 
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View root = inflater.inflate(R.layout.item_fragment, container, false);
         mName = Ui.getView(root, R.id.name);
         mDescription = Ui.getView(root, R.id.description);
         mPriority = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.priority), PRIORITIES_LOADER_ID,
-                new SimpleCursorAdapter(getActivity(), spinnerRowResource, null, new String[]{Priority.NAME},
+                new SimpleCursorAdapter(requireActivity(), spinnerRowResource, null, new String[]{Priority.NAME},
                         new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
             public Loader<Cursor> getCursorLoader() {
-                return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(Priority.TABLE_NAME, false),
+                return new CursorLoader(requireActivity(), ListProvider.getHelper().getDirUri(Priority.TABLE_NAME, false),
                         new String[]{BaseColumns._ID, Priority.ID, Priority.NAME}, null, null, Priority.ID + " ASC");
             }
         };
 
         mStatus = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.status), STATUSES_LOADER_ID,
-                new SimpleCursorAdapter(getActivity(), spinnerRowResource, null, new String[]{Status.NAME},
+                new SimpleCursorAdapter(requireActivity(), spinnerRowResource, null, new String[]{Status.NAME},
                         new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
             public Loader<Cursor> getCursorLoader() {
-                return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(Status.TABLE_NAME, false),
+                return new CursorLoader(requireActivity(), ListProvider.getHelper().getDirUri(Status.TABLE_NAME, false),
                         new String[]{BaseColumns._ID, Status.ID, Status.NAME}, null, null, Status.ID + " ASC");
             }
         };
@@ -100,7 +101,7 @@ public class ItemDetailsFragment extends Fragment implements
         final FlexboxLayoutManager layoutManager = new FlexboxLayoutManager(getContext());
         layoutManager.setFlexDirection(FlexDirection.ROW);
         recyclerView.setLayoutManager(layoutManager);
-        mTagsAdapter = new TagsAdapter(getActivity(), getChildFragmentManager(), SyncService.getUserId(getContext()));
+        mTagsAdapter = new TagsAdapter(getChildFragmentManager(), SyncService.getUserId(getContext()));
         recyclerView.setAdapter(mTagsAdapter);
         mStartDate = Ui.getView(root, R.id.start_date);
         mStartTime = Ui.getView(root, R.id.start_time);
@@ -117,36 +118,46 @@ public class ItemDetailsFragment extends Fragment implements
     @Override
     public void onResume() {
         super.onResume();
-        final LoaderManager loader = getLoaderManager();
+        final LoaderManager loader = LoaderManager.getInstance(this);
         mPriority.initLoader(loader);
         mStatus.initLoader(loader);
         loader.initLoader(MAIN_LOADER_ID, null, this);
     }
 
-    public Uri getItemUri() {
-        return mItemUri == null ? mItemUri = getArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
+    @NonNull
+    private Bundle requireArguments() {
+        final Bundle args = getArguments();
+        if (args == null) {
+            throw new IllegalStateException("Fragment " + this + " has no arguments.");
+        }
+        return args;
     }
 
+    private Uri getItemUri() {
+        return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
+    }
+
+    @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         switch (id) {
             case MAIN_LOADER_ID:
-                return new CursorLoader(getActivity(), getItemUri(), new String[]{Item.NAME,
+                return new CursorLoader(requireContext(), getItemUri(), new String[]{Item.NAME,
                         Item.DESCRIPTION, Item.PRIORITY,
                         Item.STATUS, Item.START_DATE,
                         Item.END_DATE, Item.ID}, null, null, null);
             case TAGS_LOADER_ID:
-                return new CursorLoader(getActivity(), ListProvider.getHelper().getDirUri(TagItemMapping.TagItemMappingWithNames, false), new String[]{BaseColumns._ID,
+                return new CursorLoader(requireContext(), ListProvider.getHelper().getDirUri(TagItemMapping.TagItemMappingWithNames, false), new String[]{BaseColumns._ID,
                         Tag.NAME}, TagItemMapping.ITEM_ID + "=?", new String[]{mItemID}, Tag.NAME);
             case UNUSED_LOADER_ID:
-                return new CursorLoader(getContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
+                return new CursorLoader(requireContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
                         new String[]{BaseColumns._ID}, null, new String[]{mItemID}, null);
         }
-        return null;
+        throw new RuntimeException("Unknown loader id: " + id);
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         switch (loader.getId()) {
             case MAIN_LOADER_ID:
                 if (cursor.moveToFirst()) {
@@ -162,9 +173,11 @@ public class ItemDetailsFragment extends Fragment implements
                         e.printStackTrace();
                     }
                     mStartDate.setTag(cal);
-                    mStartDate.setText(DateTimeUtils.toShort(cal));
                     mStartTime.setTag(cal);
-                    mStartTime.setText(DateTimeUtils.toTime(cal));
+                    if(cal != null) {
+                        mStartDate.setText(DateTimeUtils.toShort(cal));
+                        mStartTime.setText(DateTimeUtils.toTime(cal));
+                    }
                     time = cursor.getString(5);
                     cal = Calendar.getInstance();
                     try {
@@ -178,10 +191,10 @@ public class ItemDetailsFragment extends Fragment implements
                     mEndTime.setText(DateTimeUtils.toTime(cal));
                     mItemID = cursor.getString(6);
                     mTagsAdapter.setItemId(mItemID);
-                    getLoaderManager().initLoader(TAGS_LOADER_ID, null, this);
-                    getLoaderManager().initLoader(UNUSED_LOADER_ID, null, this);
+                    LoaderManager.getInstance(this).initLoader(TAGS_LOADER_ID, null, this);
+                    LoaderManager.getInstance(this).initLoader(UNUSED_LOADER_ID, null, this);
                 } else
-                    getActivity().finish();
+                    requireActivity().finish();
                 break;
             case TAGS_LOADER_ID:
                 mTagsAdapter.swapCursor(cursor);
@@ -193,7 +206,7 @@ public class ItemDetailsFragment extends Fragment implements
     }
 
     @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
         switch (loader.getId()) {
             case TAGS_LOADER_ID:
                 mTagsAdapter.changeCursor(null);
@@ -275,18 +288,18 @@ public class ItemDetailsFragment extends Fragment implements
         values.put(Item.END_DATE, endDate);
         where.append(" OR IFNULL(").append(Item.END_DATE).append(", '')!=?");
         whereArgs.add(endDate);
-        getActivity().getContentResolver().update(getItemUri(), values, where.toString(), whereArgs.toArray(new String[whereArgs.size()]));
+        requireActivity().getContentResolver().update(getItemUri(), values, where.toString(), whereArgs.toArray(new String[0]));
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if (getActivity().isFinishing()) {
+        if (requireActivity().isFinishing()) {
             final String name = mName.getText().toString();
             final String description = mDescription.getText().toString();
             //if element is new and name and description is empty - delete item
             if (ListFragmentCommon.checkIsNewElement(getItemUri()) && StringUtil.EMPTY.equals(name) && StringUtil.EMPTY.equals(description))
-                getActivity().getContentResolver().delete(getItemUri(), null, null);
+                requireActivity().getContentResolver().delete(getItemUri(), null, null);
         }
     }
 
@@ -305,8 +318,7 @@ public class ItemDetailsFragment extends Fragment implements
             return position == 0 && mNewItemVisibility ? R.layout.tags_row_new : R.layout.tags_row;
         }
 
-        TagsAdapter(Context context, FragmentManager manager, String userId) {
-            super(context, null);
+        TagsAdapter(FragmentManager manager, String userId) {
             mManager = manager;
             mUserId = userId;
             setHasStableIds(true);
@@ -341,14 +353,15 @@ public class ItemDetailsFragment extends Fragment implements
         }
 
         @Override
-        public void onBindViewHolder(ViewHolderBase viewHolder, int position) {
+        public void onBindViewHolder(@NonNull ViewHolderBase viewHolder, int position) {
             if (position == 0 && mNewItemVisibility)
                 return;
             super.onBindViewHolder(viewHolder, realPosition(position));
         }
 
+        @NonNull
         @Override
-        public ViewHolderBase onCreateViewHolder(ViewGroup parent, int viewType) {
+        public ViewHolderBase onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             final View itemView = LayoutInflater.from(parent.getContext()).inflate(viewType, parent, false);
             if (viewType == R.layout.tags_row) {
                 return new ItemViewHolder(itemView);
