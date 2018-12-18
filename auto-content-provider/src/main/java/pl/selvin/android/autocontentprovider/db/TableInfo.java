@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2017 Selvin
+ Copyright (c) 2017-2018 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
  of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -30,6 +30,7 @@ import java.util.Map;
 
 import pl.selvin.android.autocontentprovider.annotation.Cascade;
 import pl.selvin.android.autocontentprovider.annotation.Column;
+import pl.selvin.android.autocontentprovider.annotation.Index;
 import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.annotation.TableName;
 import pl.selvin.android.autocontentprovider.log.Logger;
@@ -49,6 +50,7 @@ public class TableInfo {
     public final List<ColumnInfo> columns;
     public final List<ColumnInfo> computedColumns;
     public final CascadeInfo[] cascadeDelete;
+    public final List<IndexInfo> indexes;
     private String selection = null;
     protected final Class<?> clazz;
 
@@ -107,6 +109,10 @@ public class TableInfo {
         this.computedColumns = Collections.unmodifiableList(computedColumns);
         this.primaryKeys = Collections.unmodifiableList(primaryKeys);
 
+        this.indexes = new ArrayList<>();
+        for(Index index : table.indexes()){
+            indexes.add(new IndexInfo(name, index));
+        }
         this.nameForMime = String.format(nameForMimeFormat, name);
         dirMime = String.format("%s/%s.%s", ContentResolver.CURSOR_DIR_BASE_TYPE, authority, nameForMime);
         itemMime = String.format("%s/%s.%s", ContentResolver.CURSOR_ITEM_BASE_TYPE, authority, nameForMime);
@@ -186,5 +192,11 @@ public class TableInfo {
         final int ret = database.update(name, SQLiteDatabase.CONFLICT_FAIL, values, selection, selectionArgs);
         logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
         return ret;
+    }
+
+    public void createIndexes(SupportSQLiteDatabase db) {
+        for (IndexInfo index : indexes) {
+            db.execSQL(index.createStatement());
+        }
     }
 }

@@ -15,7 +15,7 @@ android {
         }
     }
     compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    buildToolsVersion '28.0.3'
     defaultConfig {
         applicationId "pl.selvin.android.listsyncsample"
         minSdkVersion 14
@@ -87,6 +87,6 @@ dependencies {
     implementation 'com.squareup.okhttp3:okhttp:3.10.0'
     implementation 'com.google.android:flexbox:1.0.0'
     implementation project(':sync-framework')
-    androidImplementation 'android.arch.persistence:db-framework:1.1.0'
+    androidImplementation 'android.arch.persistence:db-framework:1.1.1'
     cipherImplementation project(':db-sqlcipher')
 }

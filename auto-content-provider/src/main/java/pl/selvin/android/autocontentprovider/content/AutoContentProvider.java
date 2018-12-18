@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Selvin
+ * Copyright (c) 2017-2018 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -290,6 +290,7 @@ public abstract class AutoContentProvider extends ContentProvider {
                 final String create = table.createStatement();
                 db.execSQL(create);
                 table.executeAfterOnCreate(db);
+                table.createIndexes(db);
                 logger.LogD(clazz, "*onCreateDataBase*: " + create);
             }
         } catch (Exception e) {

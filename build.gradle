@@ -4,8 +4,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.4'
-        classpath 'digital.wup:android-maven-publish:3.3.0'
+        classpath 'com.android.tools.build:gradle:3.2.1'
+        classpath 'digital.wup:android-maven-publish:3.4.0'
     }
 }
 
@@ -18,6 +18,6 @@ allprojects {
 
 ext {
     sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-    sync_framework_version = '0.14.0'
-    sync_framework_version_int = 14000
+    sync_framework_version = '0.16.0'
+    sync_framework_version_int = 16000
 }

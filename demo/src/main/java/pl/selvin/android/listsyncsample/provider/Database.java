@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2014-2016 Selvin
+ Copyright (c) 2014-2018 Selvin
  Licensed under the Apache License, Version 2.0 (the "License"); you may not
  use this file except in compliance with the License. You may obtain a copy
  of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -13,6 +13,8 @@ package pl.selvin.android.listsyncsample.provider;
 
 import pl.selvin.android.autocontentprovider.annotation.Cascade;
 import pl.selvin.android.autocontentprovider.annotation.Column;
+import pl.selvin.android.autocontentprovider.annotation.Index;
+import pl.selvin.android.autocontentprovider.annotation.IndexColumn;
 import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.annotation.TableName;
 import pl.selvin.android.autocontentprovider.db.ColumnType;
@@ -90,7 +92,8 @@ public interface Database {
 
     @SyncScope(DS)
     @Table(primaryKeys = {List.ID}, delete = {@Cascade(table = Item.TABLE_NAME, pk = {
-            List.ID, List.USER_ID}, fk = {Item.LIST_ID, Item.USER_ID})})
+            List.ID, List.USER_ID}, fk = {Item.LIST_ID, Item.USER_ID})}, indexes = {
+            @Index( name = "IX_" + List.TABLE_NAME + "_" + List.NAME, columns = { @IndexColumn(name = List.NAME, order = IndexColumn.ASC)})})
     interface List {
         String SCOPE = DS;
 
