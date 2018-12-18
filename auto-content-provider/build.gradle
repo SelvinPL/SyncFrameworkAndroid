@@ -25,7 +25,7 @@ android {
 }
 
 dependencies {
-    api 'androidx.annotation:annotation:1.0.0'
+    api 'androidx.annotation:annotation:1.0.1'
     api 'androidx.sqlite:sqlite:2.0.0'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'

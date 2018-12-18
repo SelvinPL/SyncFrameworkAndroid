@@ -1,1 +1,1 @@
-include ':demo', ':sync-framework', ':db-sqlcipher', ':auto-content-provider'
+include ':demo', ':sync-framework', ':auto-content-provider'

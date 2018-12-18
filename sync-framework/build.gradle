@@ -25,8 +25,8 @@ android {
     }
 }
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-core:2.9.6'
-    api 'androidx.annotation:annotation:1.0.0'
+    api 'com.fasterxml.jackson.core:jackson-core:2.9.7'
+    api 'androidx.annotation:annotation:1.0.1'
     api 'androidx.sqlite:sqlite:2.0.0'
     api project(path: ':auto-content-provider')
 }

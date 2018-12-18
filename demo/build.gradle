@@ -79,8 +79,8 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.0.0'
-    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.core:core:1.0.1'
+    implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'com.google.android.material:material:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.0.0'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
@@ -88,5 +88,5 @@ dependencies {
     implementation 'com.google.android:flexbox:1.1.0'
     implementation project(':sync-framework')
     androidImplementation 'androidx.sqlite:sqlite-framework:2.0.0'
-    cipherImplementation project(':db-sqlcipher')
+    cipherImplementation 'com.commonsware.cwac:saferoom.x:0.5.1'
 }
