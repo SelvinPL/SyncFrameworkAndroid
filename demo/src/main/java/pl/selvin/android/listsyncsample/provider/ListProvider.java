@@ -42,7 +42,7 @@ import pl.selvin.android.syncframework.content.SYNC;
 import pl.selvin.android.syncframework.content.SyncContentHelper;
 
 public class ListProvider extends BaseContentProvider {
-    private final static SyncContentHelper helperInstance = SyncContentHelper.getInstance(Database.class, Constants.AUTHORITY, "list_db", 18, Constants.SERVICE_URI);
+    private final static SyncContentHelper helperInstance = SyncContentHelper.getInstance(Database.class, Constants.AUTHORITY, "list_db", 19, Constants.SERVICE_URI);
     private final HashMap<String, String> TAG_ITEM_MAPPING_WITH_NAMES = new HashMap<>();
     private final static int TAG_ITEM_MAPPING_WITH_NAMES_MATCH = 1;
     private final static int TAG_NOT_USED_MATCH = 2;
