@@ -322,6 +322,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         private Bundle args;
         private ListFragmentCommon list;
         private Uri mUri = null;
+        private boolean wasStarted = false;
 
         InsertLoader(Context context, Bundle args, ListFragmentCommon list) {
             super(context);
@@ -332,7 +333,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
         @Override
         public Uri loadInBackground() {
             if (list != null) {
-                mUri = appendIsNewElement(list.createNewElement(args));
+                mUri = list.createNewElement(args);
                 cleanUp();
             }
             return mUri;
@@ -340,11 +341,8 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 
         @Override
         protected void onStartLoading() {
-            if (mUri != null) {
-                deliverResult(mUri);
-            }
-
-            if (takeContentChanged() || mUri == null) {
+            if ((takeContentChanged() || mUri == null) && !wasStarted) {
+                wasStarted = true;
                 forceLoad();
             }
         }
