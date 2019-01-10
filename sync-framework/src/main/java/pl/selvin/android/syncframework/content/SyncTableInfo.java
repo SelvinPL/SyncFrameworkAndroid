@@ -159,6 +159,8 @@ public class SyncTableInfo extends TableInfo {
         database.execSQL("ALTER TABLE " + name + " ADD COLUMN [" + SYNC.tempId + "] GUID");
         database.execSQL("ALTER TABLE " + name + " ADD COLUMN [" + SYNC.isDeleted + "] INTEGER NOT NULL DEFAULT (0)");
         database.execSQL("ALTER TABLE " + name + " ADD COLUMN [" + SYNC.isDirty + "] INTEGER NOT NULL DEFAULT (0)");
+        database.execSQL("CREATE INDEX IX_" + name + "_SYNC_" + SYNC.tempId + " ON " + name + "(" + SYNC.tempId + " ASC)");
+        database.execSQL("CREATE INDEX IX_" + name + "_SYNC_" + SYNC.uri + " ON " + name + "(" + SYNC.uri + " ASC)");
     }
 
     final void deleteWithUri(String uri, SupportSQLiteDatabase db) {
