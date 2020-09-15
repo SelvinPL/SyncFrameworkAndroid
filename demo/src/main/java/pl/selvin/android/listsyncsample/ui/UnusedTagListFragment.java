@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.provider.BaseColumns;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.DialogFragment;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
@@ -34,7 +35,7 @@ import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.syncframework.content.SYNC;
 
-public class UnusedTagListFragment extends pl.selvin.android.listsyncsample.app.GenericDialogFragment.DialogFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class UnusedTagListFragment extends DialogFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String USER_ID = "USER_ID";
     private static final String ITEM_ID = "ITEM_ID";

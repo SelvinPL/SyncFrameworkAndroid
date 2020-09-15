@@ -124,15 +124,6 @@ public class ItemDetailsFragment extends Fragment implements
         loader.initLoader(MAIN_LOADER_ID, null, this);
     }
 
-    @NonNull
-    private Bundle requireArguments() {
-        final Bundle args = getArguments();
-        if (args == null) {
-            throw new IllegalStateException("Fragment " + this + " has no arguments.");
-        }
-        return args;
-    }
-
     private Uri getItemUri() {
         return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
     }

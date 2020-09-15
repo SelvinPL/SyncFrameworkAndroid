@@ -23,7 +23,7 @@ import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactor
 public class TestProvider extends AutoContentProvider {
 
     public final static String AUTHORITY = "pl.selvin.android.autocontentprovider.test";
-    public final static ContentHelper CONTENT_HELPER = new ContentHelper(Database.class, AUTHORITY, new DefaultDatabaseInfoFactory(), "test_db", 2);
+    public final static ContentHelper CONTENT_HELPER = new ContentHelper(DatabaseTest.class, AUTHORITY, new DefaultDatabaseInfoFactory(), "test_db", 2);
 
     public TestProvider() {
         super(CONTENT_HELPER, Logger.EmptyLogger.INSTANCE,

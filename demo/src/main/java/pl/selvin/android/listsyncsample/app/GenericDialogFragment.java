@@ -26,6 +26,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.DialogFragment;
 
 import java.util.Calendar;
 
@@ -45,18 +46,6 @@ public interface GenericDialogFragment {
     String MIN_DATE = "MIN_DATE";
     String DIALOG_FRAGMENT_TAG = "DIALOG";
 
-    abstract class DialogFragment extends androidx.fragment.app.DialogFragment {
-        @NonNull
-        protected final Bundle requireArguments() {
-            final Bundle args = getArguments();
-            if (args == null) {
-                throw new IllegalStateException("Fragment " + this + " has no arguments.");
-            }
-            return args;
-        }
-    }
-
-    @SuppressWarnings("unused")
     @SuppressLint("ValidFragment")
     class Info extends DialogFragment implements GenericDialogFragment {
 
@@ -80,7 +69,6 @@ public interface GenericDialogFragment {
         }
     }
 
-    @SuppressWarnings("unused")
     @SuppressLint("ValidFragment")
     class OKCancel extends DialogFragment implements GenericDialogFragment {
 
@@ -95,7 +83,7 @@ public interface GenericDialogFragment {
             return frag;
         }
 
-        public void onCancel(DialogInterface dialog) {
+        public void onCancel(@NonNull DialogInterface dialog) {
             runCallback(requireArguments().getInt(ID), true, requireArguments().getParcelable(ARGS));
             super.onCancel(dialog);
         }
@@ -252,7 +240,7 @@ public interface GenericDialogFragment {
                 ((Callback) getActivity()).onAction(ID, canceled, date);
         }
 
-        public void onCancel(DialogInterface dialog) {
+        public void onCancel(@NonNull DialogInterface dialog) {
             final Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(requireArguments().getLong(DATE));
             runCallback(requireArguments().getInt(ID), true, calendar);
@@ -337,7 +325,7 @@ public interface GenericDialogFragment {
                 ((Callback) getActivity()).onAction(ID, canceled, date);
         }
 
-        public void onCancel(DialogInterface dialog) {
+        public void onCancel(@NonNull DialogInterface dialog) {
             final Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(requireArguments().getLong(DATE));
             runCallback(requireArguments().getInt(ID), true, calendar);

@@ -6,7 +6,7 @@ import android.os.Parcelable;
 
 @SuppressWarnings("WeakerAccess")
 public class Stats implements Parcelable {
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "RedundantSuppression"})
     public static final Creator<Stats> CREATOR = new Creator<Stats>() {
         public Stats createFromParcel(Parcel in) {
             return new Stats(in);
@@ -17,7 +17,7 @@ public class Stats implements Parcelable {
         }
     };
     public SyncStats stats = new SyncStats();
-    public boolean isInterrupted = false;
+    public boolean isInterrupted;
 
     public Stats() {
         isInterrupted = false;

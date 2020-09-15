@@ -12,6 +12,8 @@ package pl.selvin.android.autocontentprovider.impl;
 
 import android.content.UriMatcher;
 
+import androidx.annotation.NonNull;
+
 import java.lang.reflect.Field;
 
 import pl.selvin.android.autocontentprovider.annotation.Column;
@@ -26,8 +28,11 @@ import pl.selvin.android.autocontentprovider.db.TableInfoFactory;
 public class DefaultDatabaseInfoFactory implements DatabaseInfoFactory {
     private final ColumnInfoFactory columnInfoFactory = new ColumnInfoFactory() {
         @Override
-        public ColumnInfo createColumnInfo(Column column, Field field) throws Exception {
-            return new ColumnInfo((String) field.get(null), column);
+        public ColumnInfo createColumnInfo(@NonNull Column column, @NonNull Field field) throws Exception {
+            final String columnName = (String)field.get(null);
+            if(columnName == null)
+                throw new IllegalStateException("Column name can not be null!");
+            return new ColumnInfo(columnName , column);
         }
     };
     private final TableInfoFactory tableInfoFactory = new TableInfoFactory() {

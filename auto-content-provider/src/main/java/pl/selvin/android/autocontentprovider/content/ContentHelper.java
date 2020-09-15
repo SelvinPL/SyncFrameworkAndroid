@@ -15,6 +15,8 @@ package pl.selvin.android.autocontentprovider.content;
 import android.content.UriMatcher;
 import android.net.Uri;
 
+import androidx.annotation.NonNull;
+
 import java.util.Collection;
 
 import pl.selvin.android.autocontentprovider.db.DatabaseInfo;
@@ -56,10 +58,12 @@ public class ContentHelper {
         return databaseInfo.allTablesInfoCode.get(code);
     }
 
+    @NonNull
     public Uri.Builder getDirUriBuilder(String tableName) {
         return CONTENT_URI.buildUpon().appendPath(tableName);
     }
 
+    @NonNull
     public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork) {
         final Uri.Builder builder = getDirUriBuilder(tableName);
         if(!syncToNetwork)
@@ -67,16 +71,19 @@ public class ContentHelper {
         return builder;
     }
 
+    @NonNull
     public Uri getDirUri(String tableName) {
         return getDirUriBuilder(tableName).build();
     }
 
+    @NonNull
     public Uri getDirUri(String tableName, boolean syncToNetwork) {
         return getDirUriBuilder(tableName, syncToNetwork).build();
     }
 
+    @NonNull
     public Uri.Builder getItemUriBuilder(String tableName, String... primaryKeys) {
-        Uri.Builder builder = CONTENT_URI.buildUpon();
+        final Uri.Builder builder = CONTENT_URI.buildUpon();
         builder.appendPath(tableName);
         if (primaryKeys == null || primaryKeys.length == 0) {
             throw new IllegalArgumentException(
@@ -89,30 +96,37 @@ public class ContentHelper {
         return builder;
     }
 
+    @NonNull
     public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, String... primaryKeys) {
         return getItemUriBuilder(tableName, primaryKeys).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
+    @NonNull
     public Uri getItemUri(String tableName, String... primaryKeys) {
         return getItemUriBuilder(tableName, primaryKeys).build();
     }
 
+    @NonNull
     public Uri getItemUri(String tableName, boolean syncToNetwork, String... primaryKeys) {
         return getItemUriBuilder(tableName, syncToNetwork, primaryKeys).build();
     }
 
+    @NonNull
     public Uri.Builder getItemUriBuilder(String tableName, long _id) {
         return CONTENT_URI.buildUpon().appendPath(tableName).appendPath("ROWID").appendPath(Long.toString(_id));
     }
 
+    @NonNull
     public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, long _id) {
         return getItemUriBuilder(tableName, _id).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
     }
 
+    @NonNull
     public Uri getItemUri(String tableName, long _id) {
         return getItemUriBuilder(tableName, _id).build();
     }
 
+    @NonNull
     public Uri getItemUri(String tableName, boolean syncToNetwork, long _id) {
         return getItemUriBuilder(tableName, syncToNetwork, _id).build();
     }

@@ -30,6 +30,7 @@ import pl.selvin.android.autocontentprovider.db.ColumnType;
 public @interface Column {
     String COLLATE_NO_CASE = "COLLATE NOCASE";
     /* Not working with sqlicipher! */
+    @SuppressWarnings({"unused", "RedundantSuppression"})
     String COLLATE_LOCALIZED = "COLLATE LOCALIZED";
     String EMPTY = "";
 

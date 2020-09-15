@@ -1,7 +1,7 @@
 ext {
     sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-    sync_framework_version = '1.2.0'
-    sync_framework_version_int = 102000
+    sync_framework_version = '1.3.1'
+    sync_framework_version_int = 103001
 }
 
 // gradle publish ... for my needs
@@ -14,21 +14,23 @@ if (propsFile.exists()) {
         sync_framework_maven_url = props['sync_framework_maven']
 }
 
-publishing {
-    publications {
-        mavenAar(MavenPublication) {
-            from components.android
-            groupId 'pl.selvin.android'
-            version sync_framework_version
-            artifactId sync_framework_artifact_id
-            artifact sourceJar {
-                classifier "sources"
+afterEvaluate {
+    publishing {
+        publications {
+            mavenAar(MavenPublication) {
+                from components.release
+                groupId 'pl.selvin.android'
+                version sync_framework_version
+                artifactId sync_framework_artifact_id
+                artifact sourceJar {
+                    classifier "sources"
+                }
             }
         }
-    }
-    repositories {
-        maven {
-            url sync_framework_maven_url
+        repositories {
+            maven {
+                url sync_framework_maven_url
+            }
         }
     }
 }

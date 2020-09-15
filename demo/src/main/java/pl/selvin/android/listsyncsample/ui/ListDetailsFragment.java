@@ -119,13 +119,4 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
                 requireActivity().getContentResolver().delete(getItemUri(), null,null);
         }
     }
-
-    @NonNull
-    private Bundle requireArguments() {
-        final Bundle args = getArguments();
-        if (args == null) {
-            throw new IllegalStateException("Fragment " + this + " has no arguments.");
-        }
-        return args;
-    }
 }
