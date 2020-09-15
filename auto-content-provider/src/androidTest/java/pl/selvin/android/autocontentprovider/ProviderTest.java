@@ -15,8 +15,8 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
-import android.support.test.rule.provider.ProviderTestRule;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.rule.provider.ProviderTestRule;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import static org.junit.Assert.*;
 import org.junit.Rule;
@@ -33,21 +33,26 @@ public class ProviderTest {
     @Test
     public void testInsert() {
         final ContentResolver resolver = mProviderRule.getResolver();
-        Uri uri = resolver.insert(TestProvider.CONTENT_HELPER.getDirUri(Database.Status.TABLE_NAME), getFullContentValues());
+
+        final Uri url = TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.Status.TABLE_NAME);
+        resolver.delete(url, null, null);
+
+        Uri uri = resolver.insert(TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.Status.TABLE_NAME), getFullContentValues());
+        assertNotNull(uri);
         assertEquals(1L, ContentUris.parseId(uri));
     }
 
     @Test
     public void testReadonly() {
-        final String errMsg = "Table " + Database.StatusReadonly.TABLE_NAME + " is readonly.";
+        final String errMsg = "Table " + DatabaseTest.StatusReadonly.TABLE_NAME + " is readonly.";
         final ContentResolver resolver = mProviderRule.getResolver();
         try {
-            Uri uri = resolver.insert(TestProvider.CONTENT_HELPER.getDirUri(Database.StatusReadonly.TABLE_NAME), new ContentValues());
+            resolver.insert(TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.StatusReadonly.TABLE_NAME), new ContentValues());
             fail();
         } catch (IllegalArgumentException ex) {
             assertEquals(errMsg, ex.getMessage());
         }
-        final Uri itemUri = TestProvider.CONTENT_HELPER.getItemUri(Database.StatusReadonly.TABLE_NAME, 1);
+        final Uri itemUri = TestProvider.CONTENT_HELPER.getItemUri(DatabaseTest.StatusReadonly.TABLE_NAME, 1);
         try {
             resolver.update(itemUri, new ContentValues(), null, null);
             fail();
@@ -65,23 +70,25 @@ public class ProviderTest {
     @Test
     public void testInsertAndSelect() {
         final ContentResolver resolver = mProviderRule.getResolver();
-        final Uri url = TestProvider.CONTENT_HELPER.getDirUri(Database.Status.TABLE_NAME);
+        final Uri url = TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.Status.TABLE_NAME);
+        resolver.delete(url, null, null);
         Uri uri = resolver.insert(url, getFullContentValues());
+        assertNotNull(uri);
         assertEquals(1L, ContentUris.parseId(uri));
-        final Cursor cursor = resolver.query(url, new String[]{Database.Status.ID, Database.Status.NAME}, null, null, null);
+        final Cursor cursor = resolver.query(url, new String[]{DatabaseTest.Status.ID, DatabaseTest.Status.NAME}, null, null, null);
         assertNotNull(cursor);
         assertEquals(1, cursor.getCount());
-        assertEquals(Database.Status.ID, cursor.getColumnName(0));
-        assertEquals(Database.Status.NAME, cursor.getColumnName(1));
-        assertEquals(true, cursor.moveToFirst());
+        assertEquals(DatabaseTest.Status.ID, cursor.getColumnName(0));
+        assertEquals(DatabaseTest.Status.NAME, cursor.getColumnName(1));
+        assertTrue(cursor.moveToFirst());
         assertEquals(1, cursor.getInt(0));
         assertEquals("Test", cursor.getString(1));
     }
 
     private ContentValues getFullContentValues() {
         final ContentValues values = new ContentValues();
-        values.put(Database.Status.ID, 1);
-        values.put(Database.Status.NAME, "Test");
+        values.put(DatabaseTest.Status.ID, 1);
+        values.put(DatabaseTest.Status.NAME, "Test");
         return values;
     }
 }

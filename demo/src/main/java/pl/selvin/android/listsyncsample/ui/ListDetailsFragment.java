@@ -15,11 +15,13 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,31 +41,32 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         final View root = inflater.inflate(R.layout.list_fragment, container, false);
         mName = Ui.getView(root, R.id.name);
         mDescription = Ui.getView(root, R.id.description);
         return root;
     }
 
-    public Uri getItemUri() {
-        return mItemUri == null ? mItemUri = getArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
+    private Uri getItemUri() {
+        return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        getLoaderManager().initLoader(51000, null, this);
+        LoaderManager.getInstance(this).initLoader(51000, null, this);
     }
 
+    @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(getActivity(), getItemUri(),
+        return new CursorLoader(requireActivity(), getItemUri(),
                 new String[]{List.NAME, List.DESCRIPTION, List.ID}, null, null, null);
     }
 
     @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         if (cursor.moveToFirst()) {
             mName.setText(cursor.getString(cursor.getColumnIndex(List.NAME)));
             mDescription.setText(cursor.getString(cursor.getColumnIndex(List.DESCRIPTION)));
@@ -77,11 +80,11 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
                 getChildFragmentManager().beginTransaction().add(R.id.items, fragment, ITEMS_FRAGMENT_TAG).commit();
             }
         } else
-            getActivity().finish();
+            requireActivity().finish();
     }
 
     @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
 
     }
 
@@ -94,7 +97,7 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
 
         values.put(List.NAME, name);
         values.put(List.DESCRIPTION, description);
-        getActivity().getContentResolver().update(getItemUri(), values,
+        requireActivity().getContentResolver().update(getItemUri(), values,
                 String.format("(%s<>? OR %s<>?)", List.NAME, List.DESCRIPTION), new String[]{name, description});
     }
 
@@ -108,12 +111,12 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
     @Override
     public void onDestroy() {
         super.onDestroy();
-        if(getActivity().isFinishing()){
+        if(requireActivity().isFinishing()){
             final String name = mName.getText().toString();
             final String description = mDescription.getText().toString();
             //if element is new and name and description is empty - delete item
             if(ListFragmentCommon.checkIsNewElement(getItemUri()) && StringUtil.EMPTY.equals(name) && StringUtil.EMPTY.equals(description))
-                getActivity().getContentResolver().delete(getItemUri(), null,null);
+                requireActivity().getContentResolver().delete(getItemUri(), null,null);
         }
     }
 }

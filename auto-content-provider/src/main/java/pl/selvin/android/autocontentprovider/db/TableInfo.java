@@ -11,7 +11,7 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -176,7 +176,7 @@ public class TableInfo {
     public long insert(SupportSQLiteDatabase database, Uri uri, ContentValues values, Logger logger) {
         logger.LogD(clazz, "*insert* " + uri);
         final long rowId =  database.insert(name, SQLiteDatabase.CONFLICT_FAIL, values);
-        logger.LogD(clazz, "rowId:" + rowId + ", values: " + String.valueOf(values));
+        logger.LogD(clazz, "rowId:" + rowId + ", values: " + values);
         return rowId;
     }
 
@@ -190,7 +190,7 @@ public class TableInfo {
     public int update(SupportSQLiteDatabase database, Uri uri, ContentValues values, String selection, String[] selectionArgs, Logger logger) {
         logger.LogD(clazz, "*update* uri: " + uri.toString());
         final int ret = database.update(name, SQLiteDatabase.CONFLICT_FAIL, values, selection, selectionArgs);
-        logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + String.valueOf(values));
+        logger.LogD(clazz, "ret:" + ret + " selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + selection + "values: " + values);
         return ret;
     }
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014-2017 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -12,6 +12,8 @@
 package pl.selvin.android.autocontentprovider.db;
 
 
+import androidx.annotation.NonNull;
+
 import pl.selvin.android.autocontentprovider.annotation.Column;
 
 public class ColumnInfo {
@@ -22,7 +24,7 @@ public class ColumnInfo {
     public final boolean nullable;
     public final int precision;
 
-    public ColumnInfo(final String name, final Column column) {
+    public ColumnInfo(final @NonNull String name, final @NonNull Column column) {
         this.name = name;
         type = column.type();
         nullable = column.nullable();
@@ -31,6 +33,7 @@ public class ColumnInfo {
         precision = column.precision();
     }
 
+    @NonNull
     @Override
     public String toString() {
         return name;

@@ -13,11 +13,8 @@ package pl.selvin.android.syncframework.content;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteQueryBuilder;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SyncStats;
 import android.database.Cursor;
@@ -25,7 +22,10 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -268,7 +268,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
                                                             jp.nextToken();
                                                             switch (name) {
                                                                 case SYNC.isResolved:
-                                                                    break;
                                                                 case SYNC.conflictResolution:
                                                                     break;
                                                                 case SYNC.conflictingChange:
@@ -361,7 +360,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
                         db.endTransaction();
                         originalBlob = serverBlob;
                         logger.LogD(clazz, "*Sync* commit changes");
-                        final ContentResolver cr = getContext().getContentResolver();
+                        final ContentResolver cr = requireContextEx().getContentResolver();
                         for (TableInfo t : notifyTableInfo) {
                             final Uri nu = contentHelper.getDirUri(t.name);
                             cr.notifyChange(nu, null, false);
@@ -411,7 +410,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
     protected void onCreateDatabase(SupportSQLiteDatabase db) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_CREATE);
-        requireContext().sendBroadcast(intent);
+        requireContextEx().sendBroadcast(intent);
         try {
             super.onCreateDatabase(db);
             db.execSQL(String.format(
@@ -424,18 +423,10 @@ public abstract class BaseContentProvider extends AutoContentProvider {
         }
     }
 
-    public Context requireContext() {
-        final Context ctx = getContext();
-        if (ctx == null)
-            throw new RuntimeException("Context is null");
-        return ctx;
-    }
-
-
     protected void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
         final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
         intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
-        requireContext().sendBroadcast(intent);
+        requireContextEx().sendBroadcast(intent);
         super.onUpgradeDatabase(db, oldVersion, newVersion);
     }
 
@@ -457,8 +448,8 @@ public abstract class BaseContentProvider extends AutoContentProvider {
         final boolean upload;
         final SyncContentHelper ch;
         final JsonFactory factory;
-        int counter = 0;
         final Logger logger;
+        int counter = 0;
 
         SyncContentProducer(JsonFactory factory, SupportSQLiteDatabase db, String scope,
                             String serverBlob, boolean upload,

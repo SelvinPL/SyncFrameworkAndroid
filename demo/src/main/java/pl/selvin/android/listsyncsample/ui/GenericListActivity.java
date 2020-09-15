@@ -11,14 +11,12 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Parcelable;
-import android.support.v4.app.Fragment;
+import androidx.fragment.app.Fragment;
 import android.view.MenuItem;
 
 import pl.selvin.android.listsyncsample.R;
@@ -34,14 +32,6 @@ public class GenericListActivity extends BaseActivity implements ListFragmentCom
     private final static String LIST_FRAGMENT_TAG = "LIST_FRAGMENT_TAG";
     private IListFragmentCommon listFragment = null;
     private ISearchSupport searchSupport = null;
-
-    public static Intent createPickIntent(Context context, Class<?> fragmentClass, Bundle fragmentArgs, Parcelable passThrough) {
-        final Intent ret = new Intent(context, GenericListActivity.class);
-        ret.setAction(Intent.ACTION_PICK);
-        ret.putExtra(FRAGMENT_CLASS, fragmentClass.getName());
-        ret.putExtra(FRAGMENT_ARGS, ListFragmentCommon.Builder.createFromBundle(fragmentArgs).setSupportPick(true).putPassThrough(passThrough).build());
-        return ret;
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

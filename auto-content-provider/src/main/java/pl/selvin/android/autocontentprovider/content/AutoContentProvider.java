@@ -12,8 +12,6 @@
 package pl.selvin.android.autocontentprovider.content;
 
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -22,8 +20,11 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,11 +38,11 @@ import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactor
 public abstract class AutoContentProvider extends ContentProvider {
 
     protected final ContentHelper contentHelper;
-    private final SupportSQLiteOpenHelper.Callback defaultCallback;
     protected final Class<?> clazz = getClass();
-    private SupportSQLiteOpenHelper mDB;
-    private final SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider;
     protected final Logger logger;
+    private final SupportSQLiteOpenHelper.Callback defaultCallback;
+    private final SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider;
+    private SupportSQLiteOpenHelper mDB;
 
     public AutoContentProvider(ContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider) {
         this.logger = logger != null ? logger : Logger.EmptyLogger.INSTANCE;
@@ -49,17 +50,17 @@ public abstract class AutoContentProvider extends ContentProvider {
         this.supportSQLiteOpenHelperFactoryProvider = supportSQLiteOpenHelperFactoryProvider;
         defaultCallback = new SupportSQLiteOpenHelper.Callback(contentHelper.DATABASE_VERSION) {
             @Override
-            public void onCreate(SupportSQLiteDatabase db) {
+            public void onCreate(@NonNull SupportSQLiteDatabase db) {
                 onCreateDatabase(db);
             }
 
             @Override
-            public void onUpgrade(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+            public void onUpgrade(@NonNull SupportSQLiteDatabase db, int oldVersion, int newVersion) {
                 onUpgradeDatabase(db, oldVersion, newVersion);
             }
 
             @Override
-            public void onDowngrade(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+            public void onDowngrade(@NonNull SupportSQLiteDatabase db, int oldVersion, int newVersion) {
                 onDowngradeDatabase(db, oldVersion, newVersion);
             }
         };
@@ -116,7 +117,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             }
             builder.setProjectionMap(tab.map);
             final Cursor cursor = tab.query(getReadableDatabase(), uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit, logger);
-            cursor.setNotificationUri(requireContext().getContentResolver(), uri);
+            cursor.setNotificationUri(requireContextEx().getContentResolver(), uri);
             return cursor;
         }
         throw new IllegalArgumentException("Unknown Uri " + uri);
@@ -138,7 +139,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             if (rowId > 0) {
                 boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
                 Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
-                final ContentResolver cr = requireContext().getContentResolver();
+                final ContentResolver cr = requireContextEx().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -220,7 +221,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             }
             ret = tab.delete(getWritableDatabase(), uri, selection, selectionArgs, logger);
             if (ret > 0) {
-                final ContentResolver cr = requireContext().getContentResolver();
+                final ContentResolver cr = requireContextEx().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -259,7 +260,7 @@ public abstract class AutoContentProvider extends ContentProvider {
             final int ret = tab.update(getWritableDatabase(), uri, values, selection, selectionArgs, logger);
             if (ret > 0) {
                 boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
-                final ContentResolver cr = requireContext().getContentResolver();
+                final ContentResolver cr = requireContextEx().getContentResolver();
                 cr.notifyChange(uri, null, syncToNetwork);
                 for (String n : tab.notifyUris) {
                     cr.notifyChange(Uri.parse(n), null, syncToNetwork);
@@ -271,7 +272,7 @@ public abstract class AutoContentProvider extends ContentProvider {
     }
 
     protected SupportSQLiteOpenHelper.Factory getHelperFactory() {
-        return supportSQLiteOpenHelperFactoryProvider.createFactory(requireContext());
+        return supportSQLiteOpenHelperFactoryProvider.createFactory(requireContextEx());
     }
 
 
@@ -280,7 +281,7 @@ public abstract class AutoContentProvider extends ContentProvider {
     }
 
     protected SupportSQLiteOpenHelper.Configuration getHelperConfiguration() {
-        return SupportSQLiteOpenHelper.Configuration.builder(getContext()).name(contentHelper.DATABASE_NAME)
+        return SupportSQLiteOpenHelper.Configuration.builder(requireContextEx()).name(contentHelper.DATABASE_NAME)
                 .callback(getHelperCallback()).build();
     }
 
@@ -299,15 +300,14 @@ public abstract class AutoContentProvider extends ContentProvider {
         }
     }
 
-    public Context requireContext() {
+    @NonNull
+    public Context requireContextEx() {
         final Context ctx = getContext();
         if (ctx == null)
-            throw new RuntimeException("Context is null");
+            throw new IllegalStateException("Cannot find context from the provider.");
         return ctx;
     }
 
-
-    @SuppressWarnings("unused")
     protected void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
         final Cursor c = db.query("SELECT 'DROP TABLE ' || name || ';' AS cmd FROM sqlite_master WHERE type='table' AND name<>'android_metadata'");
         final ArrayList<String> commands = new ArrayList<>();

@@ -11,9 +11,9 @@
 
 package pl.selvin.android.syncframework.content;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
-import android.arch.persistence.db.SupportSQLiteQuery;
-import android.arch.persistence.db.SupportSQLiteQueryBuilder;
+import androidx.sqlite.db.SupportSQLiteDatabase;
+import androidx.sqlite.db.SupportSQLiteQuery;
+import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -125,7 +125,13 @@ public class SyncTableInfo extends TableInfo {
                                     break;
                                 case ColumnType.DATETIME:
                                     try {
-                                        generator.writeStringField(column.name, String.format(ms_date, sdf.parse(c.getString(i)).getTime()));
+                                        final Date date = sdf.parse(c.getString(i));
+                                        if (date == null)
+                                            throw new IllegalStateException("Parsed date is null!");
+                                        generator.writeStringField(column.name, String.format(ms_date, date.getTime()));
+                                    }
+                                    catch(IllegalStateException ie) {
+                                        throw ie;
                                     } catch (Exception e) {
                                         throw new RuntimeException(e);
                                         //logger.LogE(clazz, e);
@@ -135,7 +141,7 @@ public class SyncTableInfo extends TableInfo {
                                     generator.writeNumberField(column.name, c.getDouble(i));
                                     break;
                                 case ColumnType.DECIMAL:
-                                    generator.writeNumberField(column.name, new BigDecimal(c.getDouble(i)).setScale(column.precision, BigDecimal.ROUND_HALF_UP));
+                                    generator.writeNumberField(column.name, BigDecimal.valueOf(c.getDouble(i)).setScale(column.precision, BigDecimal.ROUND_HALF_UP));
                                     break;
                                 default:
                                     generator.writeStringField(column.name, c.getString(i));
@@ -230,7 +236,7 @@ public class SyncTableInfo extends TableInfo {
         } else {
             rowId = database.insert(name, SQLiteDatabase.CONFLICT_REPLACE, values);
         }
-        logger.LogD(clazz, "rowId:" + rowId + ", values: " + String.valueOf(values));
+        logger.LogD(clazz, "rowId:" + rowId + ", values: " + values);
         return rowId;
     }
 
@@ -243,7 +249,7 @@ public class SyncTableInfo extends TableInfo {
         values.put("isDeleted", 1);
         final String updateSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NULL", selection);
         int ret = database.update(name, SQLiteDatabase.CONFLICT_FAIL, values, updateSelection, selectionArgs);
-        logger.LogD(clazz, "ret:" + ret + " -upd: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + updateSelection + " values: " + String.valueOf(values));
+        logger.LogD(clazz, "ret:" + ret + " -upd: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + updateSelection + " values: " + values);
         final String deleteSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NOT NULL", selection);
         ret += database.delete(name, deleteSelection, selectionArgs);
         logger.LogD(clazz, "ret:" + ret + " -del: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + deleteSelection);

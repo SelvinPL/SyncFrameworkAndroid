@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2014 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
@@ -17,7 +17,7 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "RedundantSuppression"})
 public class Logger {
 
     private final String TAG;
@@ -55,7 +55,7 @@ public class Logger {
     public void LogTimeD(Class<?> clazz, String msg, long start) {
         long diffInMillis = System.currentTimeMillis() - start;
         long diffInSeconds = diffInMillis / 1000;
-        long diff[] = new long[]{0, 0, 0, 0, 0};
+        long[] diff = new long[]{0, 0, 0, 0, 0};
         diff[4] = (diffInMillis >= 1000 ? diffInMillis % 1000 : diffInMillis);
         diff[3] = (diffInSeconds >= 60 ? diffInSeconds % 60 : diffInSeconds);
         diff[2] = (diffInSeconds = (diffInSeconds / 60)) >= 60 ? diffInSeconds % 60

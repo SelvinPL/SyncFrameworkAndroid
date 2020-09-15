@@ -52,33 +52,33 @@
                     android:layout_height="wrap_content"
                     android:paddingTop="10dp">
 
-                    <android.support.design.widget.TextInputLayout
+                    <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/username_layout"
                         android:layout_width="@dimen/login_info_width"
                         android:layout_height="wrap_content">
 
-                        <android.support.design.widget.TextInputEditText
+                        <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/username_edit"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:hint="@string/login_login_hint"
                             android:inputType="text|textEmailAddress" />
-                    </android.support.design.widget.TextInputLayout>
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                    <android.support.design.widget.TextInputLayout
+                    <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/password_layout"
                         android:layout_width="@dimen/login_info_width"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/username_layout"
                         app:passwordToggleEnabled="true">
 
-                        <android.support.design.widget.TextInputEditText
+                        <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/password_edit"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:hint="@string/login_password_hint"
                             android:inputType="textPassword" />
-                    </android.support.design.widget.TextInputLayout>
+                    </com.google.android.material.textfield.TextInputLayout>
                 </RelativeLayout>
             </ScrollView>
 

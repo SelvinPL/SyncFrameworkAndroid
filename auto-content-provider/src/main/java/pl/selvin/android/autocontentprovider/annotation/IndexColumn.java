@@ -30,5 +30,6 @@ public @interface IndexColumn {
     String order() default EMPTY;
     String collate() default EMPTY;
     String ASC = "ASC";
+    @SuppressWarnings({"unused", "RedundantSuppression"})
     String DESC = "DESC";
 }

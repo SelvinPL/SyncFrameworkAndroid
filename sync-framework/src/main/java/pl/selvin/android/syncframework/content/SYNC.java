@@ -41,7 +41,7 @@ package pl.selvin.android.syncframework.content;
  * 		]
  */
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "RedundantSuppression"})
 public interface SYNC {
     String d = "d";
     String P = "=?";

@@ -16,9 +16,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
 import android.widget.ListAdapter;
 
 import java.util.Calendar;
@@ -39,19 +39,19 @@ public class ItemsListFragment extends ListFragmentCommon {
         super(60000, Item.TABLE_NAME, R.string.items_list_empty, ItemDetailsFragment.class, R.string.item_deletion_title, R.string.item_deletion_message);
     }
 
-    public static Bundle createArgs(String id) {
+    static Bundle createArgs(String id) {
         final Bundle args = new Bundle();
         args.putString(LIST_ID, id);
         return args;
     }
 
-    public String getShownId() {
-        return getArguments().getString(LIST_ID);
+    private String getShownId() {
+        return requireArguments().getString(LIST_ID);
     }
 
     @Override
     protected ListAdapter createListAdapter() {
-        return new SimpleCursorAdapter(getActivity(), R.layout.item_row,
+        return new SimpleCursorAdapter(requireActivity(), R.layout.item_row,
                 null, new String[]{Item.NAME,
                 Item.DESCRIPTION}, new int[]{R.id.name,
                 R.id.description}, 0);
@@ -59,7 +59,7 @@ public class ItemsListFragment extends ListFragmentCommon {
 
     @Override
     protected Loader<Cursor> getLoader(Bundle args) {
-        return new CursorLoader(getActivity(),
+        return new CursorLoader(requireActivity(),
                 ListProvider.getHelper().getDirUri(Item.TABLE_NAME),
                 new String[]{BaseColumns._ID, Item.ID,
                         Item.NAME, Item.DESCRIPTION},
@@ -86,7 +86,7 @@ public class ItemsListFragment extends ListFragmentCommon {
         values.put(Item.ID, UUID.randomUUID().toString());
         values.put(Item.LIST_ID, getShownId());
         values.put(Item.USER_ID, SyncService.getUserId(getActivity()));
-        return getActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(Item.TABLE_NAME), values);
+        return requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(Item.TABLE_NAME), values);
     }
 
     @Override

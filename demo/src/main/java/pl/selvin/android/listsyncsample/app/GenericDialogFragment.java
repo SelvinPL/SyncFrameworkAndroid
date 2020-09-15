@@ -21,11 +21,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.support.v4.app.DialogFragment;
-import android.support.v7.app.AlertDialog;
+
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
+import androidx.fragment.app.DialogFragment;
 
 import java.util.Calendar;
 
@@ -60,9 +61,9 @@ public interface GenericDialogFragment {
         @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final int title = getArguments().getInt(TITLE);
-            final int view = getArguments().getInt(VIEW);
-            return new AlertDialog.Builder(getActivity())
+            final int title = requireArguments().getInt(TITLE);
+            final int view = requireArguments().getInt(VIEW);
+            return new AlertDialog.Builder(requireActivity())
                     .setTitle(title).setView(view)
                     .setPositiveButton(android.R.string.ok, null).create();
         }
@@ -82,8 +83,8 @@ public interface GenericDialogFragment {
             return frag;
         }
 
-        public void onCancel(DialogInterface dialog) {
-            runCallback(getArguments().getInt(ID), true, getArguments().getParcelable(ARGS));
+        public void onCancel(@NonNull DialogInterface dialog) {
+            runCallback(requireArguments().getInt(ID), true, requireArguments().getParcelable(ARGS));
             super.onCancel(dialog);
         }
 
@@ -98,16 +99,16 @@ public interface GenericDialogFragment {
         @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final int title = getArguments().getInt(TITLE);
-            final int message = getArguments().getInt(MESSAGE);
-            return new AlertDialog.Builder(getActivity())
+            final int title = requireArguments().getInt(TITLE);
+            final int message = requireArguments().getInt(MESSAGE);
+            return new AlertDialog.Builder(requireActivity())
                     .setTitle(title)
                     .setMessage(message)
                     .setPositiveButton(android.R.string.ok,
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog,
                                                     int whichButton) {
-                                    runCallback(getArguments().getInt(ID), false, getArguments().getParcelable(ARGS));
+                                    runCallback(requireArguments().getInt(ID), false, requireArguments().getParcelable(ARGS));
                                 }
                             })
                     .setNegativeButton(android.R.string.cancel,
@@ -127,7 +128,8 @@ public interface GenericDialogFragment {
     @SuppressLint("ValidFragment")
     class ConfirmDelete extends DialogFragment implements GenericDialogFragment {
 
-        public static ConfirmDelete newInstance(int id, @StringRes int title, @StringRes int message, @NonNull Uri uri) {
+        @SuppressWarnings("SameParameterValue")
+        static ConfirmDelete newInstance(int id, @StringRes int title, @StringRes int message, @NonNull Uri uri) {
             ConfirmDelete frag = new ConfirmDelete();
             Bundle args = new Bundle();
             args.putParcelable(URI, uri);
@@ -153,10 +155,10 @@ public interface GenericDialogFragment {
         @NonNull
         @Override
         public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final int title = getArguments().getInt(TITLE);
-            final int message = getArguments().getInt(MESSAGE);
-            final Uri uri = getArguments().getParcelable(URI);
-            return new AlertDialog.Builder(getActivity())
+            final int title = requireArguments().getInt(TITLE);
+            final int message = requireArguments().getInt(MESSAGE);
+            final Uri uri = requireArguments().getParcelable(URI);
+            return new AlertDialog.Builder(requireActivity())
                     .setTitle(title)
                     .setMessage(message)
                     .setPositiveButton(android.R.string.ok,
@@ -164,8 +166,8 @@ public interface GenericDialogFragment {
                                 public void onClick(DialogInterface dialog,
                                                     int whichButton) {
                                     if (uri != null) {
-                                        getActivity().getContentResolver().delete(uri, null, null);
-                                        runCallback(getArguments().getInt(ID), false);
+                                        requireActivity().getContentResolver().delete(uri, null, null);
+                                        runCallback(requireArguments().getInt(ID), false);
                                     }
                                 }
                             })
@@ -173,7 +175,7 @@ public interface GenericDialogFragment {
                             new DialogInterface.OnClickListener() {
                                 public void onClick(DialogInterface dialog,
                                                     int whichButton) {
-                                    runCallback(getArguments().getInt(ID), true);
+                                    runCallback(requireArguments().getInt(ID), true);
                                 }
                             }).create();
         }
@@ -190,7 +192,7 @@ public interface GenericDialogFragment {
             return newInstance(id, date, MIN_DATE, MAX_DATE);
         }
 
-        public static DatePicker newInstance(int id, Calendar date, Calendar minDate, Calendar maxDate) {
+        static DatePicker newInstance(int id, Calendar date, Calendar minDate, Calendar maxDate) {
             DatePicker frag = new DatePicker();
             Bundle args = new Bundle();
             args.putLong(DATE, date.getTimeInMillis());
@@ -204,10 +206,10 @@ public interface GenericDialogFragment {
         @NonNull
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(getArguments().getLong(DATE));
-            final DatePickerDialog dialog = new DatePickerDialog(getActivity(), R.style.AppTheme_Light_Dialog, this, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-            DatePickerDialogCompatHelper.setMaxDate(dialog, getArguments().getLong(MAX_DATE));
-            DatePickerDialogCompatHelper.setMinDate(dialog, getArguments().getLong(MIN_DATE));
+            calendar.setTimeInMillis(requireArguments().getLong(DATE));
+            final DatePickerDialog dialog = new DatePickerDialog(requireActivity(), R.style.AppTheme_Light_Dialog, this, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+            DatePickerDialogCompatHelper.setMaxDate(dialog, requireArguments().getLong(MAX_DATE));
+            DatePickerDialogCompatHelper.setMinDate(dialog, requireArguments().getLong(MIN_DATE));
             return dialog;
         }
 
@@ -215,19 +217,19 @@ public interface GenericDialogFragment {
         public void onDateSet(android.widget.DatePicker view, int year, int monthOfYear, int dayOfMonth) {
             final Calendar minDate = Calendar.getInstance();
             final Calendar maxDate = Calendar.getInstance();
-            minDate.setTimeInMillis(getArguments().getLong(MIN_DATE));
-            maxDate.setTimeInMillis(getArguments().getLong(MAX_DATE));
+            minDate.setTimeInMillis(requireArguments().getLong(MIN_DATE));
+            maxDate.setTimeInMillis(requireArguments().getLong(MAX_DATE));
             final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(getArguments().getLong(DATE));
+            calendar.setTimeInMillis(requireArguments().getLong(DATE));
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, monthOfYear);
             calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
             if (minDate.getTimeInMillis() > calendar.getTimeInMillis())
-                runCallback(getArguments().getInt(ID), false, minDate);
+                runCallback(requireArguments().getInt(ID), false, minDate);
             else if (maxDate.getTimeInMillis() < calendar.getTimeInMillis())
-                runCallback(getArguments().getInt(ID), false, maxDate);
+                runCallback(requireArguments().getInt(ID), false, maxDate);
             else
-                runCallback(getArguments().getInt(ID), false, calendar);
+                runCallback(requireArguments().getInt(ID), false, calendar);
         }
 
         private void runCallback(final int ID, boolean canceled, Calendar date) {
@@ -238,10 +240,10 @@ public interface GenericDialogFragment {
                 ((Callback) getActivity()).onAction(ID, canceled, date);
         }
 
-        public void onCancel(DialogInterface dialog) {
+        public void onCancel(@NonNull DialogInterface dialog) {
             final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(getArguments().getLong(DATE));
-            runCallback(getArguments().getInt(ID), true, calendar);
+            calendar.setTimeInMillis(requireArguments().getLong(DATE));
+            runCallback(requireArguments().getInt(ID), true, calendar);
             super.onCancel(dialog);
         }
 
@@ -250,7 +252,7 @@ public interface GenericDialogFragment {
         }
 
 
-        public static class DatePickerDialogCompatHelper {
+        private static class DatePickerDialogCompatHelper {
             final static DatePickerDialogCompatImplBase IMPL;
 
             static {
@@ -311,7 +313,7 @@ public interface GenericDialogFragment {
         @NonNull
         public Dialog onCreateDialog(Bundle savedInstanceState) {
             final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(getArguments().getLong(DATE));
+            calendar.setTimeInMillis(requireArguments().getLong(DATE));
             return new TimePickerDialog(getActivity(), R.style.AppTheme_Light_Dialog, this, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
         }
 
@@ -323,22 +325,22 @@ public interface GenericDialogFragment {
                 ((Callback) getActivity()).onAction(ID, canceled, date);
         }
 
-        public void onCancel(DialogInterface dialog) {
+        public void onCancel(@NonNull DialogInterface dialog) {
             final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(getArguments().getLong(DATE));
-            runCallback(getArguments().getInt(ID), true, calendar);
+            calendar.setTimeInMillis(requireArguments().getLong(DATE));
+            runCallback(requireArguments().getInt(ID), true, calendar);
             super.onCancel(dialog);
         }
 
         @Override
         public void onTimeSet(android.widget.TimePicker timePicker, int hourOfDay, int minute) {
             final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(getArguments().getLong(DATE));
+            calendar.setTimeInMillis(requireArguments().getLong(DATE));
             calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
             calendar.set(Calendar.MINUTE, minute);
             calendar.set(Calendar.SECOND, 0);
             calendar.set(Calendar.MILLISECOND, 0);
-            runCallback(getArguments().getInt(ID), false, calendar);
+            runCallback(requireArguments().getInt(ID), false, calendar);
         }
 
         public interface Callback {

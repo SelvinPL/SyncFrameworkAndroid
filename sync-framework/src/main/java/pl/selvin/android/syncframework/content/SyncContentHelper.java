@@ -11,7 +11,8 @@
 
 package pl.selvin.android.syncframework.content;
 
-import android.arch.persistence.db.SupportSQLiteDatabase;
+import androidx.annotation.NonNull;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 import android.content.UriMatcher;
 import android.net.Uri;
 
@@ -122,11 +123,17 @@ public class SyncContentHelper extends ContentHelper {
             super(dbClass, authority, matcher, new TableInfoFactory() {
                 @Override
                 public TableInfo createTableInfo(Table table, Class<?> tableClass, String authority) throws Exception {
-                    final String scope = tableClass.getAnnotation(SyncScope.class).value();
+                    final SyncScope syncScope = tableClass.getAnnotation(SyncScope.class);
+                    if(syncScope == null)
+                        throw new IllegalStateException("There is no SyncScope annotation for class " + tableClass.getName());
+                    final String scope = syncScope.value();
                     return new SyncTableInfo(table, tableClass, authority, new ColumnInfoFactory() {
                         @Override
-                        public ColumnInfo createColumnInfo(Column column, Field field) throws Exception {
-                            return new ColumnInfo((String) field.get(null), column);
+                        public ColumnInfo createColumnInfo(@NonNull Column column, @NonNull Field field) throws Exception {
+                            final String columnName = (String)field.get(null);
+                            if(columnName == null)
+                                throw new IllegalStateException("Column name can not be null!");
+                            return new ColumnInfo(columnName, column);
                         }
                     }, scope);
                 }

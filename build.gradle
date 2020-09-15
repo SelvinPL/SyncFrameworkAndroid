@@ -4,8 +4,8 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath 'digital.wup:android-maven-publish:3.4.0'
+        classpath 'com.android.tools.build:gradle:4.0.1'
+        classpath 'digital.wup:android-maven-publish:3.6.2'
     }
 }
 
@@ -13,11 +13,16 @@ allprojects {
     repositories {
         google()
         jcenter()
+        maven {
+            url "https://s3.amazonaws.com/repo.commonsware.com"
+        }
     }
 }
 
+apply plugin: 'digital.wup.android-maven-publish'
+
 ext {
     sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-    sync_framework_version = '0.17.0'
-    sync_framework_version_int = 17000
+    sync_framework_version = '1.2.0'
+    sync_framework_version_int = 102000
 }

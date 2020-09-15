@@ -11,16 +11,19 @@
 
 package pl.selvin.android.listsyncsample;
 
-import android.arch.persistence.db.SupportSQLiteOpenHelper;
+import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import android.content.Context;
+import android.text.SpannableStringBuilder;
+
+import com.commonsware.cwac.saferoom.SafeHelperFactory;
 
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
-import pl.selvin.android.db.sqlcipher.SqlCipherOpenHelperFactory;
 
 
 public class HelperFactoryProvider implements SupportSQLiteOpenHelperFactoryProvider {
     @Override
     public SupportSQLiteOpenHelper.Factory createFactory(Context context) {
-        return new SqlCipherOpenHelperFactory("test");
+        //DO NOT DO THIS IN PRODUCTION CODE!!!
+        return SafeHelperFactory.fromUser(new SpannableStringBuilder("test"));
     }
 }

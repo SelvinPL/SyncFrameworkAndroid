@@ -15,7 +15,7 @@ import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.annotation.TableName;
 import pl.selvin.android.autocontentprovider.db.ColumnType;
 
-public class Database {
+public class DatabaseTest {
     @Table(primaryKeys = {Status.ID})
     public interface Status {
 
