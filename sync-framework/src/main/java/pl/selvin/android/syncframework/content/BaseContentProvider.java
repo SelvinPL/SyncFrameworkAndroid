@@ -331,8 +331,11 @@ public abstract class BaseContentProvider extends AutoContentProvider {
                                 fixed = true;
                                 serializationException = true;
                             }
-                            if (error.contains("Cannot find a valid scope with the name") && !serializationException) {
+                            if ((error.contains("Cannot find a valid scope with the name") ||
+                                    error.contains("Scope does not exist"))
+                                    && !serializationException) {
                                 //500 Cannot find a valid scope with the name 'table_xxxx-xxxx-guid-xxxxx' in table '[scope_info]'... delete tables in scope and blob then re-sync
+                                //400 Scope does not exist
                                 syncContentHelper.clearScope(db, scope, scopeServerBlob);
                                 serverBlob = null;
                                 moreChanges = true;
