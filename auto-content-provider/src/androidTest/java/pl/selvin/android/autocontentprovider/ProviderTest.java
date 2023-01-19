@@ -18,25 +18,30 @@ import static org.junit.Assert.fail;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
+import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.rule.provider.ProviderTestRule;
 
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class ProviderTest {
 
-	@Rule
-	public final ProviderTestRule mProviderRule = new ProviderTestRule.Builder(TestProvider.class, TestProvider.AUTHORITY).build();
+	Context appContext;
+
+	@Before
+	public void setUp() {
+		appContext = ApplicationProvider.getApplicationContext();
+	}
 
 	@Test
 	public void testInsert() {
-		final ContentResolver resolver = mProviderRule.getResolver();
+		final ContentResolver resolver = appContext.getContentResolver();
 
 		final Uri url = TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.Status.TABLE_NAME);
 		resolver.delete(url, null, null);
@@ -49,7 +54,7 @@ public class ProviderTest {
 	@Test
 	public void testReadonly() {
 		final String errMsg = "Table " + DatabaseTest.StatusReadonly.TABLE_NAME + " is readonly.";
-		final ContentResolver resolver = mProviderRule.getResolver();
+		final ContentResolver resolver = appContext.getContentResolver();
 		try {
 			resolver.insert(TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.StatusReadonly.TABLE_NAME), new ContentValues());
 			fail();
@@ -73,7 +78,7 @@ public class ProviderTest {
 
 	@Test
 	public void testInsertAndSelect() {
-		final ContentResolver resolver = mProviderRule.getResolver();
+		final ContentResolver resolver = appContext.getContentResolver();
 		final Uri url = TestProvider.CONTENT_HELPER.getDirUri(DatabaseTest.Status.TABLE_NAME);
 		resolver.delete(url, null, null);
 		Uri uri = resolver.insert(url, getFullContentValues());
