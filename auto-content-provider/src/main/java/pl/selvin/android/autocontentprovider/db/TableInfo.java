@@ -172,6 +172,8 @@ public class TableInfo {
 	public Cursor query(SupportSQLiteDatabase database, Uri uri, SQLiteQueryBuilder builder, String[] projection, String selection, String[] selectionArgs, String groupBy, String having, String sortOrder, String limit, Logger logger) {
 		final String query = builder.buildQuery(projection, selection, groupBy, having, sortOrder, limit);
 		logger.LogQuery(clazz, uri, builder, projection, selection, selectionArgs, groupBy, having, sortOrder, limit);
+		if(selectionArgs == null)
+			return database.query(query);
 		return database.query(query, selectionArgs);
 	}
 

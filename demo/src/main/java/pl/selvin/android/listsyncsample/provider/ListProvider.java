@@ -149,7 +149,11 @@ public class ListProvider extends BaseContentProvider {
 		logger.LogQuery(clazz, uri, builder, projection, selection, selectionArgs, null, null, sortOrder, limit);
 		String q = builder.buildQuery(projection, selection, null, null, sortOrder, limit);
 
-		final Cursor cursor = getReadableDatabase().query(q, selectionArgs);
+		final Cursor cursor;
+		if (selectionArgs == null)
+			cursor = getReadableDatabase().query(q);
+		else
+			cursor = getReadableDatabase().query(q, selectionArgs);
 		if (getContext() != null) {
 			cursor.setNotificationUri(getContext().getContentResolver(), uri);
 		}
