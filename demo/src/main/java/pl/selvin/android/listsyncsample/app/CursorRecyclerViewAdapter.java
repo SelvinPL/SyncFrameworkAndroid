@@ -24,109 +24,105 @@ import android.database.DataSetObserver;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-
 public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHolder> extends RecyclerView.Adapter<VH> {
 
-    private Cursor mCursor = null;
+	private final DataSetObserver mDataSetObserver = new NotifyingDataSetObserver();
+	private Cursor mCursor = null;
+	private boolean mDataValid = false;
+	private int mRowIdColumn = -1;
 
-    private boolean mDataValid = false;
+	public Cursor getCursor() {
+		return mCursor;
+	}
 
-    private int mRowIdColumn = -1;
+	@Override
+	public int getItemCount() {
+		if (mDataValid && mCursor != null) {
+			return mCursor.getCount();
+		}
+		return 0;
+	}
 
-    private final DataSetObserver mDataSetObserver = new NotifyingDataSetObserver();
+	@Override
+	public long getItemId(int position) {
+		if (mDataValid && mCursor != null && mCursor.moveToPosition(position)) {
+			return mCursor.getLong(mRowIdColumn);
+		}
+		return 0;
+	}
 
-    public Cursor getCursor() {
-        return mCursor;
-    }
+	@Override
+	public void setHasStableIds(boolean hasStableIds) {
+		super.setHasStableIds(true);
+	}
 
-    @Override
-    public int getItemCount() {
-        if (mDataValid && mCursor != null) {
-            return mCursor.getCount();
-        }
-        return 0;
-    }
+	public abstract void onBindViewHolder(VH viewHolder, Cursor cursor);
 
-    @Override
-    public long getItemId(int position) {
-        if (mDataValid && mCursor != null && mCursor.moveToPosition(position)) {
-            return mCursor.getLong(mRowIdColumn);
-        }
-        return 0;
-    }
+	@Override
+	public void onBindViewHolder(@NonNull VH viewHolder, int position) {
+		if (!mDataValid) {
+			throw new IllegalStateException("this should only be called when the cursor is valid");
+		}
+		if (!mCursor.moveToPosition(position)) {
+			throw new IllegalStateException("couldn't move cursor to position " + position);
+		}
+		onBindViewHolder(viewHolder, mCursor);
+	}
 
-    @Override
-    public void setHasStableIds(boolean hasStableIds) {
-        super.setHasStableIds(true);
-    }
+	/**
+	 * Change the underlying cursor to a new cursor. If there is an existing cursor it will be
+	 * closed.
+	 */
+	public void changeCursor(Cursor cursor) {
+		Cursor old = swapCursor(cursor);
+		if (old != null) {
+			old.close();
+		}
+	}
 
-    public abstract void onBindViewHolder(VH viewHolder, Cursor cursor);
+	/**
+	 * Swap in a new Cursor, returning the old Cursor.  Unlike
+	 * {@link #changeCursor(Cursor)}, the returned old Cursor is <em>not</em>
+	 * closed.
+	 */
+	@SuppressLint("NotifyDataSetChanged")
+	public Cursor swapCursor(Cursor newCursor) {
+		if (newCursor == mCursor) {
+			return null;
+		}
+		final Cursor oldCursor = mCursor;
+		if (oldCursor != null) {
+			oldCursor.unregisterDataSetObserver(mDataSetObserver);
+		}
+		mCursor = newCursor;
+		if (mCursor != null) {
+			mCursor.registerDataSetObserver(mDataSetObserver);
+			mRowIdColumn = newCursor.getColumnIndexOrThrow("_id");
+			mDataValid = true;
+			notifyDataSetChanged();
+		} else {
+			mRowIdColumn = -1;
+			mDataValid = false;
+			notifyDataSetChanged();
+		}
+		return oldCursor;
+	}
 
-    @Override
-    public void onBindViewHolder(@NonNull VH viewHolder, int position) {
-        if (!mDataValid) {
-            throw new IllegalStateException("this should only be called when the cursor is valid");
-        }
-        if (!mCursor.moveToPosition(position)) {
-            throw new IllegalStateException("couldn't move cursor to position " + position);
-        }
-        onBindViewHolder(viewHolder, mCursor);
-    }
+	private class NotifyingDataSetObserver extends DataSetObserver {
+		@SuppressLint("NotifyDataSetChanged")
+		@Override
+		public void onChanged() {
+			super.onChanged();
+			mDataValid = true;
+			notifyDataSetChanged();
+		}
 
-    /**
-     * Change the underlying cursor to a new cursor. If there is an existing cursor it will be
-     * closed.
-     */
-    public void changeCursor(Cursor cursor) {
-        Cursor old = swapCursor(cursor);
-        if (old != null) {
-            old.close();
-        }
-    }
-
-    /**
-     * Swap in a new Cursor, returning the old Cursor.  Unlike
-     * {@link #changeCursor(Cursor)}, the returned old Cursor is <em>not</em>
-     * closed.
-     */
-    @SuppressLint("NotifyDataSetChanged")
-    public Cursor swapCursor(Cursor newCursor) {
-        if (newCursor == mCursor) {
-            return null;
-        }
-        final Cursor oldCursor = mCursor;
-        if (oldCursor != null) {
-            oldCursor.unregisterDataSetObserver(mDataSetObserver);
-        }
-        mCursor = newCursor;
-        if (mCursor != null) {
-            mCursor.registerDataSetObserver(mDataSetObserver);
-            mRowIdColumn = newCursor.getColumnIndexOrThrow("_id");
-            mDataValid = true;
-            notifyDataSetChanged();
-        } else {
-            mRowIdColumn = -1;
-            mDataValid = false;
-            notifyDataSetChanged();
-        }
-        return oldCursor;
-    }
-
-    private class NotifyingDataSetObserver extends DataSetObserver {
-        @SuppressLint("NotifyDataSetChanged")
-        @Override
-        public void onChanged() {
-            super.onChanged();
-            mDataValid = true;
-            notifyDataSetChanged();
-        }
-
-        @SuppressLint("NotifyDataSetChanged")
-        @Override
-        public void onInvalidated() {
-            super.onInvalidated();
-            mDataValid = false;
-            notifyDataSetChanged();
-        }
-    }
+		@SuppressLint("NotifyDataSetChanged")
+		@Override
+		public void onInvalidated() {
+			super.onInvalidated();
+			mDataValid = false;
+			notifyDataSetChanged();
+		}
+	}
 }

@@ -11,7 +11,6 @@
 
 package pl.selvin.android.autocontentprovider.content;
 
-
 import android.content.UriMatcher;
 import android.net.Uri;
 
@@ -24,136 +23,135 @@ import pl.selvin.android.autocontentprovider.db.DatabaseInfoFactory;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 
 public class ContentHelper {
-    private static final String DO_CLEAR = "pl_selvin_android_auto_content_provider_do_clear";
-    public static final String PARAMETER_LIMIT = "acp_limit";
-    public static final String PARAMETER_SYNC_TO_NETWORK = "apc_sync_to_network";
-    protected final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
-    public final String AUTHORITY;
-    public final Uri CONTENT_URI;
-    public final Uri CLEAR_URI;
-    protected final DatabaseInfo databaseInfo;
-    public static final int uriClearCode = 0x20000;
-    public static final int uriCode = 0xfff;
-    public static final int uriCodeItemFlag = 0x1000;
-    public static final int uriCodeItemRowIDFlag = 0x2000 | uriCodeItemFlag;
-    final int DATABASE_VERSION;
-    final String DATABASE_NAME;
+	public static final String PARAMETER_LIMIT = "acp_limit";
+	public static final String PARAMETER_SYNC_TO_NETWORK = "apc_sync_to_network";
+	public static final int uriClearCode = 0x20000;
+	public static final int uriCode = 0xfff;
+	public static final int uriCodeItemFlag = 0x1000;
+	public static final int uriCodeItemRowIDFlag = 0x2000 | uriCodeItemFlag;
+	private static final String DO_CLEAR = "pl_selvin_android_auto_content_provider_do_clear";
+	public final String AUTHORITY;
+	public final Uri CONTENT_URI;
+	public final Uri CLEAR_URI;
+	protected final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
+	protected final DatabaseInfo databaseInfo;
+	final int DATABASE_VERSION;
+	final String DATABASE_NAME;
 
 
-    public ContentHelper(Class<?> dbClass, String authority, DatabaseInfoFactory databaseInfoFactory, String databaseName, int databaseVersion) {
-        DATABASE_VERSION = databaseVersion;
-        DATABASE_NAME = databaseName;
-        AUTHORITY = authority;
-        CONTENT_URI = Uri.parse("content://" + AUTHORITY);
-        CLEAR_URI = Uri.withAppendedPath(CONTENT_URI, DO_CLEAR);
-        matcher.addURI(AUTHORITY, DO_CLEAR, uriClearCode);
-        try {
-            databaseInfo = databaseInfoFactory.createDatabaseInfo(dbClass, authority, matcher);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+	public ContentHelper(Class<?> dbClass, String authority, DatabaseInfoFactory databaseInfoFactory, String databaseName, int databaseVersion) {
+		DATABASE_VERSION = databaseVersion;
+		DATABASE_NAME = databaseName;
+		AUTHORITY = authority;
+		CONTENT_URI = Uri.parse("content://" + AUTHORITY);
+		CLEAR_URI = Uri.withAppendedPath(CONTENT_URI, DO_CLEAR);
+		matcher.addURI(AUTHORITY, DO_CLEAR, uriClearCode);
+		try {
+			databaseInfo = databaseInfoFactory.createDatabaseInfo(dbClass, authority, matcher);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public TableInfo getTableFromCode(int code) {
-        return databaseInfo.allTablesInfoCode.get(code);
-    }
+	public static boolean isItemCode(int code) {
+		return (code & ContentHelper.uriCodeItemFlag) == ContentHelper.uriCodeItemFlag;
+	}
 
-    @NonNull
-    public Uri.Builder getDirUriBuilder(String tableName) {
-        return CONTENT_URI.buildUpon().appendPath(tableName);
-    }
+	public static boolean isItemRowIDCode(int code) {
+		return (code & ContentHelper.uriCodeItemRowIDFlag) == ContentHelper.uriCodeItemRowIDFlag;
+	}
 
-    @NonNull
-    public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork) {
-        final Uri.Builder builder = getDirUriBuilder(tableName);
-        if(!syncToNetwork)
-            builder.appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(false));
-        return builder;
-    }
+	public static boolean checkSyncToNetwork(Uri uri) {
+		final String syncToNetworkUri = uri.getQueryParameter(ContentHelper.PARAMETER_SYNC_TO_NETWORK);
+		return syncToNetworkUri == null || Boolean.parseBoolean(syncToNetworkUri);
+	}
 
-    @NonNull
-    public Uri getDirUri(String tableName) {
-        return getDirUriBuilder(tableName).build();
-    }
+	public TableInfo getTableFromCode(int code) {
+		return databaseInfo.allTablesInfoCode.get(code);
+	}
 
-    @NonNull
-    public Uri getDirUri(String tableName, boolean syncToNetwork) {
-        return getDirUriBuilder(tableName, syncToNetwork).build();
-    }
+	@NonNull
+	public Uri.Builder getDirUriBuilder(String tableName) {
+		return CONTENT_URI.buildUpon().appendPath(tableName);
+	}
 
-    @NonNull
-    public Uri.Builder getItemUriBuilder(String tableName, String... primaryKeys) {
-        final Uri.Builder builder = CONTENT_URI.buildUpon();
-        builder.appendPath(tableName);
-        if (primaryKeys == null || primaryKeys.length == 0) {
-            throw new IllegalArgumentException(
-                    "primary_keys should not be empty nor null");
-        } else {
-            for (final Object primaryKey : primaryKeys) {
-                builder.appendPath(primaryKey.toString());
-            }
-        }
-        return builder;
-    }
+	@NonNull
+	public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork) {
+		final Uri.Builder builder = getDirUriBuilder(tableName);
+		if (!syncToNetwork)
+			builder.appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(false));
+		return builder;
+	}
 
-    @NonNull
-    public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, String... primaryKeys) {
-        return getItemUriBuilder(tableName, primaryKeys).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
-    }
+	@NonNull
+	public Uri getDirUri(String tableName) {
+		return getDirUriBuilder(tableName).build();
+	}
 
-    @NonNull
-    public Uri getItemUri(String tableName, String... primaryKeys) {
-        return getItemUriBuilder(tableName, primaryKeys).build();
-    }
+	@NonNull
+	public Uri getDirUri(String tableName, boolean syncToNetwork) {
+		return getDirUriBuilder(tableName, syncToNetwork).build();
+	}
 
-    @NonNull
-    public Uri getItemUri(String tableName, boolean syncToNetwork, String... primaryKeys) {
-        return getItemUriBuilder(tableName, syncToNetwork, primaryKeys).build();
-    }
+	@NonNull
+	public Uri.Builder getItemUriBuilder(String tableName, String... primaryKeys) {
+		final Uri.Builder builder = CONTENT_URI.buildUpon();
+		builder.appendPath(tableName);
+		if (primaryKeys == null || primaryKeys.length == 0) {
+			throw new IllegalArgumentException(
+					"primary_keys should not be empty nor null");
+		} else {
+			for (final Object primaryKey : primaryKeys) {
+				builder.appendPath(primaryKey.toString());
+			}
+		}
+		return builder;
+	}
 
-    @NonNull
-    public Uri.Builder getItemUriBuilder(String tableName, long _id) {
-        return CONTENT_URI.buildUpon().appendPath(tableName).appendPath("ROWID").appendPath(Long.toString(_id));
-    }
+	@NonNull
+	public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, String... primaryKeys) {
+		return getItemUriBuilder(tableName, primaryKeys).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
+	}
 
-    @NonNull
-    public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, long _id) {
-        return getItemUriBuilder(tableName, _id).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
-    }
+	@NonNull
+	public Uri getItemUri(String tableName, String... primaryKeys) {
+		return getItemUriBuilder(tableName, primaryKeys).build();
+	}
 
-    @NonNull
-    public Uri getItemUri(String tableName, long _id) {
-        return getItemUriBuilder(tableName, _id).build();
-    }
+	@NonNull
+	public Uri getItemUri(String tableName, boolean syncToNetwork, String... primaryKeys) {
+		return getItemUriBuilder(tableName, syncToNetwork, primaryKeys).build();
+	}
 
-    @NonNull
-    public Uri getItemUri(String tableName, boolean syncToNetwork, long _id) {
-        return getItemUriBuilder(tableName, syncToNetwork, _id).build();
-    }
+	@NonNull
+	public Uri.Builder getItemUriBuilder(String tableName, long _id) {
+		return CONTENT_URI.buildUpon().appendPath(tableName).appendPath("ROWID").appendPath(Long.toString(_id));
+	}
 
-    public int matchUri(Uri uri) {
-        return matcher.match(uri);
-    }
+	@NonNull
+	public Uri.Builder getItemUriBuilder(String tableName, boolean syncToNetwork, long _id) {
+		return getItemUriBuilder(tableName, _id).appendQueryParameter(PARAMETER_SYNC_TO_NETWORK, Boolean.toString(syncToNetwork));
+	}
 
+	@NonNull
+	public Uri getItemUri(String tableName, long _id) {
+		return getItemUriBuilder(tableName, _id).build();
+	}
 
-    public TableInfo getTableFromType(String type) {
-        return databaseInfo.allTablesInfo.get(type);
-    }
+	@NonNull
+	public Uri getItemUri(String tableName, boolean syncToNetwork, long _id) {
+		return getItemUriBuilder(tableName, syncToNetwork, _id).build();
+	}
 
-    public Collection<? extends TableInfo> getAllTables() {
-        return databaseInfo.allTablesInfo.values();
-    }
+	public int matchUri(Uri uri) {
+		return matcher.match(uri);
+	}
 
-    public static boolean isItemCode(int code) {
-        return (code & ContentHelper.uriCodeItemFlag) == ContentHelper.uriCodeItemFlag;
-    }
+	public TableInfo getTableFromType(String type) {
+		return databaseInfo.allTablesInfo.get(type);
+	}
 
-    public static boolean isItemRowIDCode(int code) {
-        return (code & ContentHelper.uriCodeItemRowIDFlag) == ContentHelper.uriCodeItemRowIDFlag;
-    }
-
-    public static boolean checkSyncToNetwork(Uri uri) {
-        final String syncToNetworkUri = uri.getQueryParameter(ContentHelper.PARAMETER_SYNC_TO_NETWORK);
-        return syncToNetworkUri == null || Boolean.parseBoolean(syncToNetworkUri);
-    }
+	public Collection<? extends TableInfo> getAllTables() {
+		return databaseInfo.allTablesInfo.values();
+	}
 }

@@ -19,27 +19,23 @@ import java.lang.annotation.Target;
 
 import pl.selvin.android.autocontentprovider.db.ColumnType;
 
-/**
- * FSM save us!!
- *
- * @author Selvin
- */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD})
 public @interface Column {
-    String COLLATE_NO_CASE = "COLLATE NOCASE";
-    /* Not working with sqlicipher! */
-    @SuppressWarnings({"unused", "RedundantSuppression"})
-    String COLLATE_LOCALIZED = "COLLATE LOCALIZED";
-    String EMPTY = "";
+	String COLLATE_NO_CASE = "COLLATE NOCASE";
+	/* Not working with sqlicipher! */
+	@SuppressWarnings({"unused", "RedundantSuppression"})
+	String COLLATE_LOCALIZED = "COLLATE LOCALIZED";
+	String EMPTY = "";
 
-    int type() default ColumnType.INTEGER;
-    int precision() default 4;
+	int type() default ColumnType.INTEGER;
 
-    boolean nullable() default false;
+	int precision() default 4;
 
-    String extras() default EMPTY;
+	boolean nullable() default false;
 
-    String computed() default EMPTY;
+	String extras() default EMPTY;
+
+	String computed() default EMPTY;
 }

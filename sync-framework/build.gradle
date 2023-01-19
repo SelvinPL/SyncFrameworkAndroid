@@ -36,4 +36,3 @@ dependencies {
     api 'androidx.sqlite:sqlite:2.3.0'
     api project(path: ':auto-content-provider')
 }
-

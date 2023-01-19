@@ -50,7 +50,6 @@ public class UnusedTagListFragment extends DialogFragment implements LoaderManag
 		return frag;
 	}
 
-
 	@Override
 	public void onCreate(@Nullable Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -60,7 +59,6 @@ public class UnusedTagListFragment extends DialogFragment implements LoaderManag
 				new String[]{Tag.NAME}, new int[]{android.R.id.text1}, 1);
 		LoaderManager.getInstance(this).initLoader(0, null, this);
 	}
-
 
 	@NonNull
 	@Override

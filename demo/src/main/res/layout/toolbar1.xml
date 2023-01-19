@@ -15,8 +15,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="end"
-        app:theme="@style/AppTheme.Dark.ActionBar"
         android:imeOptions="actionSearch|flagNoExtractUi|flagNoFullscreen"
-        android:visibility="gone" />
+        android:visibility="gone"
+        app:theme="@style/AppTheme.Dark.ActionBar" />
 
 </androidx.appcompat.widget.Toolbar>

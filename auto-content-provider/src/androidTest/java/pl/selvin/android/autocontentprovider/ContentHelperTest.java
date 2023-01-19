@@ -11,10 +11,13 @@
 
 package pl.selvin.android.autocontentprovider;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+
 import android.net.Uri;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -23,56 +26,59 @@ import pl.selvin.android.autocontentprovider.content.ContentHelper;
 @RunWith(AndroidJUnit4.class)
 public class ContentHelperTest {
 
-    private Uri.Builder baseBuilder() { return Uri.parse("content://" + TestProvider.AUTHORITY).buildUpon(); }
-    @Test
-    public void getUriTest() {
-        final ContentHelper ch = TestProvider.CONTENT_HELPER;
+	private Uri.Builder baseBuilder() {
+		return Uri.parse("content://" + TestProvider.AUTHORITY).buildUpon();
+	}
 
-        final Uri statusDirUri = ch.getDirUri(DatabaseTest.Status.TABLE_NAME);
-        assertEquals(baseBuilder().appendPath(DatabaseTest.Status.TABLE_NAME).build(),
-                statusDirUri);
-        assertEquals(0, ch.matchUri(statusDirUri)  & ContentHelper.uriCodeItemFlag);
-        assertEquals(0, ch.matchUri(statusDirUri)  & ContentHelper.uriCodeItemRowIDFlag);
-        int statusUriCodeBase =  ch.matchUri(statusDirUri) & ContentHelper.uriCode;
+	@Test
+	public void getUriTest() {
+		final ContentHelper ch = TestProvider.CONTENT_HELPER;
 
-        final Uri statusItemROWIDUri = ch.getItemUri(DatabaseTest.Status.TABLE_NAME, 1);
-        assertEquals(baseBuilder().appendPath(DatabaseTest.Status.TABLE_NAME).appendPath("ROWID").appendPath("1").build(),
-                statusItemROWIDUri);
-        assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusItemROWIDUri)  & ContentHelper.uriCodeItemFlag);
-        assertEquals(ContentHelper.uriCodeItemRowIDFlag, ch.matchUri(statusItemROWIDUri)  & ContentHelper.uriCodeItemRowIDFlag);
-        assertEquals(statusUriCodeBase, ch.matchUri(statusItemROWIDUri)  & ContentHelper.uriCode);
+		final Uri statusDirUri = ch.getDirUri(DatabaseTest.Status.TABLE_NAME);
+		assertEquals(baseBuilder().appendPath(DatabaseTest.Status.TABLE_NAME).build(),
+				statusDirUri);
+		assertEquals(0, ch.matchUri(statusDirUri) & ContentHelper.uriCodeItemFlag);
+		assertEquals(0, ch.matchUri(statusDirUri) & ContentHelper.uriCodeItemRowIDFlag);
+		int statusUriCodeBase = ch.matchUri(statusDirUri) & ContentHelper.uriCode;
 
-
-        final Uri statusItemPKUri = ch.getItemUri(DatabaseTest.Status.TABLE_NAME, "1");
-        assertEquals(baseBuilder().appendPath(DatabaseTest.Status.TABLE_NAME).appendPath("1").build(),
-                statusItemPKUri);
-        assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusItemPKUri)  & ContentHelper.uriCodeItemFlag);
-        assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusItemPKUri)  & ContentHelper.uriCodeItemRowIDFlag);
-        assertEquals(statusUriCodeBase, ch.matchUri(statusItemPKUri)  & ContentHelper.uriCode);
+		final Uri statusItemROWIDUri = ch.getItemUri(DatabaseTest.Status.TABLE_NAME, 1);
+		assertEquals(baseBuilder().appendPath(DatabaseTest.Status.TABLE_NAME).appendPath("ROWID").appendPath("1").build(),
+				statusItemROWIDUri);
+		assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusItemROWIDUri) & ContentHelper.uriCodeItemFlag);
+		assertEquals(ContentHelper.uriCodeItemRowIDFlag, ch.matchUri(statusItemROWIDUri) & ContentHelper.uriCodeItemRowIDFlag);
+		assertEquals(statusUriCodeBase, ch.matchUri(statusItemROWIDUri) & ContentHelper.uriCode);
 
 
-        final Uri statusReadonlyDirUri = ch.getDirUri(DatabaseTest.StatusReadonly.TABLE_NAME);
-        assertEquals(baseBuilder().appendPath(DatabaseTest.StatusReadonly.TABLE_NAME).build(),
-                statusReadonlyDirUri);
-        assertEquals(0, ch.matchUri(statusReadonlyDirUri)  & ContentHelper.uriCodeItemFlag);
-        assertEquals(0, ch.matchUri(statusReadonlyDirUri)  & ContentHelper.uriCodeItemRowIDFlag);
-        int statusReadonlyUriCodeBase =  ch.matchUri(statusReadonlyDirUri) & ContentHelper.uriCode;
-
-        assertNotEquals(statusUriCodeBase, statusReadonlyUriCodeBase);
-
-        final Uri statusReadonlyItemROWIDUri = ch.getItemUri(DatabaseTest.StatusReadonly.TABLE_NAME, 1);
-        assertEquals(baseBuilder().appendPath(DatabaseTest.StatusReadonly.TABLE_NAME).appendPath("ROWID").appendPath("1").build(),
-                statusReadonlyItemROWIDUri);
-        assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusReadonlyItemROWIDUri)  & ContentHelper.uriCodeItemFlag);
-        assertEquals(ContentHelper.uriCodeItemRowIDFlag, ch.matchUri(statusReadonlyItemROWIDUri)  & ContentHelper.uriCodeItemRowIDFlag);
-        assertEquals(statusReadonlyUriCodeBase, ch.matchUri(statusReadonlyItemROWIDUri)  & ContentHelper.uriCode);
+		final Uri statusItemPKUri = ch.getItemUri(DatabaseTest.Status.TABLE_NAME, "1");
+		assertEquals(baseBuilder().appendPath(DatabaseTest.Status.TABLE_NAME).appendPath("1").build(),
+				statusItemPKUri);
+		assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusItemPKUri) & ContentHelper.uriCodeItemFlag);
+		assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusItemPKUri) & ContentHelper.uriCodeItemRowIDFlag);
+		assertEquals(statusUriCodeBase, ch.matchUri(statusItemPKUri) & ContentHelper.uriCode);
 
 
-        final Uri statusReadonlyItemPKUri = ch.getItemUri(DatabaseTest.StatusReadonly.TABLE_NAME, "1");
-        assertEquals(baseBuilder().appendPath(DatabaseTest.StatusReadonly.TABLE_NAME).appendPath("1").build(),
-                statusReadonlyItemPKUri);
-        assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusReadonlyItemPKUri)  & ContentHelper.uriCodeItemFlag);
-        assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusReadonlyItemPKUri)  & ContentHelper.uriCodeItemRowIDFlag);
-        assertEquals(statusReadonlyUriCodeBase, ch.matchUri(statusReadonlyItemPKUri)  & ContentHelper.uriCode);
-    }
+		final Uri statusReadonlyDirUri = ch.getDirUri(DatabaseTest.StatusReadonly.TABLE_NAME);
+		assertEquals(baseBuilder().appendPath(DatabaseTest.StatusReadonly.TABLE_NAME).build(),
+				statusReadonlyDirUri);
+		assertEquals(0, ch.matchUri(statusReadonlyDirUri) & ContentHelper.uriCodeItemFlag);
+		assertEquals(0, ch.matchUri(statusReadonlyDirUri) & ContentHelper.uriCodeItemRowIDFlag);
+		int statusReadonlyUriCodeBase = ch.matchUri(statusReadonlyDirUri) & ContentHelper.uriCode;
+
+		assertNotEquals(statusUriCodeBase, statusReadonlyUriCodeBase);
+
+		final Uri statusReadonlyItemROWIDUri = ch.getItemUri(DatabaseTest.StatusReadonly.TABLE_NAME, 1);
+		assertEquals(baseBuilder().appendPath(DatabaseTest.StatusReadonly.TABLE_NAME).appendPath("ROWID").appendPath("1").build(),
+				statusReadonlyItemROWIDUri);
+		assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusReadonlyItemROWIDUri) & ContentHelper.uriCodeItemFlag);
+		assertEquals(ContentHelper.uriCodeItemRowIDFlag, ch.matchUri(statusReadonlyItemROWIDUri) & ContentHelper.uriCodeItemRowIDFlag);
+		assertEquals(statusReadonlyUriCodeBase, ch.matchUri(statusReadonlyItemROWIDUri) & ContentHelper.uriCode);
+
+
+		final Uri statusReadonlyItemPKUri = ch.getItemUri(DatabaseTest.StatusReadonly.TABLE_NAME, "1");
+		assertEquals(baseBuilder().appendPath(DatabaseTest.StatusReadonly.TABLE_NAME).appendPath("1").build(),
+				statusReadonlyItemPKUri);
+		assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusReadonlyItemPKUri) & ContentHelper.uriCodeItemFlag);
+		assertEquals(ContentHelper.uriCodeItemFlag, ch.matchUri(statusReadonlyItemPKUri) & ContentHelper.uriCodeItemRowIDFlag);
+		assertEquals(statusReadonlyUriCodeBase, ch.matchUri(statusReadonlyItemPKUri) & ContentHelper.uriCode);
+	}
 }

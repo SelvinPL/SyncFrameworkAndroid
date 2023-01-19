@@ -2,8 +2,8 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="6dip"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="6dip">
 
     <TextView
         android:id="@+id/name"
@@ -16,16 +16,16 @@
     <TextView
         android:id="@+id/description"
         android:layout_width="match_parent"
-        android:maxLines="3"
+        android:layout_height="wrap_content"
         android:ellipsize="end"
-        android:layout_height="wrap_content" />
+        android:maxLines="3" />
 
     <TextView
         android:id="@+id/created_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ellipsize="marquee"
-        android:singleLine="true"
-        android:focusable="false" />
+        android:focusable="false"
+        android:singleLine="true" />
 
 </LinearLayout>

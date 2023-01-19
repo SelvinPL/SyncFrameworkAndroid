@@ -231,5 +231,4 @@ public class AuthenticatorActivity extends AppCompatActivity {
 			this.resultProcessed = resultProcessed;
 		}
 	}
-
 }

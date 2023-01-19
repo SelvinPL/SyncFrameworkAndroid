@@ -28,7 +28,6 @@
     <string name="menu_refresh_title">Refresh</string>
 
 
-
     <string name="welcome">Welcome!</string>
     <string name="login_error_field_required">This field is required</string>
     <string name="login_login_hint">User name</string>

@@ -12,12 +12,12 @@
 package pl.selvin.android.listsyncsample;
 
 public interface Constants {
-    String ACCOUNT_TYPE = BuildConfig.APPLICATION_ID;
-    String AUTHORITY = BuildConfig.APPLICATION_ID;
-    String AUTH_TOKEN_TYPE = BuildConfig.APPLICATION_ID;
-    String SERVICE_URI = "http://selvin.pl/listservice/";
+	String ACCOUNT_TYPE = BuildConfig.APPLICATION_ID;
+	String AUTHORITY = BuildConfig.APPLICATION_ID;
+	String AUTH_TOKEN_TYPE = BuildConfig.APPLICATION_ID;
+	String SERVICE_URI = "http://selvin.pl/listservice/";
 
-    interface StringUtil {
-        String EMPTY = "";
-    }
+	interface StringUtil {
+		String EMPTY = "";
+	}
 }

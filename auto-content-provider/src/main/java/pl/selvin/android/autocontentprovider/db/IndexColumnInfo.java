@@ -11,17 +11,16 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-
 import pl.selvin.android.autocontentprovider.annotation.IndexColumn;
 
 public final class IndexColumnInfo {
-    public final String name;
-    public final String collate;
-    public final String order;
+	public final String name;
+	public final String collate;
+	public final String order;
 
-    public IndexColumnInfo(final IndexColumn indexColumn) {
-        name = indexColumn.name();
-        order = indexColumn.order();
-        collate = indexColumn.collate();
-    }
+	public IndexColumnInfo(final IndexColumn indexColumn) {
+		name = indexColumn.name();
+		order = indexColumn.order();
+		collate = indexColumn.collate();
+	}
 }

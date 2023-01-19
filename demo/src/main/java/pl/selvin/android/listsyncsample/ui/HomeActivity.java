@@ -27,7 +27,6 @@ import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 
-
 public class HomeActivity extends AppCompatActivity {
 
 

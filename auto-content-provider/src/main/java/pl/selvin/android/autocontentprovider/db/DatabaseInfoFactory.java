@@ -11,9 +11,8 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-
 import android.content.UriMatcher;
 
 public interface DatabaseInfoFactory {
-    DatabaseInfo createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception;
+	DatabaseInfo createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception;
 }

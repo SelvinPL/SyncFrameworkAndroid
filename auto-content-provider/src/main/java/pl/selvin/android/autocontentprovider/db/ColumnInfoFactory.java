@@ -11,7 +11,6 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-
 import androidx.annotation.NonNull;
 
 import java.lang.reflect.Field;
@@ -19,7 +18,7 @@ import java.lang.reflect.Field;
 import pl.selvin.android.autocontentprovider.annotation.Column;
 
 public interface ColumnInfoFactory {
-    ColumnInfo  createColumnInfo(@NonNull Column column, @NonNull Field field) throws Exception;
+	ColumnInfo createColumnInfo(@NonNull Column column, @NonNull Field field) throws Exception;
 }
 
 

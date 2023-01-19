@@ -11,24 +11,22 @@
 
 package pl.selvin.android.autocontentprovider.annotation;
 
+import static pl.selvin.android.autocontentprovider.annotation.Column.EMPTY;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import static pl.selvin.android.autocontentprovider.annotation.Column.EMPTY;
-
-/**
- * FSM save us!!
- *
- * @author Selvin
- */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Index {
-    String name();
-    IndexColumn[] columns();
-    boolean isUnique() default false;
-    boolean ifNotExists() default false;
-    String where() default EMPTY;
+	String name();
+
+	IndexColumn[] columns();
+
+	boolean isUnique() default false;
+
+	boolean ifNotExists() default false;
+
+	String where() default EMPTY;
 }

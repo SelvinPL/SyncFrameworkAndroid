@@ -99,8 +99,8 @@
             android:id="@+id/start_time"
             android:layout_width="match_parent"
             android:layout_height="35dp"
-            android:layout_alignParentEnd="true"
             android:layout_below="@id/start_date_label"
+            android:layout_alignParentEnd="true"
             android:layout_toEndOf="@id/divider"
             android:gravity="center"
             android:textSize="17sp"
@@ -147,4 +147,5 @@
             android:layout_below="@id/tags_label"
             android:minHeight="200dp" />
     </RelativeLayout>
+
 </androidx.core.widget.NestedScrollView>
