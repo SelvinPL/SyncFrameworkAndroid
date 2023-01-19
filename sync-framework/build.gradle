@@ -6,11 +6,11 @@ apply from: '../publish.gradle'
 
 android {
 
-    compileSdkVersion 30
-    buildToolsVersion '30.0.2'
+    compileSdkVersion 33
+    buildToolsVersion '33.0.1'
     defaultConfig {
-        minSdkVersion 14
-        targetSdkVersion 30
+        minSdkVersion 22
+        targetSdkVersion 33
         versionCode sync_framework_version_int
         versionName sync_framework_version
     }
@@ -23,11 +23,17 @@ android {
             testCoverageEnabled true
         }
     }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
 }
 dependencies {
-    api 'com.fasterxml.jackson.core:jackson-core:2.9.10'
-    api 'androidx.annotation:annotation:1.1.0'
-    api 'androidx.sqlite:sqlite:2.1.0'
+    api 'com.fasterxml.jackson.core:jackson-core:2.13.4'
+    api 'androidx.annotation:annotation:1.5.0'
+    api 'androidx.sqlite:sqlite:2.3.0'
     api project(path: ':auto-content-provider')
 }
 

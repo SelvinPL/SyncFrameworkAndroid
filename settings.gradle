@@ -1,1 +1,1 @@
-include ':demo', ':sync-framework', ':auto-content-provider'
+include ':auto-content-provider', ':sync-framework', ':demo'
