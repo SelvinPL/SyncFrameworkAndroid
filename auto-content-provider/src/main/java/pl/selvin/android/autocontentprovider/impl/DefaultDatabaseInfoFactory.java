@@ -12,12 +12,6 @@ package pl.selvin.android.autocontentprovider.impl;
 
 import android.content.UriMatcher;
 
-import androidx.annotation.NonNull;
-
-import java.lang.reflect.Field;
-
-import pl.selvin.android.autocontentprovider.annotation.Column;
-import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.db.ColumnInfo;
 import pl.selvin.android.autocontentprovider.db.ColumnInfoFactory;
 import pl.selvin.android.autocontentprovider.db.DatabaseInfo;
@@ -26,24 +20,16 @@ import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.db.TableInfoFactory;
 
 public class DefaultDatabaseInfoFactory implements DatabaseInfoFactory {
-    private final ColumnInfoFactory columnInfoFactory = new ColumnInfoFactory() {
-        @Override
-        public ColumnInfo createColumnInfo(@NonNull Column column, @NonNull Field field) throws Exception {
-            final String columnName = (String)field.get(null);
-            if(columnName == null)
-                throw new IllegalStateException("Column name can not be null!");
-            return new ColumnInfo(columnName , column);
-        }
-    };
-    private final TableInfoFactory tableInfoFactory = new TableInfoFactory() {
-        @Override
-        public TableInfo createTableInfo(Table table, Class<?> tableClass, String authority) throws Exception {
-            return new TableInfo(table, tableClass, authority, "%s", columnInfoFactory);
-        }
-    };
+	private final ColumnInfoFactory columnInfoFactory = (column, field) -> {
+		final String columnName = (String) field.get(null);
+		if (columnName == null)
+			throw new IllegalStateException("Column name can not be null!");
+		return new ColumnInfo(columnName, column);
+	};
+	private final TableInfoFactory tableInfoFactory = (table, tableClass, authority) -> new TableInfo(table, tableClass, authority, "%s", columnInfoFactory);
 
-    @Override
-    public DatabaseInfo createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
-        return new DatabaseInfo(dbClass, authority, matcher, tableInfoFactory);
-    }
+	@Override
+	public DatabaseInfo createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
+		return new DatabaseInfo(dbClass, authority, matcher, tableInfoFactory);
+	}
 }

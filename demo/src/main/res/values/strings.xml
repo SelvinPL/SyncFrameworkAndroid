@@ -30,7 +30,6 @@
 
 
     <string name="welcome">Welcome!</string>
-    <string name="login_error_invalid_login_or_password">Invalid user or password</string>
     <string name="login_error_field_required">This field is required</string>
     <string name="login_login_hint">User name</string>
     <string name="login_password_hint">Password</string>
@@ -38,10 +37,12 @@
     <string name="lists_search_hint">Find list</string>
 
     <string name="fake_password" translatable="false">password</string>
-    <string name="account_exists">List Sync Sample account already exists. Only one account is supported.</string>
+    <string name="authenticator_account_exists">List Sync Sample account already exists. Only one account is supported.</string>
     <string name="cannot_create_account">Cannot create account</string>
     <string name="label_tags">Tags:</string>
     <string name="label_items">Items:</string>
     <string name="add_new_tag">Add new tag</string>
+    <string name="generic_add">Add</string>
+    <string name="generic_error_message">Something gone wrong!</string>
 
 </resources>

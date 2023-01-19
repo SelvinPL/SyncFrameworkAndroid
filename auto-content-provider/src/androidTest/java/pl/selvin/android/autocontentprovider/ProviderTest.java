@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
 public class ProviderTest {
 
     @Rule
-    public ProviderTestRule mProviderRule = new ProviderTestRule.Builder(TestProvider.class, TestProvider.AUTHORITY).build();
+    public final ProviderTestRule mProviderRule = new ProviderTestRule.Builder(TestProvider.class, TestProvider.AUTHORITY).build();
 
     @Test
     public void testInsert() {

@@ -20,7 +20,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
@@ -28,7 +27,7 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import pl.selvin.android.listsyncsample.Constants;
-import pl.selvin.android.listsyncsample.authenticator.AuthenticatorActivity;
+import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.syncframework.content.Stats;
@@ -74,7 +73,7 @@ public class SyncService extends Service {
     public IBinder onBind(Intent intent) {
         synchronized (sSyncAdapterLock) {
             if (sSyncAdapter == null) {
-                sSyncAdapter = new SyncAdapter(getApplicationContext(), true);
+                sSyncAdapter = new SyncAdapter(getApplicationContext());
             }
         }
         sSyncAdapter.setService(this);
@@ -92,7 +91,7 @@ public class SyncService extends Service {
             e.printStackTrace();
         }
         if (ac != null && ac.length > 0) {
-            return am.getUserData(ac[0], AuthenticatorActivity.LoginResponse.USER_ID);
+            return am.getUserData(ac[0], NetworkOperations.LoginResponse.USER_ID);
         }
         return null;
     }
@@ -133,8 +132,8 @@ public class SyncService extends Service {
 
         private SyncService mService = null;
 
-        SyncAdapter(Context context, boolean autoInitialize) {
-            super(context, autoInitialize);
+        SyncAdapter(Context context) {
+            super(context, true);
         }
 
         void setService(SyncService service) {
@@ -165,17 +164,10 @@ public class SyncService extends Service {
                 } else {
                     try {
                         final Uri uri = ListProvider.getHelper().getSyncUri("DefaultScopeSyncService", "defaultscope");
-
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                            Bundle syncParams = new Bundle();
-                            syncParams.putParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS, stats);
-                            syncParams = provider.call(uri.toString(), parameters, syncParams);
-                            stats = syncParams.getParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS);
-                        } else {
-                            if (provider.update(uri, null, parameters, null) != 0) {
-                                stats.stats.numParseExceptions++;
-                            }
-                        }
+                        Bundle syncParams = new Bundle();
+                        syncParams.putParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS, stats);
+                        syncParams = provider.call(uri.toString(), parameters, syncParams);
+                        stats = syncParams.getParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS);
                     } catch (RemoteException e) {
                         stats.stats.numParseExceptions++;
                         e.printStackTrace();

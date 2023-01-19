@@ -295,7 +295,7 @@ public abstract class AutoContentProvider extends ContentProvider {
                 logger.LogD(clazz, "*onCreateDataBase*: " + create);
             }
         } catch (Exception e) {
-            logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
+            logger.LogE(clazz, "*onCreateDataBase*: " + e, e);
             throw e;
         }
     }

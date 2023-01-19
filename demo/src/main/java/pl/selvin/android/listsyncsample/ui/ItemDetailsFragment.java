@@ -11,6 +11,7 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
@@ -30,7 +31,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.google.android.flexbox.AlignItems;
@@ -77,7 +77,7 @@ public class ItemDetailsFragment extends Fragment implements
         final View root = inflater.inflate(R.layout.item_fragment, container, false);
         mName = Ui.getView(root, R.id.name);
         mDescription = Ui.getView(root, R.id.description);
-        mPriority = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.priority), PRIORITIES_LOADER_ID,
+        mPriority = new SpinnerHelper(Ui.getView(root, R.id.priority), PRIORITIES_LOADER_ID,
                 new SimpleCursorAdapter(requireActivity(), spinnerRowResource, null, new String[]{Priority.NAME},
                         new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
@@ -87,7 +87,7 @@ public class ItemDetailsFragment extends Fragment implements
             }
         };
 
-        mStatus = new SpinnerHelper(Ui.<Spinner>getView(root, R.id.status), STATUSES_LOADER_ID,
+        mStatus = new SpinnerHelper(Ui.getView(root, R.id.status), STATUSES_LOADER_ID,
                 new SimpleCursorAdapter(requireActivity(), spinnerRowResource, null, new String[]{Status.NAME},
                         new int[]{android.R.id.text1}, 1), spinnerRowResource) {
             @Override
@@ -165,7 +165,7 @@ public class ItemDetailsFragment extends Fragment implements
                     }
                     mStartDate.setTag(cal);
                     mStartTime.setTag(cal);
-                    if(cal != null) {
+                    if (cal != null) {
                         mStartDate.setText(DateTimeUtils.toShort(cal));
                         mStartTime.setText(DateTimeUtils.toTime(cal));
                     }
@@ -198,55 +198,53 @@ public class ItemDetailsFragment extends Fragment implements
 
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        switch (loader.getId()) {
-            case TAGS_LOADER_ID:
-                mTagsAdapter.changeCursor(null);
-                break;
+        if (loader.getId() == TAGS_LOADER_ID) {
+            mTagsAdapter.changeCursor(null);
         }
     }
 
     @Override
     public void onClick(View v) {
         final int vId = v.getId();
-        switch (vId) {
-            case R.id.start_date:
-            case R.id.end_date:
-                GenericDialogFragment.DatePicker.newInstance(vId, (Calendar) v.getTag()).show(getChildFragmentManager(), "DATE_PICKER_TAG_" + vId);
-                break;
-            case R.id.start_time:
-            case R.id.end_time:
-                GenericDialogFragment.TimePicker.newInstance(vId, (Calendar) v.getTag()).show(getChildFragmentManager(), "TIME_PICKER_TAG_" + vId);
-                break;
+        if (vId == R.id.start_date || vId == R.id.end_date) {
+            GenericDialogFragment.DatePicker.newInstance(vId, (Calendar) v.getTag()).show(getChildFragmentManager(), "DATE_PICKER_TAG_" + vId);
+        } else if (vId == R.id.start_time || vId == R.id.end_time) {
+            GenericDialogFragment.TimePicker.newInstance(vId, (Calendar) v.getTag()).show(getChildFragmentManager(), "TIME_PICKER_TAG_" + vId);
         }
     }
 
     @Override
     public boolean onAction(int ID, boolean canceled, Calendar date) {
-        if (!canceled) {
-            switch (ID) {
-                case R.id.start_date:
-                    mStartDate.setText(DateTimeUtils.toShort(date));
-                    mStartDate.setTag(date);
-                    mStartTime.setTag(date);
-                    break;
-                case R.id.end_date:
-                    mEndDate.setText(DateTimeUtils.toShort(date));
-                    mEndDate.setTag(date);
-                    mEndTime.setTag(date);
-                    break;
-                case R.id.start_time:
-                    mStartTime.setText(DateTimeUtils.toTime(date));
-                    mStartDate.setTag(date);
-                    mStartTime.setTag(date);
-                    break;
-                case R.id.end_time:
-                    mEndTime.setText(DateTimeUtils.toTime(date));
-                    mEndDate.setTag(date);
-                    mEndTime.setTag(date);
-                    break;
+        if (ID == R.id.start_date) {
+            if (!canceled) {
+                mStartDate.setText(DateTimeUtils.toShort(date));
+                mStartDate.setTag(date);
+                mStartTime.setTag(date);
             }
+            return true;
+        } else if (ID == R.id.end_date) {
+            if (!canceled) {
+                mEndDate.setText(DateTimeUtils.toShort(date));
+                mEndDate.setTag(date);
+                mEndTime.setTag(date);
+            }
+            return true;
+        } else if (ID == R.id.start_time) {
+            if (!canceled) {
+                mStartTime.setText(DateTimeUtils.toTime(date));
+                mStartDate.setTag(date);
+                mStartTime.setTag(date);
+            }
+            return true;
+        } else if (ID == R.id.end_time) {
+            if (!canceled) {
+                mEndTime.setText(DateTimeUtils.toTime(date));
+                mEndDate.setTag(date);
+                mEndTime.setTag(date);
+            }
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -315,6 +313,7 @@ public class ItemDetailsFragment extends Fragment implements
             setHasStableIds(true);
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         void setNewItemVisible(boolean newItemVisibility) {
             final boolean old = mNewItemVisibility;
             mNewItemVisibility = newItemVisibility;

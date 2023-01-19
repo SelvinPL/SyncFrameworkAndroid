@@ -14,13 +14,7 @@ package pl.selvin.android.listsyncsample.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.graphics.PorterDuff;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import androidx.core.content.res.ResourcesCompat;
-
-import pl.selvin.android.listsyncsample.R;
-
 
 public class StaticHelpers {
     public static Bundle cursorRowToBundle(final Cursor cursor) {
@@ -38,19 +32,5 @@ public class StaticHelpers {
 
     public static SharedPreferences getPrefs(Context context) {
         return context.getSharedPreferences("OLSS_PREFS", 0);
-    }
-
-    public static void brandGlowEffect(Context context) {
-        int brandColor = ResourcesCompat.getColor(context.getResources(), R.color.colorPrimary, context.getTheme());
-
-        int glowDrawableId = context.getResources().getIdentifier("overscroll_glow", "drawable", "android");
-        final Drawable androidGlow = ResourcesCompat.getDrawable(context.getResources(), glowDrawableId, context.getTheme());
-        if (androidGlow != null)
-            androidGlow.setColorFilter(brandColor, PorterDuff.Mode.SRC_ATOP);
-
-        int edgeDrawableId = context.getResources().getIdentifier("overscroll_edge", "drawable", "android");
-        final Drawable androidEdge = ResourcesCompat.getDrawable(context.getResources(), edgeDrawableId, context.getTheme());
-        if (androidEdge != null)
-            androidEdge.setColorFilter(brandColor, PorterDuff.Mode.SRC_ATOP);
     }
 }

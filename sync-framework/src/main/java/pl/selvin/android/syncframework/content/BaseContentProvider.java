@@ -12,7 +12,6 @@
 package pl.selvin.android.syncframework.content;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
@@ -20,7 +19,6 @@ import android.content.SyncStats;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -84,13 +82,12 @@ public abstract class BaseContentProvider extends AutoContentProvider {
         return super.insert(uri, values);
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     @Override
     public Bundle call(@NonNull String method, String arg, Bundle syncParams) {
         try {
             Uri uri = Uri.parse(method);
             if (contentHelper.matchUri(uri) == SyncContentHelper.uriSyncCode) {
-                final Stats inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, (Stats) syncParams.getParcelable(SYNC_PARAM_IN_SYNC_STATS));
+                final Stats inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, syncParams.getParcelable(SYNC_PARAM_IN_SYNC_STATS));
                 syncParams.putParcelable(SYNC_PARAM_IN_SYNC_STATS, inout);
             }
         } catch (Exception ex) {
@@ -107,7 +104,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
     @Override
     public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         if (contentHelper.matchUri(uri) == SyncContentHelper.uriSyncCode) {
-            logger.LogD(clazz, "*update* sync uri: " + uri.toString());
+            logger.LogD(clazz, "*update* sync uri: " + uri);
             final Stats result = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), selection, new Stats());
             return (result.hasErrors() ? 1 : 0);
         }
@@ -422,7 +419,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
                     BlobsTable.NAME, BlobsTable.C_NAME, BlobsTable.C_VALUE, BlobsTable.C_DATE,
                     BlobsTable.C_STATE, BlobsTable.C_NAME));
         } catch (Exception e) {
-            logger.LogE(clazz, "*onCreateDataBase*: " + e.toString(), e);
+            logger.LogE(clazz, "*onCreateDataBase*: " + e, e);
         }
     }
 
@@ -440,7 +437,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
     }
 
     private static class RuntimeSerializationException extends Exception {
-        @SuppressWarnings("ThrowableInstanceNeverThrown")
         static final RuntimeSerializationException Instance = new RuntimeSerializationException();
     }
 

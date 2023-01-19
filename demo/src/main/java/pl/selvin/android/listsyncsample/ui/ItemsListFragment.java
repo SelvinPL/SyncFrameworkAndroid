@@ -79,7 +79,7 @@ public class ItemsListFragment extends ListFragmentCommon {
         values.put(Item.DESCRIPTION, StringUtil.EMPTY);
         values.put(Item.PRIORITY, 1);
         values.put(Item.STATUS, 1);
-        Calendar cal = DateTimeUtils.getToday();
+        Calendar cal = DateTimeUtils.today();
         values.put(Item.START_DATE, DateTimeUtils.toLong(cal));
         cal.add(Calendar.DATE, 1);
         values.put(Item.END_DATE, DateTimeUtils.toLong(cal));

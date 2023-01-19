@@ -17,6 +17,7 @@
 
 package pl.selvin.android.listsyncsample.app;
 
+import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 
@@ -88,6 +89,7 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
      * {@link #changeCursor(Cursor)}, the returned old Cursor is <em>not</em>
      * closed.
      */
+    @SuppressLint("NotifyDataSetChanged")
     public Cursor swapCursor(Cursor newCursor) {
         if (newCursor == mCursor) {
             return null;
@@ -106,12 +108,12 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
             mRowIdColumn = -1;
             mDataValid = false;
             notifyDataSetChanged();
-            //There is no notifyDataSetInvalidated() method in RecyclerView.Adapter
         }
         return oldCursor;
     }
 
     private class NotifyingDataSetObserver extends DataSetObserver {
+        @SuppressLint("NotifyDataSetChanged")
         @Override
         public void onChanged() {
             super.onChanged();
@@ -119,12 +121,12 @@ public abstract class CursorRecyclerViewAdapter<VH extends RecyclerView.ViewHold
             notifyDataSetChanged();
         }
 
+        @SuppressLint("NotifyDataSetChanged")
         @Override
         public void onInvalidated() {
             super.onInvalidated();
             mDataValid = false;
             notifyDataSetChanged();
-            //There is no notifyDataSetInvalidated() method in RecyclerView.Adapter
         }
     }
 }

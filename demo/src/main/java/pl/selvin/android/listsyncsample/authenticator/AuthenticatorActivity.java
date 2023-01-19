@@ -1,289 +1,235 @@
 package pl.selvin.android.listsyncsample.authenticator;
 
 import android.accounts.Account;
+import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import com.google.android.material.textfield.TextInputLayout;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 
-import androidx.annotation.NonNull;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
+
+import com.google.android.material.textfield.TextInputLayout;
+
+import java.util.Objects;
+
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
-public class AuthenticatorActivity extends AccountAuthenticatorActivityAppCompat implements View.OnClickListener {
-    public static final String PARAM_CONFIRM_CREDENTIALS = "confirmCredentials";
-    public static final String PARAM_USERNAME = "username";
-    public static final String PARAM_AUTHTOKEN_TYPE = "authtokenType";
-    private static final String TAG = "AuthenticatorActivity";
-    protected boolean mRequestNewAccount = false;
-    private AccountManager mAccountManager;
-    private UserLoginTask mAuthTask = null;
-    private Boolean mConfirmCredentials = false;
-    private String mPassword;
-    private TextInputLayout mPasswordInput;
-    private String mUsername;
-    private View mProgressView;
-    private TextInputLayout mUsernameInput;
-    private Button mOKButton;
+public class AuthenticatorActivity extends AppCompatActivity {
+	public static final String PARAM_CONFIRM_CREDENTIALS = "confirmCredentials";
+	public static final String PARAM_USERNAME = "username";
+	public static final String PARAM_AUTH_TOKEN_TYPE = "authTokenType";
+	private boolean requestNewAccount = false;
+	private AccountAuthenticatorResponse accountAuthenticatorResponse = null;
+	private Bundle resultBundle = null;
+	private AccountManager accountManager;
+	private UserLoginViewModel model = null;
+	private Boolean confirmCredentials = false;
+	private String mPassword;
+	private TextInputLayout mPasswordEdit;
+	private String mUsername;
+	private View mProgressView;
+	private TextInputLayout mUsernameEdit;
+	private Button mOKButton;
 
-    @Override
-    public void onCreate(Bundle icicle) {
-        super.onCreate(icicle);
-        mAccountManager = AccountManager.get(this);
-        final Intent intent = getIntent();
-        mUsername = intent.getStringExtra(PARAM_USERNAME);
-        mRequestNewAccount = mUsername == null;
-        mConfirmCredentials = intent.getBooleanExtra(PARAM_CONFIRM_CREDENTIALS, false);
-        setContentView(R.layout.activity_login);
-        mUsernameInput = Ui.getView(this, R.id.username_layout);
-        mUsernameInput.setEnabled(mRequestNewAccount);
-        mPasswordInput = Ui.getView(this, R.id.password_layout);
-        mOKButton = Ui.getView(this, R.id.ok_button);
-        mOKButton.setOnClickListener(this);
-        mProgressView = Ui.getView(this, R.id.working);
-        if (!TextUtils.isEmpty(mUsername)) requireUsernameEdit().setText(mUsername);
-        mAuthTask = (UserLoginTask) getLastNonConfigurationInstance();
-        if (mAuthTask != null) {
-            mAuthTask.attach(this);
-            if (mAuthTask.isRunning)
-                showProgress();
-            else {
-                if (mAuthTask.mResults != null) {
-                    onAuthenticationResult(mAuthTask.mResults);
-                }
-            }
-        }
-    }
+	public AuthenticatorActivity() {
 
-    @NonNull
-    EditText requirePasswordEdit()
-    {
-        final EditText editText = mPasswordInput != null ? mPasswordInput.getEditText() : null;
-        if (editText == null) {
-            throw new IllegalStateException("No EditText for UsernameInput.");
-        }
-        return editText;
-    }
+	}
 
-    @NonNull
-    EditText requireUsernameEdit()
-    {
-        final EditText editText = mUsernameInput != null ? mUsernameInput.getEditText() : null;
-        if (editText == null) {
-            throw new IllegalStateException("No EditText for UsernameInput.");
-        }
-        return editText;
-    }
+	public void finish() {
+		if (accountAuthenticatorResponse != null) {
+			if (resultBundle != null) {
+				accountAuthenticatorResponse.onResult(resultBundle);
+			} else {
+				accountAuthenticatorResponse.onError(AccountManager.ERROR_CODE_CANCELED, "canceled");
+			}
+			accountAuthenticatorResponse = null;
+		}
+		super.finish();
+	}
 
-    @Override
-    public Object onRetainNonConfigurationInstance() {
-        if (mAuthTask != null)
-            mAuthTask.detach();
-        return (mAuthTask);
-    }
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		model = new ViewModelProvider(this).get(UserLoginViewModel.class);
+		accountAuthenticatorResponse = getIntent().getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
 
-    @Override
-    public void onClick(View view) {
-        attemptLogin();
-    }
+		if (accountAuthenticatorResponse != null) {
+			accountAuthenticatorResponse.onRequestContinued();
+		}
+		accountManager = AccountManager.get(this);
 
-    private void finishConfirmCredentials(boolean result) {
-        final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
-        mAccountManager.setPassword(account, mPassword);
-        final Intent intent = new Intent();
-        intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, result);
-        setAccountAuthenticatorResult(intent.getExtras());
-        setResult(RESULT_OK, intent);
-        finish();
-    }
+		final Intent intent = getIntent();
+		mUsername = intent.getStringExtra(PARAM_USERNAME);
+		requestNewAccount = mUsername == null;
+		confirmCredentials = intent.getBooleanExtra(PARAM_CONFIRM_CREDENTIALS, false);
+		setContentView(R.layout.activity_login);
+		mUsernameEdit = Ui.getView(this, R.id.username_layout);
+		mUsernameEdit.setEnabled(requestNewAccount);
+		mPasswordEdit = Ui.getView(this, R.id.password_layout);
+		mOKButton = Ui.getView(this, R.id.ok_button);
+		mOKButton.setOnClickListener((v -> attemptLogin()));
+		mProgressView = Ui.getView(this, R.id.working);
+		if (!TextUtils.isEmpty(mUsername))
+			Objects.requireNonNull(mUsernameEdit.getEditText()).setText(mUsername);
+		if (model.isRunning())
+			showProgress(true);
+		model.getResult().observe(this, result -> {
+			if (!model.isResultProcessed() && result != null)
+				onAuthenticationResult(result);
+		});
+	}
 
-    private void finishLogin(Bundle results) {
+	@SuppressLint("MissingPermission")
+	private void finishConfirmCredentials(boolean result) {
+		final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
+		accountManager.setPassword(account, mPassword);
+		final Intent intent = new Intent();
+		intent.putExtra(AccountManager.KEY_BOOLEAN_RESULT, result);
+		resultBundle = intent.getExtras();
+		setResult(RESULT_OK, intent);
+		finish();
+	}
 
-        Log.i(TAG, "finishLogin()");
-        final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
-        if (mRequestNewAccount) {
-            results.remove(LoginResponse.SUCCESS);
-            mAccountManager.addAccountExplicitly(account, mPassword, results);
-            ContentResolver.setSyncAutomatically(account, Constants.AUTHORITY, true);
-        } else {
-            mAccountManager.setPassword(account, mPassword);
-        }
-        final Intent intent = new Intent();
-        intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mUsername);
-        intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
-        setAccountAuthenticatorResult(intent.getExtras());
-        setResult(RESULT_OK, intent);
-        finish();
-    }
+	@SuppressLint("MissingPermission")
+	private void finishLogin(Bundle results) {
+		final Account account = new Account(mUsername, Constants.ACCOUNT_TYPE);
+		if (requestNewAccount) {
+			results.remove(NetworkOperations.LoginResponse.SUCCESS);
+			accountManager.addAccountExplicitly(account, mPassword, results);
+			ContentResolver.setSyncAutomatically(account, Constants.AUTHORITY, true);
+		} else {
+			accountManager.setPassword(account, mPassword);
+		}
+		final Intent intent = new Intent();
+		intent.putExtra(AccountManager.KEY_ACCOUNT_NAME, mUsername);
+		intent.putExtra(AccountManager.KEY_ACCOUNT_TYPE, Constants.ACCOUNT_TYPE);
+		resultBundle = intent.getExtras();
+		setResult(RESULT_OK, intent);
+		finish();
+	}
 
-    private void onAuthenticationResult(Bundle results) {
-
-        boolean success = (results != null) && results.getBoolean(LoginResponse.SUCCESS);
-        mAuthTask = null;
-        hideProgress();
-
-        if (success) {
-            if (!mConfirmCredentials) {
-                finishLogin(results);
-            } else {
-                //noinspection ConstantConditions
-                finishConfirmCredentials(success);
-            }
-        } else {
-            mUsernameInput.setError(getString(R.string.login_error_invalid_login_or_password));
-        }
-    }
+	private void onAuthenticationResult(Bundle results) {
+		boolean success = (results != null) && results.getBoolean(NetworkOperations.LoginResponse.SUCCESS);
+		showProgress(false);
+		if (success) {
+			if (!confirmCredentials)
+				finishLogin(results);
+		} else {
+			mUsernameEdit.setError(results == null ? getString(R.string.generic_error_message) : results.getString(NetworkOperations.LoginResponse.ERROR));
+		}
+		if (confirmCredentials)
+			finishConfirmCredentials(success);
+		model.setResultProcessed(true);
+	}
 
 
-    private void attemptLogin() {
-        if (mAuthTask != null) {
-            return;
-        }
-        mUsernameInput.setError(null);
-        mPasswordInput.setError(null);
+	private void attemptLogin() {
+		if (model.isRunning())
+			return;
 
-        if (mRequestNewAccount) {
-            mUsername = requireUsernameEdit().getText().toString().trim();
-        }
-        mPassword = requirePasswordEdit().getText().toString().trim();
+		// Reset errors.
+		mUsernameEdit.setError(null);
+		mPasswordEdit.setError(null);
 
-        boolean cancel = false;
-        View focusView = null;
+		if (requestNewAccount) {
+			mUsername = Objects.requireNonNull(mUsernameEdit.getEditText()).getText().toString().trim();
+		}
+		mPassword = Objects.requireNonNull(mPasswordEdit.getEditText()).getText().toString().trim();
 
-        final String fakePassword = getString(R.string.fake_password);
-        if (TextUtils.isEmpty(mPassword)) {
-            mPasswordInput.setError(getString(R.string.login_error_field_required));
-            focusView = mPasswordInput;
-            cancel = true;
-        } else if (!mPassword.equals(fakePassword)) {
-            mPasswordInput.setError(getString(R.string.login_error_invalid_password, fakePassword));
-            focusView = mPasswordInput;
-            cancel = true;
-        }
+		boolean cancel = false;
+		View focusView = null;
 
-        if (TextUtils.isEmpty(mUsername)) {
-            mUsernameInput.setError(getString(R.string.login_error_field_required));
-            focusView = mUsernameInput;
-            cancel = true;
-        }
+		// Check for a valid password, if the user entered one.
+		if (TextUtils.isEmpty(mPassword)) {
+			mPasswordEdit.setError(getString(R.string.login_error_field_required));
+			focusView = mPasswordEdit;
+			cancel = true;
+		}
 
-        if (cancel) {
-            focusView.requestFocus();
-        } else {
-            showProgress();
-            mAuthTask = new UserLoginTask(this);
-            mAuthTask.execute((Void) null);
-        }
-    }
+		final String fakePassword = getString(R.string.fake_password);
+		if (TextUtils.isEmpty(mPassword)) {
+			mPasswordEdit.setError(getString(R.string.login_error_field_required));
+			focusView = mPasswordEdit;
+			cancel = true;
+		} else if (!mPassword.equals(fakePassword)) {
+			mPasswordEdit.setError(getString(R.string.login_error_invalid_password, fakePassword));
+			focusView = mPasswordEdit;
+			cancel = true;
+		}
 
-    private void onAuthenticationCancel() {
-        mAuthTask = null;
-        hideProgress();
-    }
+		// Check for a valid email address.
+		if (TextUtils.isEmpty(mUsername)) {
+			mUsernameEdit.setError(getString(R.string.login_error_field_required));
+			focusView = mUsernameEdit;
+			cancel = true;
+		}
 
-    private void showProgress() {
-        mProgressView.setVisibility(View.VISIBLE);
-        mPasswordInput.setEnabled(false);
-        mUsernameInput.setEnabled(false);
-        mOKButton.setEnabled(false);
-    }
+		if (cancel) {
+			// There was an error; don't attempt login and focus the first
+			// form field with an error.
+			focusView.requestFocus();
+		} else {
+			// Show a progress spinner, and kick off a background task to
+			// perform the user login attempt.
+			showProgress(true);
+			model.login(mUsername, mPassword);
+		}
+	}
 
-    private void hideProgress() {
-        if(isFinishing())
-            return;
-        mProgressView.setVisibility(View.GONE);
-        mPasswordInput.setEnabled(true);
-        mUsernameInput.setEnabled(mRequestNewAccount);
-        mOKButton.setEnabled(true);
-    }
+	private void showProgress(boolean show) {
+		mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+		mPasswordEdit.setEnabled(!show);
+		mUsernameEdit.setEnabled(!show && requestNewAccount);
+		mOKButton.setEnabled(!show);
+	}
 
-    static class UserLoginTask extends AsyncTask<Void, Void, Bundle> {
+	public interface AuthenticateCallback {
+		void onResult(Bundle result);
+	}
 
-        //it doesn't leak ... see attach/detach
-        @SuppressLint("StaticFieldLeak")
-        AuthenticatorActivity activity = null;
-        boolean isRunning;
-        Bundle mResults = null;
+	public static class UserLoginViewModel extends ViewModel {
+		private final MutableLiveData<Bundle> result = new MutableLiveData<>();
+		private boolean running;
+		private boolean resultProcessed;
+		private boolean cancelled;
 
-        UserLoginTask(AuthenticatorActivity activity) {
-            attach(activity);
-        }
+		public void login(final String username, final String password) {
+			cancelled = false;
+			running = true;
+			NetworkOperations.authenticateAsync(username, password, res -> {
+				if (!cancelled) {
+					resultProcessed = false;
+					result.postValue(res);
+				}
+				running = false;
+			});
+		}
 
-        void attach(AuthenticatorActivity activity) {
-            this.activity = activity;
-        }
+		public MutableLiveData<Bundle> getResult() {
+			return result;
+		}
 
-        void detach() {
-            activity = null;
-        }
+		public boolean isRunning() {
+			return running;
+		}
 
-        @Override
-        protected Bundle doInBackground(Void... params) {
-            try {
-                isRunning = true;
-                if (activity != null)
-                    return authenticate(activity.mUsername, activity.mPassword);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-            return null;
-        }
+		public boolean isResultProcessed() {
+			return resultProcessed;
+		}
 
-        @Override
-        protected void onPostExecute(final Bundle results) {
-            isRunning = false;
-            mResults = results;
-            if (activity != null)
-                activity.onAuthenticationResult(results);
-        }
+		public void setResultProcessed(boolean resultProcessed) {
+			this.resultProcessed = resultProcessed;
+		}
+	}
 
-        @Override
-        protected void onCancelled() {
-            if (activity != null)
-                activity.onAuthenticationCancel();
-        }
-    }
-
-    public static Bundle authenticate(String username, @SuppressWarnings("unused") String password) {
-        final Bundle bundle = new Bundle();
-        final OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder().url(Constants.SERVICE_URI + "/Login.ashx?username=" + username)
-                .addHeader("Accept", "application/json").addHeader("Content-type", "application/json; charset=utf-8").build();
-        try {
-            final Response response = client.newCall(request).execute();
-            final ResponseBody body = response.body();
-            if(body != null){
-                bundle.putBoolean(LoginResponse.SUCCESS, true);
-                bundle.putString(LoginResponse.USER_ID, body.string());
-            } else {
-                bundle.putBoolean(LoginResponse.SUCCESS, false);
-                bundle.putString(LoginResponse.ERROR, "Response has no body");
-            }
-            return bundle;
-        } catch (Exception e) {
-            bundle.putString(LoginResponse.ERROR, e.getMessage());
-            e.printStackTrace();
-        }
-        bundle.putBoolean(LoginResponse.SUCCESS, false);
-        return  bundle;
-    }
-
-    public interface LoginResponse {
-        String SUCCESS = "SUCCESS";
-        String USER_ID = "USER_ID";
-        String ERROR = "ERROR";
-    }
 }

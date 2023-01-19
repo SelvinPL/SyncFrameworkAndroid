@@ -11,12 +11,24 @@
 
 package pl.selvin.android.listsyncsample.utils;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 
 public class DateTimeUtils {
+    private final static ThreadLocal<SimpleDateFormat> SIMPLE_DATE_FORMAT =
+            new SuppliedThreadLocalCompat<>(() -> new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()));
+    private final static ThreadLocal<SimpleDateFormat> SIMPLE_DATE_FORMAT_DATE_ONLY =
+            new SuppliedThreadLocalCompat<>(() -> new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()));
+    private final static ThreadLocal<SimpleDateFormat> SIMPLE_TIME_ONLY =
+            new SuppliedThreadLocalCompat<>(() -> new SimpleDateFormat("HH:mm", Locale.getDefault()));
+
     public static Calendar zeroTime(Calendar calendar) {
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
@@ -25,64 +37,50 @@ public class DateTimeUtils {
         return calendar;
     }
 
-    private final static SimpleDateFormat longFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-    private final static SimpleDateFormat shortFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-    private final static SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-
-
-    public static int getDateAsMonths(Calendar date) {
-        return date.get(Calendar.YEAR) * 12 + date.get(Calendar.MONTH);
+    public static Calendar addYears(@NonNull final Calendar start, int years) {
+        final Calendar ret = (Calendar) start.clone();
+        ret.add(Calendar.YEAR, years);
+        return ret;
     }
-
-    public static Calendar getToday() {
+    public static Calendar today() {
         return zeroTime(Calendar.getInstance());
     }
 
-    public static String toLong(Calendar calendar) {
-        synchronized (longFormat) {
-            return longFormat.format(calendar.getTime());
+    private static String toString(Calendar date, SimpleDateFormat format) {
+        if (date != null) {
+            return Objects.requireNonNull(format).format(date.getTime());
         }
+        return null;
+    }
+
+    public static String toLong(Calendar date) {
+        return toString(date, SIMPLE_DATE_FORMAT.get());
     }
 
     public static String getNowLong() {
         return toLong(Calendar.getInstance());
     }
 
-    public static String getTodayLong() {
-        return toLong(getToday());
+    public static String toShort(Calendar date) {
+        return toString(date, SIMPLE_DATE_FORMAT_DATE_ONLY.get());
     }
 
-
-    public static String toShort(Calendar calendar) {
-        synchronized (shortFormat) {
-            return shortFormat.format(calendar.getTime());
-        }
+    public static String toTime(Calendar date) {
+        return toString(date, SIMPLE_TIME_ONLY.get());
     }
 
-    public static String toTime(Calendar calendar) {
-        synchronized (timeFormat) {
-            return timeFormat.format(calendar.getTime());
+    private static Calendar fromString(String string, @Nullable SimpleDateFormat format) throws ParseException {
+        if (string != null) {
+            final Calendar ret = Calendar.getInstance();
+            final Date date = Objects.requireNonNull(format).parse(string);
+            if (date != null)
+                ret.setTime(date);
+            return ret;
         }
+        return null;
     }
 
-
-    public static Calendar fromLong(String date) throws ParseException {
-        if(date == null)
-            return Calendar.getInstance();
-        synchronized (longFormat) {
-            final Calendar cal = Calendar.getInstance();
-            cal.setTime(longFormat.parse(date));
-            return cal;
-        }
-    }
-
-    public static Calendar fromShort(String date) throws ParseException {
-        if(date == null)
-            return Calendar.getInstance();
-        synchronized (shortFormat) {
-            final Calendar cal = Calendar.getInstance();
-            cal.setTime(shortFormat.parse(date));
-            return cal;
-        }
+    public static Calendar fromLong(String string) throws ParseException {
+        return fromString(string, SIMPLE_DATE_FORMAT.get());
     }
 }

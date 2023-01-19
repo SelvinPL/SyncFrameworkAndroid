@@ -10,15 +10,13 @@
  */
 package pl.selvin.android.autocontentprovider;
 
-import androidx.sqlite.db.SupportSQLiteOpenHelper;
+
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
-import android.content.Context;
 
 import pl.selvin.android.autocontentprovider.content.AutoContentProvider;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 import pl.selvin.android.autocontentprovider.impl.DefaultDatabaseInfoFactory;
 import pl.selvin.android.autocontentprovider.log.Logger;
-import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
 
 public class TestProvider extends AutoContentProvider {
 
@@ -27,11 +25,6 @@ public class TestProvider extends AutoContentProvider {
 
     public TestProvider() {
         super(CONTENT_HELPER, Logger.EmptyLogger.INSTANCE,
-                new SupportSQLiteOpenHelperFactoryProvider() {
-                    @Override
-                    public SupportSQLiteOpenHelper.Factory createFactory(Context context) {
-                        return new FrameworkSQLiteOpenHelperFactory();
-                    }
-                });
+                context -> new FrameworkSQLiteOpenHelperFactory());
     }
 }

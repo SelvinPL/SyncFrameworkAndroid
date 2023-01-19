@@ -68,6 +68,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
     private final int deletionTitle;
     private final LoaderManager.LoaderCallbacks<Uri> mInsertLoaderCallback = new LoaderManager.LoaderCallbacks<Uri>() {
 
+        @NonNull
         @Override
         public Loader<Uri> onCreateLoader(int id, Bundle args) {
             return new InsertLoader(getActivity(), args, ListFragmentCommon.this);
@@ -298,7 +299,7 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
         if (loader.getId() == loaderID)
-            ((CursorAdapter) Objects.requireNonNull(getListAdapter())).swapCursor(null);
+            ((CursorAdapter) Objects.requireNonNull(getListAdapter())).swapCursor(null).close();
     }
 
     private View createListViewWrapper(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

@@ -55,37 +55,35 @@ public class ListProvider extends BaseContentProvider {
         public Result execute(int requestMethod, String serviceRequestUrl, final ISyncContentProducer syncContentProducer) throws IOException {
             final Request.Builder requestBuilder = new Request.Builder().url(serviceRequestUrl)
                     .addHeader("Cache-Control", "no-store,no-cache").addHeader("Pragma", "no-cache").addHeader("Accept", "application/json");
-            switch (requestMethod) {
-                case HTTP_POST:
-                    requestBuilder.post(new RequestBody() {
-                        @Override
-                        public MediaType contentType() {
-                            return MediaType.parse("application/json; charset=utf-8");
-                        }
-
-                        @Override
-                        public void writeTo(@NonNull BufferedSink sink) throws IOException {
-                            syncContentProducer.writeTo(sink.outputStream());
-                        }
-                    });
-                    break;
-            }
-            final Response response = client.newCall(requestBuilder.build()).execute();
-
-            final ResponseBody body = response.body();
-            if (body != null) {
-                final String error;
-                try {
-                    error = response.isSuccessful() ? null : body.string();
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                }
-                return new Result(new BufferedInputStream(body.source().inputStream(), 4 * 1024 * 1024), response.code(), error) {
+            if (requestMethod == HTTP_POST) {
+                requestBuilder.post(new RequestBody() {
                     @Override
-                    public void close() {
-                        body.close();
+                    public MediaType contentType() {
+                        return MediaType.parse("application/json; charset=utf-8");
                     }
-                };
+
+                    @Override
+                    public void writeTo(@NonNull BufferedSink sink) throws IOException {
+                        syncContentProducer.writeTo(sink.outputStream());
+                    }
+                });
+            }
+            try (Response response = client.newCall(requestBuilder.build()).execute()) {
+                final ResponseBody body = response.body();
+                if (body != null) {
+                    final String error;
+                    try {
+                        error = response.isSuccessful() ? null : body.string();
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    return new Result(new BufferedInputStream(body.source().inputStream(), 4 * 1024 * 1024), response.code(), error) {
+                        @Override
+                        public void close() {
+                            body.close();
+                        }
+                    };
+                }
             }
             throw new RuntimeException("Response body is null");
         }
@@ -153,7 +151,7 @@ public class ListProvider extends BaseContentProvider {
         String q = builder.buildQuery(projection, selection, null, null, sortOrder, limit);
 
         final Cursor cursor = getReadableDatabase().query(q, selectionArgs);
-        if (cursor != null && getContext() != null) {
+        if (getContext() != null) {
             cursor.setNotificationUri(getContext().getContentResolver(), uri);
         }
         return cursor;

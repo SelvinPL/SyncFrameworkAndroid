@@ -19,6 +19,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentFactory;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
@@ -68,14 +69,15 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         if (cursor.moveToFirst()) {
-            mName.setText(cursor.getString(cursor.getColumnIndex(List.NAME)));
-            mDescription.setText(cursor.getString(cursor.getColumnIndex(List.DESCRIPTION)));
+            mName.setText(cursor.getString(cursor.getColumnIndexOrThrow(List.NAME)));
+            mDescription.setText(cursor.getString(cursor.getColumnIndexOrThrow(List.DESCRIPTION)));
             Fragment fragment = getChildFragmentManager().findFragmentByTag(ITEMS_FRAGMENT_TAG);
             if (fragment == null) {
                 final Bundle fragmentArgs = ListFragmentCommon.Builder.createFromBundle(
-                        ItemsListFragment.createArgs(cursor.getString(cursor.getColumnIndex(List.ID))))
+                        ItemsListFragment.createArgs(cursor.getString(cursor.getColumnIndexOrThrow(List.ID))))
                         .setSupportEdit(true).build();
-                fragment = Fragment.instantiate(getActivity(), ItemsListFragment.class.getName(), null);
+                final FragmentFactory fragmentFactory = getChildFragmentManager().getFragmentFactory();
+                fragment = fragmentFactory.instantiate(ClassLoader.getSystemClassLoader(), ItemsListFragment.class.getName());
                 fragment.setArguments(fragmentArgs);
                 getChildFragmentManager().beginTransaction().add(R.id.items, fragment, ITEMS_FRAGMENT_TAG).commit();
             }

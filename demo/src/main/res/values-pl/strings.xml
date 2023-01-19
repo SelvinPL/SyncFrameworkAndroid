@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="account_exists">Konto List Sync Sample już istnieje. Tylko jedno konto jest obsługiwane.</string>
+    <string name="authenticator_account_exists">Konto List Sync Sample już istnieje. Tylko jedno konto jest obsługiwane.</string>
     <string name="add_new_tag">Dodaj nowy tag</string>
     <string name="cannot_create_account">Nie można utworzyć konta</string>
     <string name="deleted">Skasowano</string>
@@ -23,7 +23,6 @@
     <string name="listslist_activity_title">Listy</string>
     <string name="login_activity_title">Zaloguj się</string>
     <string name="login_error_field_required">To pole jest wymagane</string>
-    <string name="login_error_invalid_login_or_password">Błedny użytkownik lub hasło</string>
     <string name="login_error_invalid_password">Błedne hasło - spróbuj: %s</string>
     <string name="login_login_hint">Użytkownik</string>
     <string name="login_password_hint">Hasło</string>
@@ -31,4 +30,6 @@
     <string name="prompt_priority">Wybierz priorytet</string>
     <string name="prompt_status">Wybierz status</string>
     <string name="welcome">Witamy!</string>
+    <string name="generic_add">Dodaj</string>
+    <string name="generic_error_message">Coś poszło nie tak!</string>
 </resources>

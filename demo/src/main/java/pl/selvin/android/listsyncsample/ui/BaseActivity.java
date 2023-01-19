@@ -18,7 +18,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -54,12 +53,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
         @Override
         public void onStatusChanged(final int status) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    BaseActivity.this.onStatusChanged(status);
-                }
-            });
+            runOnUiThread(() -> BaseActivity.this.onStatusChanged(status));
         }
     };
     private final ServiceConnection mConnection = new ServiceConnection() {
@@ -115,13 +109,6 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
-            StaticHelpers.brandGlowEffect(this);
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
     public void setContentView(int layoutResID) {
         super.setContentView(layoutResID);
         getActionBarToolbar();
@@ -159,12 +146,9 @@ public abstract class BaseActivity extends AppCompatActivity {
             getMenuInflater().inflate(R.menu.refresh, menu);
             menu.findItem(R.id.menu_refresh)
                     .setIcon(R.drawable.ic_refresh_white_24dp)
-                    .setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-                        @Override
-                        public boolean onMenuItemClick(MenuItem item) {
-                            startSync(true);
-                            return false;
-                        }
+                    .setOnMenuItemClickListener(item -> {
+                        startSync(true);
+                        return false;
                     });
             if (mBound)
                 try {
@@ -197,34 +181,30 @@ public abstract class BaseActivity extends AppCompatActivity {
     }
 
     public void startSync(final int delay, final boolean force) {
-        new Handler().postDelayed(new Runnable() {
-
-            @Override
-            public void run() {
-                if (mBound) {
-                    try {
-                        if (mService.getLastStatus() == SyncService.SYNC_IDLE) {
-                            Account ac = SyncService.getAccount(getApplicationContext());
-                            if (ac != null) {
-                                final SharedPreferences pref = StaticHelpers.getPrefs(getApplicationContext());
-                                final long now = Calendar.getInstance().getTime().getTime();
-                                final long syncTime = pref.getLong(LAST_SYNC_TIME, -1);
-                                if ((now - syncTime > AUTO_SYNC_TIMER_MILLIS) || force) {
-                                    final Bundle settingsBundle = new Bundle();
-                                    settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-                                    settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-                                    ContentResolver.requestSync(ac, Constants.AUTHORITY, Bundle.EMPTY);
-                                    pref.edit().putLong(LAST_SYNC_TIME, now).apply();
-                                }
-                            } else
-                                finish();
-                        }
-                    } catch (RemoteException re) {
-                        re.printStackTrace();
+        new Handler().postDelayed(() -> {
+            if (mBound) {
+                try {
+                    if (mService.getLastStatus() == SyncService.SYNC_IDLE) {
+                        Account ac = SyncService.getAccount(getApplicationContext());
+                        if (ac != null) {
+                            final SharedPreferences pref = StaticHelpers.getPrefs(getApplicationContext());
+                            final long now = Calendar.getInstance().getTime().getTime();
+                            final long syncTime = pref.getLong(LAST_SYNC_TIME, -1);
+                            if ((now - syncTime > AUTO_SYNC_TIMER_MILLIS) || force) {
+                                final Bundle settingsBundle = new Bundle();
+                                settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
+                                settingsBundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
+                                ContentResolver.requestSync(ac, Constants.AUTHORITY, Bundle.EMPTY);
+                                pref.edit().putLong(LAST_SYNC_TIME, now).apply();
+                            }
+                        } else
+                            finish();
                     }
-                } else {
-                    mStartLaterDelay = delay;
+                } catch (RemoteException re) {
+                    re.printStackTrace();
                 }
+            } else {
+                mStartLaterDelay = delay;
             }
         }, delay);
     }
