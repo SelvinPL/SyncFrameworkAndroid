@@ -1,13 +1,8 @@
+apply from: file("$rootDir/version.gradle")
 apply plugin: 'maven-publish'
 
-ext {
-    sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-    sync_framework_version = '1.4.0'
-    sync_framework_version_int = 104000
-}
-
 // gradle publish ... for my needs
-File propsFile = file("${rootProject.projectDir}/maven-url.properties")
+File propsFile = file("$rootDir/maven-url.properties")
 
 if (propsFile.exists()) {
     def props = new Properties()

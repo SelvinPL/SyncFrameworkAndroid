@@ -1,12 +1,11 @@
 apply plugin: 'com.android.library'
 ext.sync_framework_artifact_id = 'auto-content-provider'
-import digital.wup.android_maven_publish.AndroidMavenPublishPlugin
-apply plugin: AndroidMavenPublishPlugin
 apply from: '../publish.gradle'
 
 android {
     compileSdkVersion 33
     buildToolsVersion '33.0.1'
+    namespace 'pl.selvin.android.autocontentprovider'
 
     defaultConfig {
         minSdkVersion 22

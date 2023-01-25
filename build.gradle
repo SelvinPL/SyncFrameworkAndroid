@@ -5,7 +5,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:7.4.0'
-        classpath 'digital.wup:android-maven-publish:3.6.2'
     }
 }
 
@@ -17,10 +16,4 @@ allprojects {
             url "https://s3.amazonaws.com/repo.commonsware.com"
         }
     }
-}
-
-ext {
-    sync_framework_maven_url = "file:/${rootProject.projectDir}/artifacts"
-    sync_framework_version = '1.4.0'
-    sync_framework_version_int = 104000
 }

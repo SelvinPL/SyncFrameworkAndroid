@@ -1,0 +1,5 @@
+ext {
+    sync_framework_maven_url = "file://$rootDir/artifacts"
+    sync_framework_version = '1.4.1'
+    sync_framework_version_int = 104001
+}
