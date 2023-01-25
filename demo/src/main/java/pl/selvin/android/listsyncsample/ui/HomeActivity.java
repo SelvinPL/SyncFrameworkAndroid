@@ -13,103 +13,87 @@ package pl.selvin.android.listsyncsample.ui;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import androidx.fragment.app.FragmentActivity;
-import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentActivity;
 
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 
-
 public class HomeActivity extends AppCompatActivity {
 
 
-    final static String TAG = "HomeActivity";
-    private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
+	final static String TAG = "HomeActivity";
+	private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
 
-    static void startRealHome(Activity activity) {
-        final Intent intent = new Intent();
-        intent.setAction(activity.getString(R.string.application_id)  + ".intent.action.MAIN");
-        activity.startActivity(intent);
-        activity.finish();
-    }
+	static void startRealHome(Activity activity) {
+		final Intent intent = new Intent();
+		intent.setAction(activity.getString(R.string.application_id) + ".intent.action.MAIN");
+		activity.startActivity(intent);
+		activity.finish();
+	}
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
-    }
-
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (accountExists()) {
-            new Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    startRealHome(HomeActivity.this);
-                }
-            }, 500);
-        }
-    }
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_home);
+	}
 
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PLAY_SERVICES_RESOLUTION_REQUEST) {
-            if (resultCode != RESULT_OK) {
-                finish();
-            }
-        }
-    }
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if (accountExists()) {
+			new Handler().postDelayed(() -> startRealHome(HomeActivity.this), 500);
+		}
+	}
 
-    boolean accountExists() {
-        Account ac = SyncService.getAccount(this);
-        Log.d(TAG, "" + ac);
-        if (ac == null) {
-            final FragmentActivity thizz = this;
-            new Handler().postDelayed(new Runnable() {
 
-                @Override
-                public void run() {
-                    try {
-                        AccountManager am = AccountManager.get(thizz);
-                        am.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTH_TOKEN_TYPE, null, null, thizz,
-                                new AccountManagerCallback<Bundle>() {
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (requestCode == PLAY_SERVICES_RESOLUTION_REQUEST) {
+			if (resultCode != RESULT_OK) {
+				finish();
+			}
+		}
+	}
 
-                                    @Override
-                                    public void run(
-                                            AccountManagerFuture<Bundle> ret) {
-                                        try {
-                                            if (ret.getResult() == null) {
-                                                finish();
-                                            }
-                                        } catch (Exception ex) {
-                                            Toast.makeText(thizz, R.string.cannot_create_account, Toast.LENGTH_LONG).show();
-                                            finish();
-                                        }
+	boolean accountExists() {
+		Account ac = SyncService.getAccount(this);
+		Log.d(TAG, "" + ac);
+		if (ac == null) {
+			final FragmentActivity thizz = this;
+			new Handler().postDelayed(() -> {
+				try {
+					AccountManager am = AccountManager.get(thizz);
+					am.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTH_TOKEN_TYPE, null, null, thizz,
+							ret -> {
+								try {
+									if (ret.getResult() == null) {
+										finish();
+									}
+								} catch (Exception ex) {
+									Toast.makeText(thizz, R.string.cannot_create_account, Toast.LENGTH_LONG).show();
+									finish();
+								}
 
-                                    }
-                                }, null);
-                    } catch (Exception ex) {
-                        Toast.makeText(thizz, R.string.cannot_create_account, Toast.LENGTH_LONG).show();
-                        finish();
-                    }
-                }
-            }, 200);
-            return false;
-        }
-        return true;
-    }
+							}, null);
+				} catch (Exception ex) {
+					Toast.makeText(thizz, R.string.cannot_create_account, Toast.LENGTH_LONG).show();
+					finish();
+				}
+			}, 200);
+			return false;
+		}
+		return true;
+	}
 }

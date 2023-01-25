@@ -16,29 +16,29 @@ import java.io.InputStream;
 
 public interface RequestExecutor {
 
-    int HTTP_GET = 1;
-    int HTTP_POST = 2;
+	int HTTP_GET = 1;
+	int HTTP_POST = 2;
 
-    Result execute(int requestMethod, String serviceRequestUrl, final BaseContentProvider.ISyncContentProducer syncContentProducer) throws IOException;
-
-
-    class Result {
-        final InputStream inputBuffer;
-        public final int status;
-        final String error;
+	Result execute(int requestMethod, String serviceRequestUrl, final BaseContentProvider.ISyncContentProducer syncContentProducer) throws IOException;
 
 
-        protected Result(InputStream inputBuffer, int status, String error) {
-            this.inputBuffer = inputBuffer;
-            this.status = status;
-            this.error = error;
-        }
+	class Result {
+		public final int status;
+		final InputStream inputBuffer;
+		final String error;
 
-        public void close() {
-        }
 
-        String getError() {
-            return error;
-        }
-    }
+		protected Result(InputStream inputBuffer, int status, String error) {
+			this.inputBuffer = inputBuffer;
+			this.status = status;
+			this.error = error;
+		}
+
+		public void close() {
+		}
+
+		String getError() {
+			return error;
+		}
+	}
 }

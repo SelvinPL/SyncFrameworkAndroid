@@ -9,13 +9,13 @@
  language governing permissions and limitations under the License.
  */
 
-package pl.selvin.android.autocontentprovider.suite;
+package pl.selvin.android.autocontentprovider.test.suite;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import pl.selvin.android.autocontentprovider.ContentHelperTest;
-import pl.selvin.android.autocontentprovider.ProviderTest;
+import pl.selvin.android.autocontentprovider.test.ContentHelperTest;
+import pl.selvin.android.autocontentprovider.test.ProviderTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ContentHelperTest.class,

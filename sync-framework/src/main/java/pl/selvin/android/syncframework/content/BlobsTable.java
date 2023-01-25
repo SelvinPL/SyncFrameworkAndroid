@@ -12,10 +12,10 @@
 package pl.selvin.android.syncframework.content;
 
 public interface BlobsTable {
-    //why such name? ... to make sure that Your table will not have the same name as blob table
-    String NAME = "pl_selvin_android_sync_framework_blobs";
-    String C_NAME = "name";
-    String C_VALUE = "value";
-    String C_DATE = "date";
-    String C_STATE = "state";
+	//why such name? ... to make sure that Your table will not have the same name as blob table
+	String NAME = "pl_selvin_android_sync_framework_blobs";
+	String C_NAME = "name";
+	String C_VALUE = "value";
+	String C_DATE = "date";
+	String C_STATE = "state";
 }

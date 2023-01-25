@@ -16,7 +16,7 @@ package pl.selvin.android.syncframework.content;
  * 		"__sync"	:{	//req
  *			"serverBlob"			: "blob",
  *			"moreChangesAvailable"	: boolean,
- * 			"resolveConflicts"		: boolean //opt 
+ * 			"resolveConflicts"		: boolean //opt
  * 		},
  * 		"results"	:[
  * 			"__metadata"	:{ //req
@@ -27,9 +27,9 @@ package pl.selvin.android.syncframework.content;
  * 			},
  * 			"__syncConflict"	:{ //opt
  * 				"isResolved"			: boolean,
- * 				"conflictResolution"	: "ClientWins|ServerWins|Merge", 
+ * 				"conflictResolution"	: "ClientWins|ServerWins|Merge",
  * 						//names taken from doc ... i'm not sure about 'em
- * 				"conflictingChange"		: { 
+ * 				"conflictingChange"		: {
  * 					"restOfFields":"goes here" //... i think doc sucks
  * 				}
  * 			},
@@ -43,28 +43,28 @@ package pl.selvin.android.syncframework.content;
 
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public interface SYNC {
-    String d = "d";
-    String P = "=?";
-    String __sync = "__sync";
-    String serverBlob = "serverBlob";
-    String moreChangesAvailable = "moreChangesAvailable";
-    String resolveConflicts = "resolveConflicts";
-    String results = "results";
-    String __metadata = "__metadata";
-    String uri = "uri";
-    String uriP = uri + P;
-    String isDeleted = "isDeleted";
-    String isDeletedP = isDeleted + P;
-    String isDirty = "isDirty";
-    String isDirtyP = isDirty + P;
-    String tempId = "tempId";
-    String tempIdP = tempId + P;
-    String type = "type";
-    String __syncConflict = "__syncConflict";
-    String isResolved = "isResolved";
-    String conflictResolution = "conflictResolution";
-    String conflictingChange = "conflictingChange";
-    String __syncError = "__syncError";
-    String errorDescription = "errorDescription";
-    String changeInError = "changeInError";
+	String d = "d";
+	String P = "=?";
+	String __sync = "__sync";
+	String serverBlob = "serverBlob";
+	String moreChangesAvailable = "moreChangesAvailable";
+	String resolveConflicts = "resolveConflicts";
+	String results = "results";
+	String __metadata = "__metadata";
+	String uri = "uri";
+	String uriP = uri + P;
+	String isDeleted = "isDeleted";
+	String isDeletedP = isDeleted + P;
+	String isDirty = "isDirty";
+	String isDirtyP = isDirty + P;
+	String tempId = "tempId";
+	String tempIdP = tempId + P;
+	String type = "type";
+	String __syncConflict = "__syncConflict";
+	String isResolved = "isResolved";
+	String conflictResolution = "conflictResolution";
+	String conflictingChange = "conflictingChange";
+	String __syncError = "__syncError";
+	String errorDescription = "errorDescription";
+	String changeInError = "changeInError";
 }

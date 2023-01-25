@@ -3,4 +3,3 @@
     android:accountType="@string/application_id"
     android:contentAuthority="@string/application_id"
     android:supportsUploading="true" />
-

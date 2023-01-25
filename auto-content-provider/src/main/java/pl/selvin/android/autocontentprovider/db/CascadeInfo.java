@@ -11,17 +11,16 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-
 import pl.selvin.android.autocontentprovider.annotation.Cascade;
 
 public final class CascadeInfo {
-    public final String table;
-    public final String[] pk;
-    public final String[] fk;
+	public final String table;
+	public final String[] pk;
+	public final String[] fk;
 
-    public CascadeInfo(final Cascade cascade) {
-        table = cascade.table();
-        pk = cascade.pk();
-        fk = cascade.fk();
-    }
+	public CascadeInfo(final Cascade cascade) {
+		table = cascade.table();
+		pk = cascade.pk();
+		fk = cascade.fk();
+	}
 }

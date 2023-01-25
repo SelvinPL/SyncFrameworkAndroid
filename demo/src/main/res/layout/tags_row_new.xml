@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ImageButton xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/text1"
-    android:text="@string/add_new_tag"
-    android:src="@drawable/ic_tag_white_24dp"
     style="@style/AppTheme.ButtonAccent"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:contentDescription="@string/add_new_tag" />
+    android:contentDescription="@string/add_new_tag"
+    android:src="@drawable/ic_tag_white_24dp"
+    android:text="@string/add_new_tag" />

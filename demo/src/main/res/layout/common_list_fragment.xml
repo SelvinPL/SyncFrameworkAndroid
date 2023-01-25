@@ -6,9 +6,9 @@
 
     <FrameLayout
         android:id="@+id/list"
-        app:layout_behavior="@string/move_upward_behavior"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/move_upward_behavior">
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/button_add_new"
@@ -16,10 +16,12 @@
             android:layout_height="wrap_content"
             android:layout_gravity="bottom|end"
             android:layout_margin="24dp"
+            android:contentDescription="@string/generic_add"
             android:src="@drawable/ic_add_white_24dp"
             app:borderWidth="0dp"
             app:layout_anchor="@id/list"
             app:layout_anchorGravity="bottom|right|end" />
 
     </FrameLayout>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

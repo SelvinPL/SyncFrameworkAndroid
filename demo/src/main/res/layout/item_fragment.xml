@@ -90,7 +90,6 @@
             android:layout_width="match_parent"
             android:layout_height="35dp"
             android:layout_below="@id/start_date_label"
-            android:layout_toLeftOf="@id/divider"
             android:layout_toStartOf="@id/divider"
             android:gravity="center"
             android:textSize="17sp"
@@ -100,11 +99,9 @@
             android:id="@+id/start_time"
             android:layout_width="match_parent"
             android:layout_height="35dp"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
             android:layout_below="@id/start_date_label"
+            android:layout_alignParentEnd="true"
             android:layout_toEndOf="@id/divider"
-            android:layout_toRightOf="@id/divider"
             android:gravity="center"
             android:textSize="17sp"
             android:textStyle="bold" />
@@ -121,7 +118,6 @@
             android:layout_width="match_parent"
             android:layout_height="35dp"
             android:layout_below="@id/end_date_label"
-            android:layout_toLeftOf="@id/divider"
             android:layout_toStartOf="@id/divider"
             android:gravity="center"
             android:textSize="17sp"
@@ -133,7 +129,6 @@
             android:layout_height="35dp"
             android:layout_below="@id/end_date_label"
             android:layout_toEndOf="@id/divider"
-            android:layout_toRightOf="@id/divider"
             android:gravity="center"
             android:textSize="17sp"
             android:textStyle="bold" />
@@ -152,4 +147,5 @@
             android:layout_below="@id/tags_label"
             android:minHeight="200dp" />
     </RelativeLayout>
+
 </androidx.core.widget.NestedScrollView>

@@ -12,61 +12,48 @@
 package pl.selvin.android.listsyncsample.utils;
 
 import android.database.Cursor;
-import androidx.cursoradapter.widget.CursorAdapter;
 import android.widget.AdapterView;
 
+import androidx.cursoradapter.widget.CursorAdapter;
+
 class AdapterViewHelper {
-    static boolean setSelectionById(final AdapterView spinner, final boolean loaded, long id, final String columnName) {
-        return  setSelectionById(spinner, loaded, id, columnName, false);
-    }
 
-    private static boolean setSelectionById(final AdapterView spinner, final boolean loaded, long id, final String columnName, boolean setLastIfDidntFind) {
-        if (loaded && id != AdapterView.INVALID_ROW_ID) {
-            Cursor c = ((CursorAdapter) spinner.getAdapter()).getCursor();
-            if (c != null) {
-                int pos = 0;
-                if (c.moveToFirst()) {
-                    final int index = c.getColumnIndex(columnName);
-                    do {
-                        if (c.getLong(index) == id) {
-                            spinner.setSelection(pos);
-                            return true;
-                        }
-                        pos++;
-                    } while (c.moveToNext());
-                    if(setLastIfDidntFind) {
-                        spinner.setSelection(--pos);
-                    }
-                }
-            }
-        }
-        return false;
-    }
+	public static void setSelectionById(final AdapterView<?> spinner, final boolean loaded, long id, final String columnName) {
+		if (loaded && id != AdapterView.INVALID_ROW_ID) {
+			Cursor c = ((CursorAdapter) spinner.getAdapter()).getCursor();
+			if (c != null) {
+				int pos = 0;
+				if (c.moveToFirst()) {
+					final int index = c.getColumnIndex(columnName);
+					do {
+						if (c.getLong(index) == id) {
+							spinner.setSelection(pos);
+							return;
+						}
+						pos++;
+					} while (c.moveToNext());
+				}
+			}
+		}
+	}
 
-    static boolean setSelectionByValue(final AdapterView spinner, final boolean loaded, String value, final String columnName) {
-        return  setSelectionByValue(spinner, loaded, value, columnName, false);
-    }
-    private static boolean setSelectionByValue(final AdapterView spinner, final boolean loaded, String value, final String columnName, boolean setLastIfDidntFind) {
-        if (loaded && value != null) {
-            Cursor c = ((CursorAdapter) spinner.getAdapter()).getCursor();
-            if (c != null) {
-                int pos = 0;
-                if (c.moveToFirst()) {
-                    value = value.toLowerCase();
-                    final int index = c.getColumnIndex(columnName);
-                    do {
-                        if (c.getString(index).toLowerCase().equals(value)) {
-                            spinner.setSelection(pos);
-                            return true;
-                        }
-                        pos++;
-                    } while (c.moveToNext());
-                    if(setLastIfDidntFind) {
-                        spinner.setSelection(--pos);
-                    }
-                }
-            }
-        }
-        return false;
-    }
+	public static void setSelectionByValue(final AdapterView<?> spinner, final boolean loaded, String value, final String columnName) {
+		if (loaded && value != null) {
+			Cursor c = ((CursorAdapter) spinner.getAdapter()).getCursor();
+			if (c != null) {
+				int pos = 0;
+				if (c.moveToFirst()) {
+					value = value.toLowerCase();
+					final int index = c.getColumnIndex(columnName);
+					do {
+						if (c.getString(index).toLowerCase().equals(value)) {
+							spinner.setSelection(pos);
+							return;
+						}
+						pos++;
+					} while (c.moveToNext());
+				}
+			}
+		}
+	}
 }

@@ -26,16 +26,14 @@ import android.view.View;
 @SuppressWarnings("unused")
 public class Ui {
 
-    @SuppressWarnings("unchecked")
     @Nullable
     public static <T extends View> T getViewOrNull(Activity parent, @IdRes int viewId) {
-        return (T) parent.findViewById(viewId);
+        return parent.findViewById(viewId);
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     public static <T extends View> T getViewOrNull(View parent, @IdRes int viewId) {
-        return (T) parent.findViewById(viewId);
+        return parent.findViewById(viewId);
     }
 
     @SuppressWarnings("unchecked")

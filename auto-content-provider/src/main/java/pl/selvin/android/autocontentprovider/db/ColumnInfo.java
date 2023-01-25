@@ -11,31 +11,30 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-
 import androidx.annotation.NonNull;
 
 import pl.selvin.android.autocontentprovider.annotation.Column;
 
 public class ColumnInfo {
-    public final String name;
-    public final int type;
-    public final String extras;
-    public final String computed;
-    public final boolean nullable;
-    public final int precision;
+	public final String name;
+	public final int type;
+	public final String extras;
+	public final String computed;
+	public final boolean nullable;
+	public final int precision;
 
-    public ColumnInfo(final @NonNull String name, final @NonNull Column column) {
-        this.name = name;
-        type = column.type();
-        nullable = column.nullable();
-        extras = column.extras();
-        computed = column.computed();
-        precision = column.precision();
-    }
+	public ColumnInfo(final @NonNull String name, final @NonNull Column column) {
+		this.name = name;
+		type = column.type();
+		nullable = column.nullable();
+		extras = column.extras();
+		computed = column.computed();
+		precision = column.precision();
+	}
 
-    @NonNull
-    @Override
-    public String toString() {
-        return name;
-    }
+	@NonNull
+	@Override
+	public String toString() {
+		return name;
+	}
 }

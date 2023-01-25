@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="vertical"
-    android:focusableInTouchMode="true">
+    android:focusableInTouchMode="true"
+    android:orientation="vertical">
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
-        app:hintAnimationEnabled="false"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:hintAnimationEnabled="false">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/name"
@@ -20,15 +20,15 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-        app:hintAnimationEnabled="false"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        app:hintAnimationEnabled="false">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/description"
-            android:gravity="top"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:gravity="top"
             android:hint="@string/label_description"
             android:imeOptions="actionNext|flagNoExtractUi"
             android:inputType="textMultiLine"
@@ -46,4 +46,5 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
+
 </LinearLayout>

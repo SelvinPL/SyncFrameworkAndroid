@@ -12,17 +12,17 @@
 package pl.selvin.android.autocontentprovider.db;
 
 public class ColumnType {
-    public final static int INTEGER = 0;
-    public final static int VARCHAR = 1;
-    public final static int GUID = 2;
-    public final static int DATETIME = 3;
-    public final static int NUMERIC = 4;
-    public final static int BOOLEAN = 5;
-    public final static int BLOB = 6;
-    public final static int DECIMAL = 7;
-    private final static String[] names = new String[]{"INTEGER", "VARCHAR", "GUID", "DATETIME", "NUMERIC", "BOOLEAN", "BLOB", "DECIMAL"};
+	public final static int INTEGER = 0;
+	public final static int VARCHAR = 1;
+	public final static int GUID = 2;
+	public final static int DATETIME = 3;
+	public final static int NUMERIC = 4;
+	public final static int BOOLEAN = 5;
+	public final static int BLOB = 6;
+	public final static int DECIMAL = 7;
+	private final static String[] names = new String[]{"INTEGER", "VARCHAR", "GUID", "DATETIME", "NUMERIC", "BOOLEAN", "BLOB", "DECIMAL"};
 
-    public static String getName(int type) {
-        return names[type];
-    }
+	public static String getName(int type) {
+		return names[type];
+	}
 }

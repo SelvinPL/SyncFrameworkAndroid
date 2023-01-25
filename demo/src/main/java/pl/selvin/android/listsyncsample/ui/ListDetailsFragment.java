@@ -19,9 +19,11 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentFactory;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,89 +36,91 @@ import pl.selvin.android.listsyncsample.provider.Database.List;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
 public class ListDetailsFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>,
-        ListFragmentCommon.IDetailsUiProvider {
-    private static final String ITEMS_FRAGMENT_TAG = "ITEMS_FRAGMENT_TAG";
-    private Uri mItemUri;
-    private EditText mName, mDescription;
+		ListFragmentCommon.IDetailsUiProvider {
+	private static final String ITEMS_FRAGMENT_TAG = "ITEMS_FRAGMENT_TAG";
+	private Uri mItemUri;
+	private EditText mName, mDescription;
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        final View root = inflater.inflate(R.layout.list_fragment, container, false);
-        mName = Ui.getView(root, R.id.name);
-        mDescription = Ui.getView(root, R.id.description);
-        return root;
-    }
+	@Nullable
+	@Override
+	public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+		final View root = inflater.inflate(R.layout.list_fragment, container, false);
+		mName = Ui.getView(root, R.id.name);
+		mDescription = Ui.getView(root, R.id.description);
+		return root;
+	}
 
-    private Uri getItemUri() {
-        return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
-    }
+	private Uri getItemUri() {
+		return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
+	}
 
-    @Override
-    public void onResume() {
-        super.onResume();
-        LoaderManager.getInstance(this).initLoader(51000, null, this);
-    }
+	@Override
+	public void onResume() {
+		super.onResume();
+		LoaderManager.getInstance(this).initLoader(51000, null, this);
+	}
 
-    @NonNull
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return new CursorLoader(requireActivity(), getItemUri(),
-                new String[]{List.NAME, List.DESCRIPTION, List.ID}, null, null, null);
-    }
+	@NonNull
+	@Override
+	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+		return new CursorLoader(requireActivity(), getItemUri(),
+				new String[]{List.NAME, List.DESCRIPTION, List.ID}, null, null, null);
+	}
 
-    @Override
-    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
-        if (cursor.moveToFirst()) {
-            mName.setText(cursor.getString(cursor.getColumnIndex(List.NAME)));
-            mDescription.setText(cursor.getString(cursor.getColumnIndex(List.DESCRIPTION)));
-            Fragment fragment = getChildFragmentManager().findFragmentByTag(ITEMS_FRAGMENT_TAG);
-            if (fragment == null) {
-                final Bundle fragmentArgs = ListFragmentCommon.Builder.createFromBundle(
-                        ItemsListFragment.createArgs(cursor.getString(cursor.getColumnIndex(List.ID))))
-                        .setSupportEdit(true).build();
-                fragment = Fragment.instantiate(getActivity(), ItemsListFragment.class.getName(), null);
-                fragment.setArguments(fragmentArgs);
-                getChildFragmentManager().beginTransaction().add(R.id.items, fragment, ITEMS_FRAGMENT_TAG).commit();
-            }
-        } else
-            requireActivity().finish();
-    }
+	@Override
+	public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+		if (cursor.moveToFirst()) {
+			mName.setText(cursor.getString(cursor.getColumnIndexOrThrow(List.NAME)));
+			mDescription.setText(cursor.getString(cursor.getColumnIndexOrThrow(List.DESCRIPTION)));
+			Fragment fragment = getChildFragmentManager().findFragmentByTag(ITEMS_FRAGMENT_TAG);
+			if (fragment == null) {
+				final Bundle fragmentArgs = ListFragmentCommon.Builder.createFromBundle(
+								ItemsListFragment.createArgs(cursor.getString(cursor.getColumnIndexOrThrow(List.ID))))
+						.setSupportEdit(true).build();
+				final FragmentFactory fragmentFactory = getChildFragmentManager().getFragmentFactory();
+				fragment = fragmentFactory.instantiate(ClassLoader.getSystemClassLoader(), ItemsListFragment.class.getName());
+				fragment.setArguments(fragmentArgs);
+				getChildFragmentManager().beginTransaction().add(R.id.items, fragment, ITEMS_FRAGMENT_TAG).commit();
+			}
+		} else
+			requireActivity().finish();
+	}
 
-    @Override
-    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+	@Override
+	public void onLoaderReset(@NonNull Loader<Cursor> loader) {
 
-    }
+	}
 
-    @Override
-    public void onPause() {
-        super.onPause();
-        final ContentValues values = new ContentValues();
-        final String description = mDescription.getText().toString();
-        final String name = mName.getText().toString();
+	@Override
+	public void onPause() {
+		super.onPause();
+		final ContentValues values = new ContentValues();
+		final String description = mDescription.getText().toString();
+		final String name = mName.getText().toString();
 
-        values.put(List.NAME, name);
-        values.put(List.DESCRIPTION, description);
-        requireActivity().getContentResolver().update(getItemUri(), values,
-                String.format("(%s<>? OR %s<>?)", List.NAME, List.DESCRIPTION), new String[]{name, description});
-    }
+		values.put(List.NAME, name);
+		values.put(List.DESCRIPTION, description);
+		requireActivity().getContentResolver().update(getItemUri(), values,
+				String.format("(%s<>? OR %s<>?)", List.NAME, List.DESCRIPTION), new String[]{name, description});
+	}
 
-    @Override
-    public boolean showDetails(Uri itemUri, Class<? extends Fragment> fragmentClass, Bundle args, boolean editable) {
-        final Bundle uriArgs = new Bundle();
-        uriArgs.putParcelable(GenericDetailsActivity.ITEM_URI, itemUri);
-        startActivity(GenericDetailsActivity.createIntent(getActivity(), fragmentClass, uriArgs));
-        return true;
-    }
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if(requireActivity().isFinishing()){
-            final String name = mName.getText().toString();
-            final String description = mDescription.getText().toString();
-            //if element is new and name and description is empty - delete item
-            if(ListFragmentCommon.checkIsNewElement(getItemUri()) && StringUtil.EMPTY.equals(name) && StringUtil.EMPTY.equals(description))
-                requireActivity().getContentResolver().delete(getItemUri(), null,null);
-        }
-    }
+	@Override
+	public boolean showDetails(Uri itemUri, Class<? extends Fragment> fragmentClass, Bundle args, boolean editable) {
+		final Bundle uriArgs = new Bundle();
+		uriArgs.putParcelable(GenericDetailsActivity.ITEM_URI, itemUri);
+		startActivity(GenericDetailsActivity.createIntent(getActivity(), fragmentClass, uriArgs));
+		return true;
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		if (requireActivity().isFinishing()) {
+			final String name = mName.getText().toString();
+			final String description = mDescription.getText().toString();
+			//if element is new and name and description is empty - delete item
+			if (ListFragmentCommon.checkIsNewElement(getItemUri()) && StringUtil.EMPTY.equals(name) && StringUtil.EMPTY.equals(description))
+				requireActivity().getContentResolver().delete(getItemUri(), null, null);
+		}
+	}
 }

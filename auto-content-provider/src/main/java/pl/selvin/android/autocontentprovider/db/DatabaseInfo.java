@@ -11,7 +11,6 @@
 
 package pl.selvin.android.autocontentprovider.db;
 
-
 import android.content.UriMatcher;
 import android.util.SparseArray;
 
@@ -21,31 +20,31 @@ import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 
 public class DatabaseInfo {
-    public final HashMap<String, TableInfo> allTablesInfo = new HashMap<>();
-    public final SparseArray<TableInfo> allTablesInfoCode = new SparseArray<>();
+	public final HashMap<String, TableInfo> allTablesInfo = new HashMap<>();
+	public final SparseArray<TableInfo> allTablesInfoCode = new SparseArray<>();
 
-    public DatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher, TableInfoFactory tableInfoFactory) throws Exception {
-        final Class<?>[] tableClasses = dbClass.getClasses();
-        int code = 0;
+	public DatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher, TableInfoFactory tableInfoFactory) throws Exception {
+		final Class<?>[] tableClasses = dbClass.getClasses();
+		int code = 0;
 
-        for (final Class<?> tableClass : tableClasses) {
-            final Table table = tableClass.getAnnotation(Table.class);
-            if (table != null) {
-                code++;
-                TableInfo tableToAdd = tableInfoFactory.createTableInfo(table, tableClass, authority);
-                matcher.addURI(authority, tableToAdd.name, code);
-                matcher.addURI(authority, tableToAdd.name + "/ROWID/#", code | ContentHelper.uriCodeItemRowIDFlag);
-                if (tableToAdd.primaryKeys.size() > 0) {
-                    final StringBuilder sig = new StringBuilder(tableToAdd.name);
-                    for (ColumnInfo pkInfo : tableToAdd.primaryKeys) {
-                        sig.append('/');
-                        sig.append(pkInfo.type == ColumnType.INTEGER ? '#' : '*');
-                    }
-                    matcher.addURI(authority, sig.toString(), code | ContentHelper.uriCodeItemFlag);
-                }
-                allTablesInfo.put(tableToAdd.nameForMime, tableToAdd);
-                allTablesInfoCode.put(code, tableToAdd);
-            }
-        }
-    }
+		for (final Class<?> tableClass : tableClasses) {
+			final Table table = tableClass.getAnnotation(Table.class);
+			if (table != null) {
+				code++;
+				TableInfo tableToAdd = tableInfoFactory.createTableInfo(table, tableClass, authority);
+				matcher.addURI(authority, tableToAdd.name, code);
+				matcher.addURI(authority, tableToAdd.name + "/ROWID/#", code | ContentHelper.uriCodeItemRowIDFlag);
+				if (tableToAdd.primaryKeys.size() > 0) {
+					final StringBuilder sig = new StringBuilder(tableToAdd.name);
+					for (ColumnInfo pkInfo : tableToAdd.primaryKeys) {
+						sig.append('/');
+						sig.append(pkInfo.type == ColumnType.INTEGER ? '#' : '*');
+					}
+					matcher.addURI(authority, sig.toString(), code | ContentHelper.uriCodeItemFlag);
+				}
+				allTablesInfo.put(tableToAdd.nameForMime, tableToAdd);
+				allTablesInfoCode.put(code, tableToAdd);
+			}
+		}
+	}
 }

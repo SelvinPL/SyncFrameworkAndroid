@@ -8,7 +8,7 @@
  OF ANY KIND, either express or implied. See the License for the specific
  language governing permissions and limitations under the License.
  */
-package pl.selvin.android.autocontentprovider;
+package pl.selvin.android.autocontentprovider.test;
 
 import pl.selvin.android.autocontentprovider.annotation.Column;
 import pl.selvin.android.autocontentprovider.annotation.Table;
@@ -16,29 +16,29 @@ import pl.selvin.android.autocontentprovider.annotation.TableName;
 import pl.selvin.android.autocontentprovider.db.ColumnType;
 
 public class DatabaseTest {
-    @Table(primaryKeys = {Status.ID})
-    public interface Status {
+	@Table(primaryKeys = {Status.ID})
+	public interface Status {
 
-        @TableName
-        String TABLE_NAME = "Status";
+		@TableName
+		String TABLE_NAME = "Status";
 
-        @Column
-        String ID = "ID";
+		@Column
+		String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
-        String NAME = "Name";
-    }
+		@Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
+		String NAME = "Name";
+	}
 
-    @Table(primaryKeys = {StatusReadonly.ID}, readonly = true)
-    public interface StatusReadonly {
+	@Table(primaryKeys = {StatusReadonly.ID}, readonly = true)
+	public interface StatusReadonly {
 
-        @TableName
-        String TABLE_NAME = "StatusReadonly";
+		@TableName
+		String TABLE_NAME = "StatusReadonly";
 
-        @Column
-        String ID = "ID";
+		@Column
+		String ID = "ID";
 
-        @Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
-        String NAME = "Name";
-    }
+		@Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
+		String NAME = "Name";
+	}
 }

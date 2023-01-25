@@ -11,25 +11,22 @@
 
 package pl.selvin.android.autocontentprovider.annotation;
 
+import static pl.selvin.android.autocontentprovider.annotation.Column.EMPTY;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import static pl.selvin.android.autocontentprovider.annotation.Column.EMPTY;
-
-/**
- * FSM save us!!
- *
- * @author Selvin
- */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IndexColumn {
-    String name();
-    String order() default EMPTY;
-    String collate() default EMPTY;
-    String ASC = "ASC";
-    @SuppressWarnings({"unused", "RedundantSuppression"})
-    String DESC = "DESC";
+	String ASC = "ASC";
+	@SuppressWarnings({"unused", "RedundantSuppression"})
+	String DESC = "DESC";
+
+	String name();
+
+	String order() default EMPTY;
+
+	String collate() default EMPTY;
 }

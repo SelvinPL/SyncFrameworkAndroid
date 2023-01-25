@@ -16,15 +16,15 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.view.View;
+import android.widget.ListAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.SearchView;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
 import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
-import androidx.cursoradapter.widget.SimpleCursorAdapter;
-import androidx.appcompat.widget.SearchView;
-import android.view.View;
-import android.widget.ListAdapter;
 
 import java.util.UUID;
 
@@ -40,126 +40,121 @@ import pl.selvin.android.listsyncsample.utils.Ui;
 
 @SuppressWarnings("unused")
 public class ListsListFragment extends ListFragmentCommon implements SearchView.OnQueryTextListener,
-        GenericListActivity.ISearchSupport {
-    private final static String SEARCH_VIEW_ICONIFIED = "SEARCH_VIEW_ICONIFIED";
-    private static final String CURRENT_FILTER = "CURRENT_FILTER";
-    private SearchView mSearchView = null;
-    private String mCurrentFilter = StringUtil.EMPTY;
+		GenericListActivity.ISearchSupport {
+	private final static String SEARCH_VIEW_ICONIFIED = "SEARCH_VIEW_ICONIFIED";
+	private static final String CURRENT_FILTER = "CURRENT_FILTER";
+	private SearchView mSearchView = null;
+	private String mCurrentFilter = StringUtil.EMPTY;
 
-    public ListsListFragment() {
-        super(50000, List.TABLE_NAME, R.string.lists_list_empty, ListDetailsFragment.class, R.string.list_deletion_title, R.string.list_deletion_message);
-    }
-
-
-    @Override
-    protected Loader<Cursor> getLoader(Bundle args) {
-        return new CursorLoader(requireActivity(),
-                ListProvider.getHelper().getDirUri(List.TABLE_NAME), new String[]{
-                BaseColumns._ID, List.ID, List.NAME,
-                List.DESCRIPTION, List.CREATED_DATE
-        }, String.format("%s LIKE ?1 OR %s LIKE ?1", List.NAME, List.DESCRIPTION),
-                new String[]{"%" + mCurrentFilter + "%"}, List.NAME);
-    }
-
-    @Override
-    protected boolean getEditable(Cursor cursor) {
-        return true;
-    }
+	public ListsListFragment() {
+		super(50000, List.TABLE_NAME, R.string.lists_list_empty, ListDetailsFragment.class, R.string.list_deletion_title, R.string.list_deletion_message);
+	}
 
 
-    @Override
-    protected ListAdapter createListAdapter() {
-        return new SimpleCursorAdapter(requireActivity(), R.layout.list_row,
-                null, new String[]{List.NAME,
-                List.DESCRIPTION, List.CREATED_DATE},
-                new int[]{R.id.name, R.id.description, R.id.created_date},
-                0);
-    }
+	@Override
+	protected Loader<Cursor> getLoader(Bundle args) {
+		return new CursorLoader(requireActivity(),
+				ListProvider.getHelper().getDirUri(List.TABLE_NAME), new String[]{
+				BaseColumns._ID, List.ID, List.NAME,
+				List.DESCRIPTION, List.CREATED_DATE
+		}, String.format("%s LIKE ?1 OR %s LIKE ?1", List.NAME, List.DESCRIPTION),
+				new String[]{"%" + mCurrentFilter + "%"}, List.NAME);
+	}
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
-        if (savedInstanceState != null) {
-            mCurrentFilter = savedInstanceState.getString(CURRENT_FILTER);
-        }
-    }
+	@Override
+	protected boolean getEditable(Cursor cursor) {
+		return true;
+	}
 
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
 
-        mSearchView = Ui.getView(requireActivity(), R.id.search_view);
-        mSearchView.setVisibility(View.VISIBLE);
-        mSearchView.setQueryHint(getString(R.string.lists_search_hint));
-        mSearchView.setOnQueryTextListener(this);
-        if (savedInstanceState != null)
-            mSearchView.setIconified(savedInstanceState.getBoolean(SEARCH_VIEW_ICONIFIED, true));
+	@Override
+	protected ListAdapter createListAdapter() {
+		return new SimpleCursorAdapter(requireActivity(), R.layout.list_row,
+				null, new String[]{List.NAME,
+				List.DESCRIPTION, List.CREATED_DATE},
+				new int[]{R.id.name, R.id.description, R.id.created_date},
+				0);
+	}
 
-    }
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setHasOptionsMenu(true);
+		if (savedInstanceState != null) {
+			mCurrentFilter = savedInstanceState.getString(CURRENT_FILTER);
+		}
+	}
 
-    @Override
-    public void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (mSearchView != null)
-            outState.putBoolean(SEARCH_VIEW_ICONIFIED, mSearchView.isIconified());
-        outState.putString(CURRENT_FILTER, mCurrentFilter);
-    }
+	@Override
+	public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
+		super.onViewCreated(view, savedInstanceState);
+		mSearchView = Ui.getView(requireActivity(), R.id.search_view);
+		mSearchView.setVisibility(View.VISIBLE);
+		mSearchView.setQueryHint(getString(R.string.lists_search_hint));
+		mSearchView.setOnQueryTextListener(this);
+		if (savedInstanceState != null)
+			mSearchView.setIconified(savedInstanceState.getBoolean(SEARCH_VIEW_ICONIFIED, true));
+	}
 
-    @Override
-    public boolean onQueryTextChange(String newText) {
-        if (!mCurrentFilter.equals(newText)) {
-            mCurrentFilter = newText;
-            LoaderManager.getInstance(this).restartLoader(loaderID, null, this);
-        }
-        return true;
-    }
+	@Override
+	public void onSaveInstanceState(@NonNull Bundle outState) {
+		super.onSaveInstanceState(outState);
+		if (mSearchView != null)
+			outState.putBoolean(SEARCH_VIEW_ICONIFIED, mSearchView.isIconified());
+		outState.putString(CURRENT_FILTER, mCurrentFilter);
+	}
 
-    @Override
-    public boolean onQueryTextSubmit(String query) {
-        return false;
-    }
+	@Override
+	public boolean onQueryTextChange(String newText) {
+		if (!mCurrentFilter.equals(newText)) {
+			mCurrentFilter = newText;
+			LoaderManager.getInstance(this).restartLoader(loaderID, null, this);
+		}
+		return true;
+	}
 
-    @Override
-    public void onSearchRequested() {
+	@Override
+	public boolean onQueryTextSubmit(String query) {
+		return false;
+	}
 
-        if (mSearchView != null && mSearchView.isIconified())
-            mSearchView.setIconified(false);
-    }
+	@Override
+	public void onSearchRequested() {
 
-    @Override
-    public boolean backOrHideSearch() {
-        if (mSearchView != null) {
-            if (!mSearchView.isIconified()) {
-                mSearchView.setIconified(true);
-                mSearchView.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        mSearchView.clearFocus();
-                        mSearchView.setIconified(true);
-                    }
-                });
-                return true;
-            }
-        }
-        return false;
-    }
+		if (mSearchView != null && mSearchView.isIconified())
+			mSearchView.setIconified(false);
+	}
 
-    @Override
-    public Uri createNewElement(Bundle args) {
-        ContentValues values = new ContentValues();
-        values.put(Database.List.NAME, StringUtil.EMPTY);
-        values.put(Database.List.DESCRIPTION, StringUtil.EMPTY);
-        values.put(Database.List.ID, UUID.randomUUID().toString());
-        values.put(Database.List.USER_ID, SyncService.getUserId(getActivity()));
-        values.put(Database.List.CREATED_DATE, DateTimeUtils.getNowLong());
-        return requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
-    }
+	@Override
+	public boolean backOrHideSearch() {
+		if (mSearchView != null) {
+			if (!mSearchView.isIconified()) {
+				mSearchView.setIconified(true);
+				mSearchView.post(() -> {
+					mSearchView.clearFocus();
+					mSearchView.setIconified(true);
+				});
+				return true;
+			}
+		}
+		return false;
+	}
 
-    @Override
-    protected Uri getItemUri(Cursor cursor, long id) {
-        if (cursor.getLong(0) == id)
-            return ListProvider.getHelper().getItemUri(List.TABLE_NAME, false, cursor.getString(1));
-        return super.getItemUri(cursor, id);
-    }
+	@Override
+	public Uri createNewElement(Bundle args) {
+		ContentValues values = new ContentValues();
+		values.put(Database.List.NAME, StringUtil.EMPTY);
+		values.put(Database.List.DESCRIPTION, StringUtil.EMPTY);
+		values.put(Database.List.ID, UUID.randomUUID().toString());
+		values.put(Database.List.USER_ID, SyncService.getUserId(getActivity()));
+		values.put(Database.List.CREATED_DATE, DateTimeUtils.getNowLong());
+		return requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
+	}
+
+	@Override
+	protected Uri getItemUri(Cursor cursor, long id) {
+		if (cursor.getLong(0) == id)
+			return ListProvider.getHelper().getItemUri(List.TABLE_NAME, false, cursor.getString(1));
+		return super.getItemUri(cursor, id);
+	}
 }

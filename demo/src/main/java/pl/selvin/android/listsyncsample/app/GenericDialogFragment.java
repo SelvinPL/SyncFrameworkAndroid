@@ -12,7 +12,6 @@
 package pl.selvin.android.listsyncsample.app;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
@@ -20,9 +19,7 @@ import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 
-import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
@@ -33,318 +30,194 @@ import java.util.Calendar;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.utils.DateTimeUtils;
 
-
 public interface GenericDialogFragment {
-    String MESSAGE = "MESSAGE";
-    String TITLE = "TITLE";
-    String URI = "URI";
-    String ID = "ID";
-    String ARGS = "ARGS";
-    String VIEW = "VIEW";
-    String DATE = "DATE";
-    String MAX_DATE = "MAX_DATE";
-    String MIN_DATE = "MIN_DATE";
-    String DIALOG_FRAGMENT_TAG = "DIALOG";
+	String MESSAGE = "MESSAGE";
+	String TITLE = "TITLE";
+	String URI = "URI";
+	String ID = "ID";
+	String DATE = "DATE";
+	String MAX_DATE = "MAX_DATE";
+	String MIN_DATE = "MIN_DATE";
+	String DIALOG_FRAGMENT_TAG = "DIALOG";
 
-    @SuppressLint("ValidFragment")
-    class Info extends DialogFragment implements GenericDialogFragment {
+	@SuppressLint("ValidFragment")
+	class ConfirmDelete extends DialogFragment implements GenericDialogFragment {
 
-        public static Info newInstance(@StringRes int title, @LayoutRes int view) {
-            Info frag = new Info();
-            Bundle args = new Bundle();
-            args.putInt(TITLE, title);
-            args.putInt(VIEW, view);
-            frag.setArguments(args);
-            return frag;
-        }
+		@SuppressWarnings("SameParameterValue")
+		static ConfirmDelete newInstance(int id, @StringRes int title, @StringRes int message, @NonNull Uri uri) {
+			ConfirmDelete frag = new ConfirmDelete();
+			Bundle args = new Bundle();
+			args.putParcelable(URI, uri);
+			args.putInt(TITLE, title);
+			args.putInt(MESSAGE, message);
+			args.putInt(ID, id);
+			frag.setArguments(args);
+			return frag;
+		}
 
-        @NonNull
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final int title = requireArguments().getInt(TITLE);
-            final int view = requireArguments().getInt(VIEW);
-            return new AlertDialog.Builder(requireActivity())
-                    .setTitle(title).setView(view)
-                    .setPositiveButton(android.R.string.ok, null).create();
-        }
-    }
+		private void runCallback(int ID, boolean canceled) {
+			boolean handled = false;
+			if (getParentFragment() != null && getParentFragment() instanceof Callback)
+				handled = ((Callback) getParentFragment()).onAction(ID, canceled);
+			if (!handled && getActivity() instanceof Callback)
+				((Callback) getActivity()).onAction(ID, canceled);
+		}
 
-    @SuppressLint("ValidFragment")
-    class OKCancel extends DialogFragment implements GenericDialogFragment {
+		@NonNull
+		@Override
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			final int title = requireArguments().getInt(TITLE);
+			final int message = requireArguments().getInt(MESSAGE);
+			final Uri uri = requireArguments().getParcelable(URI);
+			return new AlertDialog.Builder(requireActivity())
+					.setTitle(title)
+					.setMessage(message)
+					.setPositiveButton(android.R.string.ok,
+							(dialog, whichButton) -> {
+								if (uri != null) {
+									requireActivity().getContentResolver().delete(uri, null, null);
+									runCallback(requireArguments().getInt(ID), false);
+								}
+							})
+					.setNegativeButton(android.R.string.cancel,
+							(dialog, whichButton) -> runCallback(requireArguments().getInt(ID), true)).create();
+		}
 
-        public static OKCancel newInstance(int id, @StringRes int title, @StringRes int message, Parcelable argsIn) {
-            OKCancel frag = new OKCancel();
-            Bundle args = new Bundle();
-            args.putInt(ID, id);
-            args.putInt(TITLE, title);
-            args.putInt(MESSAGE, message);
-            args.putParcelable(ARGS, argsIn);
-            frag.setArguments(args);
-            return frag;
-        }
+		public interface Callback {
+			boolean onAction(int ID, boolean canceled);
+		}
+	}
 
-        public void onCancel(@NonNull DialogInterface dialog) {
-            runCallback(requireArguments().getInt(ID), true, requireArguments().getParcelable(ARGS));
-            super.onCancel(dialog);
-        }
+	class DatePicker extends DialogFragment implements DatePickerDialog.OnDateSetListener, GenericDialogFragment {
 
-        private void runCallback(final int ID, boolean canceled, final Parcelable args) {
-            boolean handled = false;
-            if (getParentFragment() != null && getParentFragment() instanceof Callback)
-                handled = ((Callback) getParentFragment()).onAction(ID, canceled, args);
-            if (!handled && getActivity() instanceof Callback)
-                ((Callback) getActivity()).onAction(ID, canceled, args);
-        }
+		static final Calendar MAX_DATE_VALUE = DateTimeUtils.addYears(DateTimeUtils.today(), 2);
 
-        @NonNull
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final int title = requireArguments().getInt(TITLE);
-            final int message = requireArguments().getInt(MESSAGE);
-            return new AlertDialog.Builder(requireActivity())
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setPositiveButton(android.R.string.ok,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,
-                                                    int whichButton) {
-                                    runCallback(requireArguments().getInt(ID), false, requireArguments().getParcelable(ARGS));
-                                }
-                            })
-                    .setNegativeButton(android.R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,
-                                                    int whichButton) {
-                                    dialog.cancel();
-                                }
-                            }).create();
-        }
+		public static DatePicker newInstance(int id, Calendar date) {
+			return newInstance(id, date, DateTimeUtils.today(), MAX_DATE_VALUE);
+		}
 
-        public interface Callback {
-            boolean onAction(final int ID, boolean canceled, final Parcelable args);
-        }
-    }
+		public static DatePicker newInstance(int id, Calendar date, Calendar minDate, Calendar maxDate) {
+			DatePicker frag = new DatePicker();
+			Bundle args = new Bundle();
+			args.putSerializable(DATE, date);
+			args.putSerializable(MIN_DATE, minDate);
+			args.putSerializable(MAX_DATE, maxDate == null ? MAX_DATE_VALUE : maxDate);
+			args.putInt(ID, id);
+			frag.setArguments(args);
+			return frag;
+		}
 
-    @SuppressLint("ValidFragment")
-    class ConfirmDelete extends DialogFragment implements GenericDialogFragment {
+		@NonNull
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			final Bundle arguments = requireArguments();
+			final Calendar calendar = (Calendar) arguments.getSerializable(DATE);
+			if (calendar != null) {
+				final DatePickerDialog dialog = new DatePickerDialog(this.requireActivity(), R.style.AppTheme_Light_Dialog, this,
+						calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+				setMaxDate(dialog, (Calendar) arguments.getSerializable(MAX_DATE));
+				setMinDate(dialog, (Calendar) arguments.getSerializable(MIN_DATE));
+				return dialog;
+			}
+			throw new RuntimeException("No DATE argument");
+		}
 
-        @SuppressWarnings("SameParameterValue")
-        static ConfirmDelete newInstance(int id, @StringRes int title, @StringRes int message, @NonNull Uri uri) {
-            ConfirmDelete frag = new ConfirmDelete();
-            Bundle args = new Bundle();
-            args.putParcelable(URI, uri);
-            args.putInt(TITLE, title);
-            args.putInt(MESSAGE, message);
-            args.putInt(ID, id);
-            frag.setArguments(args);
-            return frag;
-        }
+		@Override
+		public void onDateSet(android.widget.DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+			final Bundle arguments = requireArguments();
+			final Calendar minDate = (Calendar) arguments.getSerializable(MIN_DATE);
+			final Calendar maxDate = (Calendar) arguments.getSerializable(MAX_DATE);
+			final Calendar calendar = DateTimeUtils.today();
+			calendar.set(Calendar.YEAR, year);
+			calendar.set(Calendar.MONTH, monthOfYear);
+			calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+			if (minDate != null && calendar.compareTo(minDate) < 0)
+				runCallback(arguments.getInt(ID), false, minDate);
+			else if (maxDate != null && calendar.compareTo(maxDate) > 0)
+				runCallback(arguments.getInt(ID), false, maxDate);
+			else
+				runCallback(arguments.getInt(ID), false, calendar);
+		}
 
-        private void runCallback(int ID, boolean canceled) {
-            boolean handled = false;
-            if (getParentFragment() != null && getParentFragment() instanceof Callback)
-                handled = ((Callback) getParentFragment()).onAction(ID, canceled);
-            if (!handled && getActivity() instanceof Callback)
-                ((Callback) getActivity()).onAction(ID, canceled);
-        }
+		private void runCallback(final int ID, boolean canceled, Calendar date) {
+			boolean handled = false;
+			if (getParentFragment() != null && getParentFragment() instanceof Callback)
+				handled = ((Callback) getParentFragment()).onAction(ID, canceled, date);
+			if (!handled && getActivity() instanceof Callback)
+				((Callback) getActivity()).onAction(ID, canceled, date);
+		}
 
-        public interface Callback {
-            boolean onAction(int ID, boolean canceled);
-        }
+		public void onCancel(@NonNull DialogInterface dialog) {
+			final Bundle arguments = requireArguments();
+			final Calendar calendar = (Calendar) arguments.getSerializable(DATE);
+			runCallback(arguments.getInt(ID), true, calendar);
+			super.onCancel(dialog);
+		}
 
-        @NonNull
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final int title = requireArguments().getInt(TITLE);
-            final int message = requireArguments().getInt(MESSAGE);
-            final Uri uri = requireArguments().getParcelable(URI);
-            return new AlertDialog.Builder(requireActivity())
-                    .setTitle(title)
-                    .setMessage(message)
-                    .setPositiveButton(android.R.string.ok,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,
-                                                    int whichButton) {
-                                    if (uri != null) {
-                                        requireActivity().getContentResolver().delete(uri, null, null);
-                                        runCallback(requireArguments().getInt(ID), false);
-                                    }
-                                }
-                            })
-                    .setNegativeButton(android.R.string.cancel,
-                            new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface dialog,
-                                                    int whichButton) {
-                                    runCallback(requireArguments().getInt(ID), true);
-                                }
-                            }).create();
-        }
-    }
+		private void setMaxDate(DatePickerDialog dialog, Calendar maxDate) {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+				dialog.getDatePicker().setCalendarViewShown(false);
+			dialog.getDatePicker().setMaxDate(maxDate.getTimeInMillis());
+		}
 
-    @SuppressLint("ValidFragment")
-    class DatePicker extends DialogFragment implements DatePickerDialog.OnDateSetListener, GenericDialogFragment {
+		private void setMinDate(DatePickerDialog dialog, Calendar minDate) {
+			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+				dialog.getDatePicker().setCalendarViewShown(false);
+			dialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
+		}
 
-        public static DatePicker newInstance(int id, Calendar date) {
-            final Calendar MAX_DATE = DateTimeUtils.getToday();
-            MAX_DATE.add(Calendar.YEAR, 100);
-            final Calendar MIN_DATE = DateTimeUtils.getToday();
-            MIN_DATE.add(Calendar.YEAR, -100);
-            return newInstance(id, date, MIN_DATE, MAX_DATE);
-        }
+		public interface Callback {
+			boolean onAction(final int ID, boolean canceled, Calendar date);
+		}
+	}
 
-        static DatePicker newInstance(int id, Calendar date, Calendar minDate, Calendar maxDate) {
-            DatePicker frag = new DatePicker();
-            Bundle args = new Bundle();
-            args.putLong(DATE, date.getTimeInMillis());
-            args.putLong(MIN_DATE, minDate.getTimeInMillis());
-            args.putLong(MAX_DATE, maxDate.getTimeInMillis());
-            args.putInt(ID, id);
-            frag.setArguments(args);
-            return frag;
-        }
-
-        @NonNull
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(requireArguments().getLong(DATE));
-            final DatePickerDialog dialog = new DatePickerDialog(requireActivity(), R.style.AppTheme_Light_Dialog, this, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-            DatePickerDialogCompatHelper.setMaxDate(dialog, requireArguments().getLong(MAX_DATE));
-            DatePickerDialogCompatHelper.setMinDate(dialog, requireArguments().getLong(MIN_DATE));
-            return dialog;
-        }
-
-        @Override
-        public void onDateSet(android.widget.DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-            final Calendar minDate = Calendar.getInstance();
-            final Calendar maxDate = Calendar.getInstance();
-            minDate.setTimeInMillis(requireArguments().getLong(MIN_DATE));
-            maxDate.setTimeInMillis(requireArguments().getLong(MAX_DATE));
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(requireArguments().getLong(DATE));
-            calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, monthOfYear);
-            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-            if (minDate.getTimeInMillis() > calendar.getTimeInMillis())
-                runCallback(requireArguments().getInt(ID), false, minDate);
-            else if (maxDate.getTimeInMillis() < calendar.getTimeInMillis())
-                runCallback(requireArguments().getInt(ID), false, maxDate);
-            else
-                runCallback(requireArguments().getInt(ID), false, calendar);
-        }
-
-        private void runCallback(final int ID, boolean canceled, Calendar date) {
-            boolean handled = false;
-            if (getParentFragment() != null && getParentFragment() instanceof Callback)
-                handled = ((Callback) getParentFragment()).onAction(ID, canceled, date);
-            if (!handled && getActivity() instanceof Callback)
-                ((Callback) getActivity()).onAction(ID, canceled, date);
-        }
-
-        public void onCancel(@NonNull DialogInterface dialog) {
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(requireArguments().getLong(DATE));
-            runCallback(requireArguments().getInt(ID), true, calendar);
-            super.onCancel(dialog);
-        }
-
-        public interface Callback {
-            boolean onAction(final int ID, boolean canceled, Calendar date);
-        }
+	@SuppressLint("ValidFragment")
+	class TimePicker extends DialogFragment implements TimePickerDialog.OnTimeSetListener, GenericDialogFragment {
 
 
-        private static class DatePickerDialogCompatHelper {
-            final static DatePickerDialogCompatImplBase IMPL;
+		public static TimePicker newInstance(int id, Calendar date) {
+			TimePicker frag = new TimePicker();
+			Bundle args = new Bundle();
+			args.putLong(DATE, date.getTimeInMillis());
+			args.putInt(ID, id);
+			frag.setArguments(args);
+			return frag;
+		}
 
-            static {
-                final int version = Build.VERSION.SDK_INT;
-                if (version >= Build.VERSION_CODES.HONEYCOMB) {
-                    IMPL = new DatePickerDialogCompatImplHC();
-                } else {
-                    IMPL = new DatePickerDialogCompatImplBase();
-                }
-            }
+		@NonNull
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			final Calendar calendar = Calendar.getInstance();
+			calendar.setTimeInMillis(requireArguments().getLong(DATE));
+			return new TimePickerDialog(getActivity(), R.style.AppTheme_Light_Dialog, this, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
+		}
 
-            static void setMaxDate(DatePickerDialog dialog, long maxDate) {
-                IMPL.setMaxDate(dialog, maxDate);
-            }
+		private void runCallback(final int ID, boolean canceled, Calendar date) {
+			boolean handled = false;
+			if (getParentFragment() != null && getParentFragment() instanceof Callback)
+				handled = ((Callback) getParentFragment()).onAction(ID, canceled, date);
+			if (!handled && getActivity() instanceof Callback)
+				((Callback) getActivity()).onAction(ID, canceled, date);
+		}
 
-            static void setMinDate(DatePickerDialog dialog, long minDate) {
-                IMPL.setMinDate(dialog, minDate);
-            }
+		public void onCancel(@NonNull DialogInterface dialog) {
+			final Calendar calendar = Calendar.getInstance();
+			calendar.setTimeInMillis(requireArguments().getLong(DATE));
+			runCallback(requireArguments().getInt(ID), true, calendar);
+			super.onCancel(dialog);
+		}
 
-            @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-            static class DatePickerDialogCompatImplHC extends DatePickerDialogCompatImplBase {
-                @Override
-                public void setMaxDate(DatePickerDialog dialog, long maxDate) {
-                    dialog.getDatePicker().setCalendarViewShown(false);
-                    dialog.getDatePicker().setMaxDate(maxDate);
-                }
+		@Override
+		public void onTimeSet(android.widget.TimePicker timePicker, int hourOfDay, int minute) {
+			final Calendar calendar = Calendar.getInstance();
+			calendar.setTimeInMillis(requireArguments().getLong(DATE));
+			calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+			calendar.set(Calendar.MINUTE, minute);
+			calendar.set(Calendar.SECOND, 0);
+			calendar.set(Calendar.MILLISECOND, 0);
+			runCallback(requireArguments().getInt(ID), false, calendar);
+		}
 
-                @Override
-                public void setMinDate(DatePickerDialog dialog, long minDate) {
-                    dialog.getDatePicker().setCalendarViewShown(false);
-                    dialog.getDatePicker().setMinDate(minDate);
-                }
-            }
-
-            static class DatePickerDialogCompatImplBase {
-                public void setMaxDate(DatePickerDialog dialog, long maxDate) {
-                }
-
-                public void setMinDate(DatePickerDialog dialog, long minDate) {
-                }
-            }
-        }
-    }
-
-    @SuppressLint("ValidFragment")
-    class TimePicker extends DialogFragment implements TimePickerDialog.OnTimeSetListener, GenericDialogFragment {
-
-
-        public static TimePicker newInstance(int id, Calendar date) {
-            TimePicker frag = new TimePicker();
-            Bundle args = new Bundle();
-            args.putLong(DATE, date.getTimeInMillis());
-            args.putInt(ID, id);
-            frag.setArguments(args);
-            return frag;
-        }
-
-        @NonNull
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(requireArguments().getLong(DATE));
-            return new TimePickerDialog(getActivity(), R.style.AppTheme_Light_Dialog, this, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), true);
-        }
-
-        private void runCallback(final int ID, boolean canceled, Calendar date) {
-            boolean handled = false;
-            if (getParentFragment() != null && getParentFragment() instanceof Callback)
-                handled = ((Callback) getParentFragment()).onAction(ID, canceled, date);
-            if (!handled && getActivity() instanceof Callback)
-                ((Callback) getActivity()).onAction(ID, canceled, date);
-        }
-
-        public void onCancel(@NonNull DialogInterface dialog) {
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(requireArguments().getLong(DATE));
-            runCallback(requireArguments().getInt(ID), true, calendar);
-            super.onCancel(dialog);
-        }
-
-        @Override
-        public void onTimeSet(android.widget.TimePicker timePicker, int hourOfDay, int minute) {
-            final Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(requireArguments().getLong(DATE));
-            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            calendar.set(Calendar.MINUTE, minute);
-            calendar.set(Calendar.SECOND, 0);
-            calendar.set(Calendar.MILLISECOND, 0);
-            runCallback(requireArguments().getInt(ID), false, calendar);
-        }
-
-        public interface Callback {
-            boolean onAction(final int ID, boolean canceled, Calendar date);
-        }
-    }
+		public interface Callback {
+			boolean onAction(final int ID, boolean canceled, Calendar date);
+		}
+	}
 }

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Disable background -->
-    <item android:state_enabled="false" android:color="#dfdfdf"/>
+    <item android:color="#dfdfdf" android:state_enabled="false" />
     <!-- Pressed background -->
-    <item android:state_pressed="true" android:color="@color/colorPrimaryDark"/>
+    <item android:color="@color/colorPrimaryDark" android:state_pressed="true" />
     <!-- Enabled background -->
-    <item android:color="@color/colorPrimary"/>
+    <item android:color="@color/colorPrimary" />
 </selector>

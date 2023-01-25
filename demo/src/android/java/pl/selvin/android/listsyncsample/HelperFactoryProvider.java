@@ -11,16 +11,16 @@
 
 package pl.selvin.android.listsyncsample;
 
+import android.content.Context;
+
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
-import android.content.Context;
 
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
 
-
 public class HelperFactoryProvider implements SupportSQLiteOpenHelperFactoryProvider {
-    @Override
-    public SupportSQLiteOpenHelper.Factory createFactory(Context context) {
-        return new FrameworkSQLiteOpenHelperFactory();
-    }
+	@Override
+	public SupportSQLiteOpenHelper.Factory createFactory(Context context) {
+		return new FrameworkSQLiteOpenHelperFactory();
+	}
 }

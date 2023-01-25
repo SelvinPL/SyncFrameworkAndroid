@@ -18,8 +18,8 @@
             <stroke
                 android:width="5dp"
                 android:color="@color/colorAccent"
-                android:dashGap="90dp"
-                android:dashWidth="20dp" />
+                android:dashWidth="20dp"
+                android:dashGap="90dp" />
         </shape>
     </item>
 </layer-list>
