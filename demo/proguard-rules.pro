@@ -1,9 +1,4 @@
--keepattributes *Annotation*
--keep, allowobfuscation @pl.selvin.android.autocontentprovider.annotation.Table public interface * {
-          @pl.selvin.android.autocontentprovider.annotation.Column static <fields>;
-          @pl.selvin.android.autocontentprovider.annotation.TableName static <fields>;
-}
--keepnames class pl.selvin.android.listsyncsample.ui.** extends androidx.core.widget.app.Fragment
+-keepnames class pl.selvin.android.listsyncsample.ui.** extends androidx.fragment.app.Fragment
 -keep class pl.selvin.android.listsyncsample.ui.** extends pl.selvin.android.listsyncsample.app.ListFragmentCommon
 -dontwarn okio.**
 -dontnote okhttp3.**
