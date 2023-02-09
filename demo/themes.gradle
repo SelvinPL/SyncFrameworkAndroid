@@ -94,18 +94,18 @@ class ThemesExtension {
             outputFile project.file("${this.path}/values/colors.xml")
             colorsMap this.colorsMap
         }
-        println "${project.file('/themed/drawable')} :  ${project.file('/themed/drawable').exists()}"
+        def generateThemedVectorDrawablesTask = null
         if (project.file("/themed/drawable").exists()) {
-            generateTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
+            generateThemedVectorDrawablesTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
                 inputDir = project.file("/themed/drawable")
                 outputDir = project.file("${this.path}/drawable")
                 colorsMapVector this.colorsMapVector
                 dependsOn(generateColorsTask)
             }
         }
-        println "${project.file('/themed/mipmap')} :  ${project.file('/themed/mipmap').exists()}"
+        def generateThemedMipmapsTask = null
         if (project.file("/themed/mipmap").exists()) {
-            generateTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
+            generateThemedMipmapsTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
                 inputDir = project.file("/themed/mipmap")
                 outputDirs = GenerateThemedMipmapsVectorDrawable.sizes.collectEntries {
                     [(it): project.file("${this.path}/mipmap-${it.getResourceValue()}")]
@@ -114,8 +114,13 @@ class ThemesExtension {
                 dependsOn(generateColorsTask)
             }
         }
-        if(generateTask == null)
-            generateTask = generateColorsTask
+        generateTask = project.tasks.register("generate${flavourName}ThemedAll") {
+            dependsOn(generateColorsTask)
+            if(generateThemedVectorDrawablesTask != null)
+                dependsOn(generateThemedVectorDrawablesTask)
+            if(generateThemedMipmapsTask != null)
+                dependsOn(generateThemedMipmapsTask)
+        }
         setHasTheme()
     }
 
@@ -198,7 +203,6 @@ class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
                         def image = VdPreview.getPreviewFromVectorXml(imageSize, vector.toString(), null)
                         def fileOut = project.file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
                         fileOut.parentFile.mkdirs()
-                        println fileOut
                         ImageIO.write(image, "png", fileOut)
                     }
                 }
