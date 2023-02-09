@@ -94,6 +94,7 @@ class ThemesExtension {
             outputFile project.file("${this.path}/values/colors.xml")
             colorsMap this.colorsMap
         }
+        println "${project.file('/themed/drawable')} :  ${project.file('/themed/drawable').exists()}"
         if (project.file("/themed/drawable").exists()) {
             generateTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
                 inputDir = project.file("/themed/drawable")
@@ -102,7 +103,7 @@ class ThemesExtension {
                 dependsOn(generateColorsTask)
             }
         }
-
+        println "${project.file('/themed/mipmap')} :  ${project.file('/themed/mipmap').exists()}"
         if (project.file("/themed/mipmap").exists()) {
             generateTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
                 inputDir = project.file("/themed/mipmap")
