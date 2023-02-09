@@ -39,12 +39,9 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-
-    - name: Build mipmaps
-      run: ./gradlew demo:generateAndroidThemedMipmaps
       
     - name: Build with Gradle
-      run: ./gradlew build
+      run: ./gradlew buildAndroidRelease
 
     # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
     # the publishing section of your build.gradle
