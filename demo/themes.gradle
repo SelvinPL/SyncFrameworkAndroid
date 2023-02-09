@@ -97,19 +97,22 @@ class ThemesExtension {
             colorsMap this.colorsMap
         }
         def generateThemedVectorDrawablesTask = null
-        if (project.file("/themed/drawable").exists()) {
+        def drawableDir = project.file('themed/drawable');
+        logger.warn("${drawableDir}: ${drawableDir.exists()}")
+        if (drawableDir.exists()) {
             generateThemedVectorDrawablesTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
-                inputDir = project.file("/themed/drawable")
+                inputDir = drawableDir
                 outputDir = project.file("${this.path}/drawable")
                 colorsMapVector this.colorsMapVector
                 dependsOn(generateColorsTask)
             }
         }
         def generateThemedMipmapsTask = null
-        logger.warn("${project.file('/themed/mipmap')}")
-        if (project.file("/themed/mipmap").exists()) {
+        def mipmapDir = project.file('themed/mipmap');
+        logger.warn("${mipmapDir}: ${mipmapDir.exists()}")
+        if (mipmapDir.exists()) {
             generateThemedMipmapsTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
-                inputDir = project.file("/themed/mipmap")
+                inputDir = mipmapDir
                 outputDirs = GenerateThemedMipmapsVectorDrawable.sizes.collectEntries {
                     [(it): project.file("${this.path}/mipmap-${it.getResourceValue()}")]
                 }
