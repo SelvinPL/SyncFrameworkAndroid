@@ -197,6 +197,7 @@ class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
                         def image = VdPreview.getPreviewFromVectorXml(imageSize, vector.toString(), null)
                         def fileOut = project.file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
                         fileOut.parentFile.mkdirs()
+                        println fileOut
                         ImageIO.write(image, "png", fileOut)
                     }
                 }
