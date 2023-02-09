@@ -28,11 +28,13 @@ class ThemesExtension {
     public boolean hasTheme = false
     public def generateTask = null
     def task = null
+    def logger = null
     protected String path
 
-    ThemesExtension(project, flavour) {
+    ThemesExtension(project, flavour, logger) {
         this.project = project
         this.flavour = flavour
+        this.logger = logger
         colorsMap = [:]
         colorsMapVector = [:]
     }
@@ -104,6 +106,7 @@ class ThemesExtension {
             }
         }
         def generateThemedMipmapsTask = null
+        logger.warn("${project.file('/themed/mipmap')}")
         if (project.file("/themed/mipmap").exists()) {
             generateThemedMipmapsTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
                 inputDir = project.file("/themed/mipmap")
@@ -248,7 +251,7 @@ class GenerateColors extends DefaultTask {
 
 android {
     productFlavors.whenObjectAdded { flavour ->
-        flavour.extensions.create("themes", ThemesExtension, project, flavour)
+        flavour.extensions.create("themes", ThemesExtension, project, flavour, logger)
     }
     applicationVariants.all { variant ->
         variant.productFlavors.each { it.themes.createTask(variant) }
