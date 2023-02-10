@@ -11,6 +11,7 @@ if (propsFile.exists()) {
         sync_framework_maven_url = props['sync_framework_maven']
 }
 
+println System.getenv("GITHUB_ACTOR")
 
 publishing {
     publications {
@@ -30,7 +31,7 @@ publishing {
         }
         maven {
             name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/SelvinPL/SyncFrameworkAndroid"
+            url = "https://maven.pkg.github.com/selvinpl/syncframeworkandroid"
             credentials {
                 username = System.getenv("GITHUB_ACTOR")
                 password = System.getenv("GITHUB_TOKEN")
