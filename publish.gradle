@@ -11,8 +11,6 @@ if (propsFile.exists()) {
         sync_framework_maven_url = props['sync_framework_maven']
 }
 
-println System.getenv("GITHUB_ACTOR")
-
 publishing {
     publications {
         release(MavenPublication) {
