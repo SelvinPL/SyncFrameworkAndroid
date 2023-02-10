@@ -25,15 +25,7 @@ publishing {
 
     repositories {
         maven {
-            url sync_framework_maven_url
-        }
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/selvinpl/syncframeworkandroid"
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
+            url project.file('../build/maven')
         }
     }
 }
