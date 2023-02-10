@@ -53,7 +53,7 @@ jobs:
           git config --global user.name '${{ secrets.USER }}' 
           git config --global user.email '${{ secrets.EMAIL }}'
           git add --all
-          git remote set-url origin https://${{ secrets.USER }}:${{ secrets.ACCESS_TOKEN }}@github.com/SelvinPL/test.git
+          git remote set-url origin https://${{ secrets.USER }}:${{ secrets.ACCESS_TOKEN }}@github.com/SelvinPL/maven.git
           git commit -m '[automated commit]'
           git push
 
