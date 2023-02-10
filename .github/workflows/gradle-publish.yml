@@ -20,7 +20,7 @@ on:
         description: 'Test scenario tags'  
 
 jobs:
-  build:
+  publish:
 
     runs-on: ubuntu-latest
     permissions:
