@@ -5,11 +5,19 @@ apply from: '../version.gradle'
 def disabledColor = 0xADADAD
 
 android {
-    compileSdkVersion 33
-    buildToolsVersion '33.0.1'
+    flavorDimensions = ["db_impl"]
+    buildToolsVersion  = '34.0.0'
     namespace 'pl.selvin.android.listsyncsample'
 
-    flavorDimensions "db_impl"
+    defaultConfig {
+        compileSdk 34
+        applicationId 'pl.selvin.android.listsyncsample'
+        minSdkVersion 22
+        targetSdkVersion 34
+        versionCode sync_framework_version_int
+        versionName sync_framework_version
+    }
+
     signingConfigs {
         release {
             keyAlias 'androiddebugkey'
@@ -17,14 +25,6 @@ android {
             storeFile file('debug.keystore')
             storePassword 'android'
         }
-    }
-
-    defaultConfig {
-        applicationId 'pl.selvin.android.listsyncsample'
-        minSdkVersion 22
-        targetSdkVersion 33
-        versionCode sync_framework_version_int
-        versionName sync_framework_version
     }
 
     buildTypes {
@@ -44,8 +44,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+	buildFeatures {
+		aidl true
+        buildConfig true
+	}
 
-    android.applicationVariants.all { variant ->
+	android.applicationVariants.configureEach { variant ->
         variant.resValue 'string', 'application_id', variant.applicationId
     }
 
@@ -87,14 +91,15 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.9.0'
+    implementation 'androidx.core:core:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.8.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.12'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
     implementation 'com.google.android.flexbox:flexbox:3.0.0'
     implementation project(':sync-framework')
-    androidImplementation 'androidx.sqlite:sqlite-framework:2.3.0'
-    cipherImplementation 'com.commonsware.cwac:saferoom.x:0.5.1'
+    androidImplementation 'androidx.sqlite:sqlite-framework:2.4.0'
+    cipherImplementation "net.zetetic:android-database-sqlcipher:4.5.3"
+    cipherImplementation 'com.commonsware.cwac:saferoom.x:1.3.0'
 }

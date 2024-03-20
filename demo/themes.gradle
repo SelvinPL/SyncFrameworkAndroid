@@ -5,7 +5,6 @@ import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.OutputKeys
 import com.android.ide.common.vectordrawable.VdPreview
-import javax.imageio.ImageIO
 import org.apache.commons.text.TextStringBuilder
 import org.gradle.work.InputChanges
 import org.gradle.work.ChangeType
@@ -28,13 +27,11 @@ class ThemesExtension {
     public boolean hasTheme = false
     public def generateTask = null
     def task = null
-    def logger = null
     protected String path
 
-    ThemesExtension(project, flavour, logger) {
+    ThemesExtension(project, flavour) {
         this.project = project
         this.flavour = flavour
-        this.logger = logger
         colorsMap = [:]
         colorsMapVector = [:]
     }
@@ -91,40 +88,32 @@ class ThemesExtension {
         closure.delegate = this
         closure()
         def flavourName = flavour.name.capitalize()
-        path = "${project.buildDir}/generated/res/themed/${flavourName}"
+        path = project.layout.buildDirectory.dir("/generated/res/themed/${flavourName}").get()
         def generateColorsTask = project.tasks.register("generate${flavourName}Themes", GenerateColors) {
             outputFile project.file("${this.path}/values/colors.xml")
             colorsMap this.colorsMap
         }
-        def generateThemedVectorDrawablesTask = null
-        def drawableDir = project.file('themed/drawable');
-        if (drawableDir.exists()) {
-            generateThemedVectorDrawablesTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
-                inputDir = drawableDir
+        if (project.file("/themed/drawable").exists()) {
+            generateTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
+                inputDir = project.file("/themed/drawable")
                 outputDir = project.file("${this.path}/drawable")
                 colorsMapVector this.colorsMapVector
                 dependsOn(generateColorsTask)
             }
         }
-        def generateThemedMipmapsTask = null
-        def mipmapDir = project.file('themed/mipmap');
-        if (mipmapDir.exists()) {
-            generateThemedMipmapsTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
-                inputDir = mipmapDir
-                outputDirs = GenerateThemedMipmapsVectorDrawable.sizes.collectEntries {
+
+        if (project.file("/themed/mipmap").exists()) {
+            generateTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
+                inputDir = project.file("/themed/mipmap")
+                outputDirs = sizes.collectEntries {
                     [(it): project.file("${this.path}/mipmap-${it.getResourceValue()}")]
                 }
                 colorsMapVector this.colorsMapVector
                 dependsOn(generateColorsTask)
             }
         }
-        generateTask = project.tasks.register("generate${flavourName}ThemedAll") {
-            dependsOn(generateColorsTask)
-            if(generateThemedVectorDrawablesTask != null)
-                dependsOn(generateThemedVectorDrawablesTask)
-            if(generateThemedMipmapsTask != null)
-                dependsOn(generateThemedMipmapsTask)
-        }
+        if(generateTask == null)
+            generateTask = generateColorsTask
         setHasTheme()
     }
 
@@ -189,7 +178,7 @@ class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
     @TaskAction
     void execute(InputChanges inputChanges) {
         if (!inputChanges.incremental)
-            outputDirs.each { project.delete(it.getValue()) }
+            outputDirs.each { it.getValue().delete() }
 
         inputChanges.getAllFileChanges().each { change ->
             if (change.fileType == FileType.DIRECTORY)
@@ -205,15 +194,15 @@ class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
                         }
                         def imageSize = VdPreview.TargetSize.createFromScale(scaleFactor)
                         def image = VdPreview.getPreviewFromVectorXml(imageSize, vector.toString(), null)
-                        def fileOut = project.file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
+                        def fileOut = new File("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
                         fileOut.parentFile.mkdirs()
-                        ImageIO.write(image, "png", fileOut)
+                        javax.imageio.ImageIO.write(image, "png", fileOut)
                     }
                 }
             }
             if(change.changeType == ChangeType.REMOVED) {
                 outputDirs.each {
-                    def file = project.file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
+                    def file = file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
                     if (file.exists())
                         file.delete()
                 }
@@ -251,10 +240,10 @@ class GenerateColors extends DefaultTask {
 }
 
 android {
-    productFlavors.whenObjectAdded { flavour ->
-        flavour.extensions.create("themes", ThemesExtension, project, flavour, logger)
+    productFlavors.configureEach { flavour ->
+        flavour.extensions.create("themes", ThemesExtension, project, flavour)
     }
-    applicationVariants.all { variant ->
+    applicationVariants.configureEach { variant ->
         variant.productFlavors.each { it.themes.createTask(variant) }
     }
 }
@@ -265,7 +254,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools:sdk-common:30.4.0'
-        classpath 'org.apache.commons:commons-text:1.9'
+        classpath 'com.android.tools:sdk-common:31.3.0'
+        classpath 'org.apache.commons:commons-text:1.11.0'
     }
 }

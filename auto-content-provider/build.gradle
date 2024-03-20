@@ -3,15 +3,13 @@ ext.sync_framework_artifact_id = 'auto-content-provider'
 apply from: '../publish.gradle'
 
 android {
-    compileSdkVersion 33
-    buildToolsVersion '33.0.1'
+    buildToolsVersion = '34.0.0'
     namespace 'pl.selvin.android.autocontentprovider'
 
     defaultConfig {
+        compileSdk 34
         minSdkVersion 22
-        targetSdkVersion 33
-        versionCode sync_framework_version_int
-        versionName sync_framework_version
+        targetSdkVersion 34
         consumerProguardFiles 'proguard-rules.pro'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,11 +28,11 @@ android {
 }
 
 dependencies {
-    api 'androidx.annotation:annotation:1.5.0'
-    api 'androidx.sqlite:sqlite:2.3.0'
+    api 'androidx.annotation:annotation:1.7.1'
+    api 'androidx.sqlite:sqlite:2.4.0'
     androidTestImplementation 'androidx.test:core:1.5.0'
     androidTestImplementation 'androidx.test:runner:1.5.2'
     androidTestImplementation 'androidx.test:rules:1.5.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.sqlite:sqlite-framework:2.3.0'
+    androidTestImplementation 'androidx.sqlite:sqlite-framework:2.4.0'
 }
