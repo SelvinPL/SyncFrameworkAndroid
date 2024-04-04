@@ -12,29 +12,29 @@ if (propsFile.exists()) {
 }
 
 publishing {
-    publications {
-        release(MavenPublication) {
-            groupId 'pl.selvin.android'
-            version sync_framework_version
-            artifactId sync_framework_artifact_id
-            afterEvaluate {
-                from components.release
-            }
-        }
-    }
+	publications {
+		release(MavenPublication) {
+			groupId 'pl.selvin.android'
+			version sync_framework_version
+			artifactId sync_framework_artifact_id
+			afterEvaluate {
+				from components.release
+			}
+		}
+	}
 
-    repositories {
-        maven {
-            url sync_framework_maven_url
-        }
-        if(System.getenv("GITHUB_ACTOR") != null)
-        maven {
-            name = "GitHubPackages"
-            url = "https://maven.pkg.github.com/selvinpl/syncframeworkandroid"
-            credentials {
-                username = System.getenv("GITHUB_ACTOR")
-                password = System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
+	repositories {
+		maven {
+			url sync_framework_maven_url
+		}
+		if (System.getenv("GITHUB_ACTOR") != null)
+			maven {
+				name = "GitHubPackages"
+				url = "https://maven.pkg.github.com/selvinpl/syncframeworkandroid"
+				credentials {
+					username = System.getenv("GITHUB_ACTOR")
+					password = System.getenv("GITHUB_TOKEN")
+				}
+			}
+	}
 }

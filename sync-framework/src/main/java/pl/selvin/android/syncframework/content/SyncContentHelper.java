@@ -68,8 +68,16 @@ public class SyncContentHelper extends ContentHelper {
 		return ret;
 	}
 
+	public void createScopeTables(SupportSQLiteDatabase db, String scope) {
+		for (SyncTableInfo tab : Objects.requireNonNull(getTableForScope(scope))) {
+			db.execSQL(tab.createStatement());
+			tab.executeAfterOnCreate(db);
+			tab.createIndexes(db);
+		}
+	}
+
 	void clearScope(SupportSQLiteDatabase db, String scope, String scopeServerBlob) {
-		for (SyncTableInfo tab : Objects.requireNonNull(syncDatabaseInfo.tablesInScope.get(scope))) {
+		for (SyncTableInfo tab : Objects.requireNonNull(getTableForScope(scope))) {
 			db.execSQL(tab.dropStatement());
 			db.execSQL(tab.createStatement());
 			tab.executeAfterOnCreate(db);
@@ -96,7 +104,7 @@ public class SyncContentHelper extends ContentHelper {
 		return Uri.withAppendedPath(Uri.withAppendedPath(SYNC_URI, serviceName), syncScope);
 	}
 
-	List<SyncTableInfo> getTableFromScope(String scope) {
+	public List<SyncTableInfo> getTableForScope(String scope) {
 		return syncDatabaseInfo.tablesInScope.get(scope);
 	}
 

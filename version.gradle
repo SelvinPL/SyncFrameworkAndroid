@@ -5,7 +5,7 @@ def version_int = Integer.parseInt(Arrays.stream(version.split('\\.'))
         .map(s->String.format("%03d", Integer.parseInt(s)))
         .collect(Collectors.joining()))
 ext {
-    sync_framework_maven_url = "file://$rootDir/build/maven"
-    sync_framework_version = version
-    sync_framework_version_int = version_int
+	sync_framework_maven_url = "file://$rootDir/build/maven"
+	sync_framework_version = version
+	sync_framework_version_int = version_int
 }

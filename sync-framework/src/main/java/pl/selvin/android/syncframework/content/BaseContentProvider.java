@@ -477,7 +477,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 			generator.writeEndObject(); // sync
 			generator.writeArrayFieldStart(SYNC.results);
 			if (upload) {
-				for (SyncTableInfo tab : ch.getTableFromScope(scope)) {
+				for (SyncTableInfo tab : ch.getTableForScope(scope)) {
 					counter += tab.getChanges(db, generator, logger);
 				}
 			}
