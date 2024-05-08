@@ -15,6 +15,9 @@ pluginManagement {
 dependencyResolutionManagement {
 	repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
 	repositories {
+		maven {
+			url "https://raw.githubusercontent.com/SelvinPL/maven/master/"
+		}
 		google()
 		mavenCentral()
 	}

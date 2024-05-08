@@ -19,6 +19,7 @@ android-gradle-plugin = "8.4.0"
 com-android-sdk-common = "31.4.0"
 org-apache-commons-text = "1.11.0"
 jsr305 = "3.0.2"
+constructors-constraints-annotations = "0.0.9"
 
 androidx-test-core = "1.5.0"
 androidx-test-runner = "1.5.2"
@@ -48,6 +49,8 @@ com-android-sdk-common = { module = "com.android.tools:sdk-common", version.ref 
 
 org-apache-commons-text = { module = "org.apache.commons:commons-text", version.ref = "org-apache-commons-text" }
 jsr305 = { module = "com.google.code.findbugs:jsr305", version.ref = "jsr305" }
+constructors-constraints-annotations = { module = "pl.selvin.apt:constructors-constraints-annotations", version.ref = "constructors-constraints-annotations" }
+constructors-constraints-processor = { module = "pl.selvin.apt:constructors-constraints-processor", version.ref = "constructors-constraints-annotations" }
 
 #tests
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }

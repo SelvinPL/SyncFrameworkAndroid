@@ -17,22 +17,21 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.loader.app.LoaderManager;
-import androidx.loader.content.CursorLoader;
-import androidx.loader.content.Loader;
-import androidx.cursoradapter.widget.SimpleCursorAdapter;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.CursorLoader;
+import androidx.loader.content.Loader;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.flexbox.AlignItems;
 import com.google.android.flexbox.FlexDirection;
@@ -53,6 +52,8 @@ import pl.selvin.android.listsyncsample.provider.Database.Status;
 import pl.selvin.android.listsyncsample.provider.Database.Tag;
 import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
+import pl.selvin.android.listsyncsample.provider.implementation.TagItemMappingWithNamesProvider;
+import pl.selvin.android.listsyncsample.provider.implementation.TagNotUsedProvider;
 import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 import pl.selvin.android.listsyncsample.utils.DateTimeUtils;
 import pl.selvin.android.listsyncsample.utils.SpinnerHelper;
@@ -139,10 +140,10 @@ public class ItemDetailsFragment extends Fragment implements
 						Item.STATUS, Item.START_DATE,
 						Item.END_DATE, Item.ID}, null, null, null);
 			case TAGS_LOADER_ID:
-				return new CursorLoader(requireContext(), ListProvider.getHelper().getDirUri(TagItemMapping.TagItemMappingWithNames, false), new String[]{BaseColumns._ID,
+				return new CursorLoader(requireContext(), TagItemMappingWithNamesProvider.getDirUri(), new String[]{BaseColumns._ID,
 						Tag.NAME}, TagItemMapping.ITEM_ID + "=?", new String[]{mItemID}, Tag.NAME);
 			case UNUSED_LOADER_ID:
-				return new CursorLoader(requireContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
+				return new CursorLoader(requireContext(), TagNotUsedProvider.getDirUri(),
 						new String[]{BaseColumns._ID}, null, new String[]{mItemID}, null);
 		}
 		throw new RuntimeException("Unknown loader id: " + id);

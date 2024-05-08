@@ -33,6 +33,7 @@ import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.Database.Tag;
 import pl.selvin.android.listsyncsample.provider.Database.TagItemMapping;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
+import pl.selvin.android.listsyncsample.provider.implementation.TagNotUsedProvider;
 import pl.selvin.android.syncframework.content.SYNC;
 
 public class UnusedTagListFragment extends DialogFragment implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -83,7 +84,7 @@ public class UnusedTagListFragment extends DialogFragment implements LoaderManag
 	@NonNull
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		return new CursorLoader(requireContext(), ListProvider.getHelper().getDirUri(Tag.TagNotUsed),
+		return new CursorLoader(requireContext(), TagNotUsedProvider.getDirUri(),
 				new String[]{BaseColumns._ID, Tag.NAME}, null,
 				new String[]{requireArguments().getString(ITEM_ID)}, Tag.NAME);
 	}

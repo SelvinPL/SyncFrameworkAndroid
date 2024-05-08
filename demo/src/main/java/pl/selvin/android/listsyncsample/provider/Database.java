@@ -18,7 +18,8 @@ import pl.selvin.android.autocontentprovider.annotation.IndexColumn;
 import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.annotation.TableName;
 import pl.selvin.android.autocontentprovider.db.ColumnType;
-import pl.selvin.android.listsyncsample.Constants;
+import pl.selvin.android.listsyncsample.provider.implementation.TagItemMappingWithNamesProvider;
+import pl.selvin.android.listsyncsample.provider.implementation.TagNotUsedProvider;
 import pl.selvin.android.syncframework.annotation.SyncScope;
 
 @SuppressWarnings("unused")
@@ -42,7 +43,7 @@ public interface Database {
 	}
 
 	@SyncScope(DS)
-	@Table(primaryKeys = {Tag.ID}, readonly = true, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri})
+	@Table(primaryKeys = {Tag.ID}, readonly = true, notifyUris = {TagNotUsedProvider.Uri})
 	interface Tag {
 		String SCOPE = DS;
 
@@ -54,10 +55,6 @@ public interface Database {
 
 		@Column(type = ColumnType.VARCHAR, extras = Column.COLLATE_NO_CASE)
 		String NAME = "Name";
-
-		String TagNotUsed = "TagNotUsed";
-
-		String TagNotUsedUri = "content://" + Constants.AUTHORITY + "/" + TagNotUsed;
 	}
 
 	@SyncScope(DS)
@@ -116,13 +113,11 @@ public interface Database {
 		String CREATED_DATE = "CreatedDate";
 
 		// this is the only sneaky part computed ... but well see @Column doc :)
-		@Column(type = ColumnType.VARCHAR, computed = List.NAME + " || ' ' || "
-				+ List.DESCRIPTION)
+		@Column(type = ColumnType.VARCHAR, computed = List.NAME + " || ' ' || " + List.DESCRIPTION)
 		String NAME_DESCRIPTION = "N_D";
 
 		// this is the only sneaky part computed ... but well see @Column doc :)
-		@Column(type = ColumnType.VARCHAR, computed = List.NAME + " || ' ' || "
-				+ List.DESCRIPTION + " || ' ' || " + List.CREATED_DATE)
+		@Column(type = ColumnType.VARCHAR, computed = List.NAME + " || ' ' || " + List.DESCRIPTION + " || ' ' || " + List.CREATED_DATE)
 		String NAME_DESCRIPTION_CREATE = "N_D_C";
 	}
 
@@ -166,8 +161,8 @@ public interface Database {
 
 	@SyncScope(DS)
 	@Table(primaryKeys = {TagItemMapping.TAG_ID, TagItemMapping.ITEM_ID,
-			TagItemMapping.USER_ID}, notifyUris = {TagItemMapping.TagItemMappingWithNamesUri,
-			Tag.TagNotUsedUri})
+			TagItemMapping.USER_ID}, notifyUris = {TagItemMappingWithNamesProvider.Uri,
+			TagNotUsedProvider.Uri})
 	interface TagItemMapping {
 		String SCOPE = DS;
 
@@ -182,9 +177,5 @@ public interface Database {
 
 		@Column(type = ColumnType.GUID)
 		String USER_ID = "UserID";
-
-		String TagItemMappingWithNames = "TagItemMappingWithNames";
-
-		String TagItemMappingWithNamesUri = "content://" + Constants.AUTHORITY + "/" + TagItemMappingWithNames;
 	}
 }

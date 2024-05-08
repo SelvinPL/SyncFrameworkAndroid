@@ -99,7 +99,9 @@ dependencies {
     implementation libs.jsr305
     implementation libs.okhttp3
     implementation libs.flexbox
+    implementation libs.constructors.constraints.annotations
     implementation project(':sync-framework')
     androidImplementation libs.androidx.sqlite.framework
     cipherImplementation libs.sqlcipher.android
+    annotationProcessor libs.constructors.constraints.processor
 }
