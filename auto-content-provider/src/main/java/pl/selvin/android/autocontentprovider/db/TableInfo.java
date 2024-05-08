@@ -83,7 +83,7 @@ public class TableInfo {
 				}
 			}
 		}
-		if (columns.size() == 0)
+		if (columns.isEmpty())
 			throw new RuntimeException("Table has no columns");
 		if (tableName == null)
 			throw new RuntimeException("There is no field with @TableName annotation");

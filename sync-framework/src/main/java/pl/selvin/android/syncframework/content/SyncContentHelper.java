@@ -68,6 +68,9 @@ public class SyncContentHelper extends ContentHelper {
 		return ret;
 	}
 
+	/**
+	 * @noinspection unused
+	 */
 	public void createScopeTables(SupportSQLiteDatabase db, String scope) {
 		for (SyncTableInfo tab : Objects.requireNonNull(getTableForScope(scope))) {
 			db.execSQL(tab.createStatement());

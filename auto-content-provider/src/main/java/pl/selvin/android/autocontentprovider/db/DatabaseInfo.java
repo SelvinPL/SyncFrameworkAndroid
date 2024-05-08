@@ -34,7 +34,7 @@ public class DatabaseInfo {
 				TableInfo tableToAdd = tableInfoFactory.createTableInfo(table, tableClass, authority);
 				matcher.addURI(authority, tableToAdd.name, code);
 				matcher.addURI(authority, tableToAdd.name + "/ROWID/#", code | ContentHelper.uriCodeItemRowIDFlag);
-				if (tableToAdd.primaryKeys.size() > 0) {
+				if (!tableToAdd.primaryKeys.isEmpty()) {
 					final StringBuilder sig = new StringBuilder(tableToAdd.name);
 					for (ColumnInfo pkInfo : tableToAdd.primaryKeys) {
 						sig.append('/');

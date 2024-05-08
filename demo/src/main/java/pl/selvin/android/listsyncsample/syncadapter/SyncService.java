@@ -94,9 +94,6 @@ public class SyncService extends Service {
 		return null;
 	}
 
-	/*
-	 * {@inheritDoc}
-	 */
 	@Override
 	public IBinder onBind(Intent intent) {
 		synchronized (sSyncAdapterLock) {

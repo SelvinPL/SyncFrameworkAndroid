@@ -38,12 +38,6 @@ public class GenericDetailsActivity extends BaseActivity {
 	}
 
 	@Override
-	public void onBackPressed() {
-		super.onBackPressed();
-		overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-	}
-
-	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_empty);
@@ -72,10 +66,16 @@ public class GenericDetailsActivity extends BaseActivity {
 						if (intent.getData() != null)
 							args.putParcelable(ITEM_URI, intent.getData());
 						final FragmentFactory fragmentFactory = getSupportFragmentManager().getFragmentFactory();
-						fragment = fragmentFactory.instantiate(ClassLoader.getSystemClassLoader(), className);
-						fragment.setArguments(args);
+						if (className != null) {
+							fragment = fragmentFactory.instantiate(ClassLoader.getSystemClassLoader(), className);
+							fragment.setArguments(args);
+						}
 					}
-					getSupportFragmentManager().beginTransaction().replace(R.id.content, fragment, "generic").commit();
+					if (fragment != null) {
+						getSupportFragmentManager().beginTransaction().replace(R.id.content, fragment, "generic").commit();
+					} else {
+						finish();
+					}
 				} catch (Exception ex) {
 					ex.printStackTrace();
 					finish();
@@ -89,7 +89,7 @@ public class GenericDetailsActivity extends BaseActivity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == android.R.id.home) {
-			onBackPressed();
+			getOnBackPressedDispatcher().onBackPressed();
 			return true;
 		}
 		return super.onOptionsItemSelected(item);

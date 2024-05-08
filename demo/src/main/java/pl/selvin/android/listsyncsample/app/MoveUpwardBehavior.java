@@ -17,18 +17,16 @@
 
 package pl.selvin.android.listsyncsample.app;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.AttributeSet;
+import android.view.View;
 
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
 
 import com.google.android.material.snackbar.Snackbar;
-
-import androidx.core.view.ViewCompat;
-
-import android.util.AttributeSet;
-import android.view.View;
 
 @SuppressWarnings("unused")
 @Keep
@@ -42,6 +40,7 @@ public class MoveUpwardBehavior extends CoordinatorLayout.Behavior<View> {
 		super(context, attrs);
 	}
 
+	@SuppressLint("RestrictedApi")
 	@Override
 	public boolean layoutDependsOn(@NonNull CoordinatorLayout parent, @NonNull View child, @NonNull View dependency) {
 		return dependency instanceof Snackbar.SnackbarLayout;
@@ -56,6 +55,6 @@ public class MoveUpwardBehavior extends CoordinatorLayout.Behavior<View> {
 
 	@Override
 	public void onDependentViewRemoved(@NonNull CoordinatorLayout parent, @NonNull View child, @NonNull View dependency) {
-		ViewCompat.animate(child).translationY(0).start();
+		child.animate().translationY(0).start();
 	}
 }

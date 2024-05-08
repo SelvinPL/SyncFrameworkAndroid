@@ -58,15 +58,6 @@ public abstract class SpinnerHelper implements LoaderManager.LoaderCallbacks<Cur
 		loaderManager.initLoader(mLoaderID, bundle, this);
 	}
 
-	public void restartLoader(final LoaderManager loaderManager) {
-		restartLoader(loaderManager, null);
-	}
-
-	public void restartLoader(final LoaderManager loaderManager, Bundle bundle) {
-		mDataLoaded = false;
-		loaderManager.restartLoader(mLoaderID, bundle, this);
-	}
-
 	public abstract Loader<Cursor> getCursorLoader();
 
 	public void setSelectedId(long id) {
@@ -76,15 +67,8 @@ public abstract class SpinnerHelper implements LoaderManager.LoaderCallbacks<Cur
 		setSelectionById(mDataLoaded, id, mColumn);
 	}
 
-	public void setSelectedValue(String value, String columnName) {
-		mValue = value;
-		mColumn = columnName;
-		mId = AdapterView.INVALID_ROW_ID;
-		setSelectionByValue(mDataLoaded, value, columnName);
-	}
-
-	private void setSelectionByValue(final boolean loaded, String value, final String columnName) {
-		AdapterViewHelper.setSelectionByValue(Spinner, loaded, value, columnName);
+	private void setSelectionByValue(String value, final String columnName) {
+		AdapterViewHelper.setSelectionByValue(Spinner, true, value, columnName);
 	}
 
 	private void setSelectionById(final boolean loaded, long id, final String columnName) {
@@ -104,7 +88,7 @@ public abstract class SpinnerHelper implements LoaderManager.LoaderCallbacks<Cur
 	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
 		if (loader.getId() == mLoaderID) {
 			((CursorAdapter) Spinner.getAdapter()).swapCursor(cursor);
-			setSelectionByValue(true, mValue, mColumn);
+			setSelectionByValue(mValue, mColumn);
 			setSelectionById(true, mId, mColumn);
 			mDataLoaded = true;
 		}
@@ -118,9 +102,5 @@ public abstract class SpinnerHelper implements LoaderManager.LoaderCallbacks<Cur
 				oldCursor.close();
 			mDataLoaded = false;
 		}
-	}
-
-	public boolean isDataLoaded() {
-		return mDataLoaded;
 	}
 }

@@ -20,5 +20,3 @@ import pl.selvin.android.autocontentprovider.annotation.Column;
 public interface ColumnInfoFactory {
 	ColumnInfo createColumnInfo(@NonNull Column column, @NonNull Field field) throws Exception;
 }
-
-

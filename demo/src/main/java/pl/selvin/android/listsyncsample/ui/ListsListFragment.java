@@ -16,13 +16,10 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
-import android.view.View;
 import android.widget.ListAdapter;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.SearchView;
 import androidx.cursoradapter.widget.SimpleCursorAdapter;
-import androidx.loader.app.LoaderManager;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
 
@@ -31,26 +28,29 @@ import java.util.UUID;
 import pl.selvin.android.listsyncsample.Constants.StringUtil;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.app.ListFragmentCommon;
+import pl.selvin.android.listsyncsample.app.SearchComponent;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.Database.List;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 import pl.selvin.android.listsyncsample.utils.DateTimeUtils;
-import pl.selvin.android.listsyncsample.utils.Ui;
 
 @SuppressWarnings("unused")
-public class ListsListFragment extends ListFragmentCommon implements SearchView.OnQueryTextListener,
-		GenericListActivity.ISearchSupport {
+public class ListsListFragment extends ListFragmentCommon implements SearchComponent.Callback {
 	private final static String SEARCH_VIEW_ICONIFIED = "SEARCH_VIEW_ICONIFIED";
 	private static final String CURRENT_FILTER = "CURRENT_FILTER";
-	private SearchView mSearchView = null;
-	private String mCurrentFilter = StringUtil.EMPTY;
+	private String currentFilter = StringUtil.EMPTY;
 
 	public ListsListFragment() {
-		super(50000, List.TABLE_NAME, R.string.lists_list_empty, ListDetailsFragment.class, R.string.list_deletion_title, R.string.list_deletion_message);
+		super(createSetupBuilder(50000, List.TABLE_NAME, R.string.lists_list_empty)
+				.detailsClass(ListDetailsFragment.class)
+				.deletionTitle(R.string.list_deletion_title)
+				.deletionMessage(R.string.list_deletion_message)
+				.deferredLoading().create());
 	}
 
 
+	@NonNull
 	@Override
 	protected Loader<Cursor> getLoader(Bundle args) {
 		return new CursorLoader(requireActivity(),
@@ -58,7 +58,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
 				BaseColumns._ID, List.ID, List.NAME,
 				List.DESCRIPTION, List.CREATED_DATE
 		}, String.format("%s LIKE ?1 OR %s LIKE ?1", List.NAME, List.DESCRIPTION),
-				new String[]{"%" + mCurrentFilter + "%"}, List.NAME);
+				new String[]{"%" + currentFilter + "%"}, List.NAME);
 	}
 
 	@Override
@@ -80,64 +80,7 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setHasOptionsMenu(true);
-		if (savedInstanceState != null) {
-			mCurrentFilter = savedInstanceState.getString(CURRENT_FILTER);
-		}
-	}
-
-	@Override
-	public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
-		super.onViewCreated(view, savedInstanceState);
-		mSearchView = Ui.getView(requireActivity(), R.id.search_view);
-		mSearchView.setVisibility(View.VISIBLE);
-		mSearchView.setQueryHint(getString(R.string.lists_search_hint));
-		mSearchView.setOnQueryTextListener(this);
-		if (savedInstanceState != null)
-			mSearchView.setIconified(savedInstanceState.getBoolean(SEARCH_VIEW_ICONIFIED, true));
-	}
-
-	@Override
-	public void onSaveInstanceState(@NonNull Bundle outState) {
-		super.onSaveInstanceState(outState);
-		if (mSearchView != null)
-			outState.putBoolean(SEARCH_VIEW_ICONIFIED, mSearchView.isIconified());
-		outState.putString(CURRENT_FILTER, mCurrentFilter);
-	}
-
-	@Override
-	public boolean onQueryTextChange(String newText) {
-		if (!mCurrentFilter.equals(newText)) {
-			mCurrentFilter = newText;
-			LoaderManager.getInstance(this).restartLoader(loaderID, null, this);
-		}
-		return true;
-	}
-
-	@Override
-	public boolean onQueryTextSubmit(String query) {
-		return false;
-	}
-
-	@Override
-	public void onSearchRequested() {
-
-		if (mSearchView != null && mSearchView.isIconified())
-			mSearchView.setIconified(false);
-	}
-
-	@Override
-	public boolean backOrHideSearch() {
-		if (mSearchView != null) {
-			if (!mSearchView.isIconified()) {
-				mSearchView.setIconified(true);
-				mSearchView.post(() -> {
-					mSearchView.clearFocus();
-					mSearchView.setIconified(true);
-				});
-				return true;
-			}
-		}
-		return false;
+		SearchComponent.install(this, R.string.lists_search_hint);
 	}
 
 	@Override
@@ -148,7 +91,10 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
 		values.put(Database.List.ID, UUID.randomUUID().toString());
 		values.put(Database.List.USER_ID, SyncService.getUserId(getActivity()));
 		values.put(Database.List.CREATED_DATE, DateTimeUtils.getNowLong());
-		return requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
+		final Uri insertUri = requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(List.TABLE_NAME, false), values);
+		if (insertUri != null)
+			return ListFragmentCommon.appendIsNewElement(insertUri);
+		return null;
 	}
 
 	@Override
@@ -156,5 +102,15 @@ public class ListsListFragment extends ListFragmentCommon implements SearchView.
 		if (cursor.getLong(0) == id)
 			return ListProvider.getHelper().getItemUri(List.TABLE_NAME, false, cursor.getString(1));
 		return super.getItemUri(cursor, id);
+	}
+
+	@Override
+	public void queryChanged(String query, boolean restored) {
+		currentFilter = query;
+		if (restored)
+
+			initMainLoader();
+		else
+			restartMainLoader();
 	}
 }

@@ -16,12 +16,12 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.BaseColumns;
+import android.widget.ListAdapter;
 
+import androidx.annotation.NonNull;
+import androidx.cursoradapter.widget.SimpleCursorAdapter;
 import androidx.loader.content.CursorLoader;
 import androidx.loader.content.Loader;
-import androidx.cursoradapter.widget.SimpleCursorAdapter;
-
-import android.widget.ListAdapter;
 
 import java.util.Calendar;
 import java.util.UUID;
@@ -38,7 +38,11 @@ public class ItemsListFragment extends ListFragmentCommon {
 	private static final String LIST_ID = "LIST_ID";
 
 	public ItemsListFragment() {
-		super(60000, Item.TABLE_NAME, R.string.items_list_empty, ItemDetailsFragment.class, R.string.item_deletion_title, R.string.item_deletion_message);
+		super(createSetupBuilder(60000, Item.TABLE_NAME, R.string.items_list_empty)
+				.detailsClass(ItemDetailsFragment.class)
+				.deletionTitle(R.string.item_deletion_title)
+				.deletionMessage(R.string.item_deletion_message)
+				.create());
 	}
 
 	static Bundle createArgs(String id) {
@@ -59,6 +63,7 @@ public class ItemsListFragment extends ListFragmentCommon {
 				R.id.description}, 0);
 	}
 
+	@NonNull
 	@Override
 	protected Loader<Cursor> getLoader(Bundle args) {
 		return new CursorLoader(requireActivity(),
@@ -88,7 +93,10 @@ public class ItemsListFragment extends ListFragmentCommon {
 		values.put(Item.ID, UUID.randomUUID().toString());
 		values.put(Item.LIST_ID, getShownId());
 		values.put(Item.USER_ID, SyncService.getUserId(getActivity()));
-		return requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(Item.TABLE_NAME), values);
+		final Uri insertUri = requireActivity().getContentResolver().insert(ListProvider.getHelper().getDirUri(Item.TABLE_NAME), values);
+		if (insertUri != null)
+			return ListFragmentCommon.appendIsNewElement(insertUri);
+		return null;
 	}
 
 	@Override

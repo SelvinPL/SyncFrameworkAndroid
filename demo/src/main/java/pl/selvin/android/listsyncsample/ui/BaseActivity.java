@@ -61,7 +61,6 @@ public abstract class BaseActivity extends AppCompatActivity {
 		@Override
 		public void onServiceConnected(ComponentName className, IBinder service) {
 			Log.d("SyncService", "onServiceConnected");
-			//SyncService.LocalBinder binder = (SyncService.LocalBinder) service;
 			mService = ISyncService.Stub.asInterface(service);
 			mBound = true;
 			try {

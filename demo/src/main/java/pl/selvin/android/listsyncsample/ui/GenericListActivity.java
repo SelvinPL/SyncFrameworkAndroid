@@ -33,7 +33,6 @@ public class GenericListActivity extends BaseActivity implements ListFragmentCom
 	private static final String FRAGMENT_ARGS = "fragment_args";
 	private final static String LIST_FRAGMENT_TAG = "LIST_FRAGMENT_TAG";
 	private IListFragmentCommon listFragment = null;
-	private ISearchSupport searchSupport = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -68,11 +67,15 @@ public class GenericListActivity extends BaseActivity implements ListFragmentCom
 					else
 						fragmentArgs = ListFragmentCommon.Builder.createFromBundle(fragmentArgs).setSupportPick(pick).setSupportEdit(supportAdding && !pick).build();
 					final FragmentFactory fragmentFactory = getSupportFragmentManager().getFragmentFactory();
-					listFragment = (IListFragmentCommon) fragmentFactory.instantiate(ClassLoader.getSystemClassLoader(), className);
-					listFragment.setArguments(fragmentArgs);
-					getSupportFragmentManager().beginTransaction().add(R.id.list, (Fragment) listFragment, LIST_FRAGMENT_TAG).commit();
-					if (!pick)
-						startSync(500, false);
+					if (className != null) {
+						listFragment = (IListFragmentCommon) fragmentFactory.instantiate(ClassLoader.getSystemClassLoader(), className);
+						listFragment.setArguments(fragmentArgs);
+						getSupportFragmentManager().beginTransaction().add(R.id.list, (Fragment) listFragment, LIST_FRAGMENT_TAG).commit();
+						if (!pick)
+							startSync(500, false);
+					} else {
+						finish();
+					}
 				} catch (Exception ex) {
 					ex.printStackTrace();
 					finish();
@@ -83,32 +86,12 @@ public class GenericListActivity extends BaseActivity implements ListFragmentCom
 		} else {
 			listFragment = (IListFragmentCommon) getSupportFragmentManager().findFragmentByTag(LIST_FRAGMENT_TAG);
 		}
-		if (listFragment instanceof ISearchSupport)
-			searchSupport = (ISearchSupport) listFragment;
-	}
-
-	@Override
-	public boolean onSearchRequested() {
-		if (searchSupport != null) {
-			searchSupport.onSearchRequested();
-		}
-		return false;
-	}
-
-	@Override
-	public void onBackPressed() {
-		if (searchSupport != null) {
-			if (searchSupport.backOrHideSearch()) {
-				return;
-			}
-		}
-		super.onBackPressed();
 	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (item.getItemId() == android.R.id.home) {
-			onBackPressed();
+			getOnBackPressedDispatcher().onBackPressed();
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -121,11 +104,5 @@ public class GenericListActivity extends BaseActivity implements ListFragmentCom
 		startActivity(GenericDetailsActivity.createIntent(this, listFragment.getDetailsClass(), uriArgs));
 		overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
 		return true;
-	}
-
-	public interface ISearchSupport {
-		void onSearchRequested();
-
-		boolean backOrHideSearch();
 	}
 }

@@ -12,29 +12,25 @@
 package pl.selvin.android.listsyncsample.app;
 
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Parcelable;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ListAdapter;
+import android.widget.ListView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.cursoradapter.widget.CursorAdapter;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.ListFragment;
 import androidx.loader.app.LoaderManager;
-import androidx.loader.content.AsyncTaskLoader;
 import androidx.loader.content.Loader;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.Objects;
@@ -42,30 +38,20 @@ import java.util.Objects;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.listsyncsample.utils.StaticHelpers;
-import pl.selvin.android.listsyncsample.utils.Ui;
+import pl.selvin.android.listsyncsample.utils.UnknownLoaderIdException;
 
-@SuppressWarnings({"WeakerAccess, unused", "RedundantSuppression"})
-public abstract class ListFragmentCommon extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor>, IListFragmentCommon, GenericDialogFragment.ConfirmDelete.Callback {
-	public final static String EXTRA_ID = "EXTRA_ID";
-	public final static String EXTRA_POS = "EXTRA_POS";
-	public final static String EXTRA_ROW = "EXTRA_ROW";
-	public final static String EXTRA_PASS_THROUGH = "EXTRA_PASS_THROUGH";
-	private final static String ID = "LIST_COMMON_ID";
-
-	private final static int DELETE_CALLBACK_ID = 111111;
-
+public abstract class ListFragmentCommon extends ListFragmentEx implements LoaderManager.LoaderCallbacks<Cursor>, IListFragmentCommon,
+		GenericDialogFragment.ConfirmDelete.Callback, InsertLoader.ICreator {
+	public static final String EXTRA_ID = "EXTRA_ID";
+	public static final String EXTRA_POS = "EXTRA_POS";
+	public static final String EXTRA_ROW = "EXTRA_ROW";
+	public static final String IS_EDITABLE = "IS_EDITABLE";
+	protected static final int DELETE_CALLBACK_ID = 101010;
+	private static final String ID = "LIST_COMMON_ID";
 	private static final String IS_NEW_ELEMENT = "IS_NEW_ELEMENT";
 	private static final String TRUE = "true";
-	protected final String tableName;
-	protected final int pickTitle;
-	protected final boolean supportDetails;
-	protected final int emptyText;
-	protected final int loaderID;
-	protected final int insertLoaderID;
-	private final boolean deferredLoading;
-	private final Class<? extends Fragment> detailsClass;
-	private final int deletionMessage;
-	private final int deletionTitle;
+	protected final ListFragmentCommonSetup setup;
+
 	private final LoaderManager.LoaderCallbacks<Uri> mInsertLoaderCallback = new LoaderManager.LoaderCallbacks<Uri>() {
 
 		@NonNull
@@ -76,7 +62,8 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 
 		@Override
 		public void onLoadFinished(@NonNull Loader<Uri> loader, final Uri data) {
-			new Handler().post(() -> finishCreateNewElement(data));
+			getLoaderManager().destroyLoader(loader.getId());
+			finishCreateNewElement(data);
 		}
 
 		@Override
@@ -88,46 +75,12 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 	protected boolean supportEdit;
 	private long currentId = -1;
 
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText, Class<? extends Fragment> detailsClass, @StringRes int pickTitle) {
-		this(loaderID, tableName, emptyText, detailsClass, -1, -1, pickTitle, false);
+	protected ListFragmentCommon(ListFragmentCommonSetup setup) {
+		this.setup = setup;
 	}
 
-
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText, Class<? extends Fragment> detailsClass, @StringRes int pickTitle, boolean deferredLoading) {
-		this(loaderID, tableName, emptyText, detailsClass, -1, -1, pickTitle, deferredLoading);
-	}
-
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText) {
-		this(loaderID, tableName, emptyText, null, -1, -1, -1, false);
-	}
-
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText, @StringRes int pickTitle) {
-		this(loaderID, tableName, emptyText, null, -1, -1, pickTitle, false);
-	}
-
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText, Class<? extends Fragment> detailsClass,
-								 @StringRes int deletionTitle, @StringRes int deletionMessage) {
-		this(loaderID, tableName, emptyText, detailsClass, deletionTitle, deletionMessage, -1, false);
-	}
-
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText, Class<? extends Fragment> detailsClass,
-								 @StringRes int deletionTitle, @StringRes int deletionMessage, @StringRes int pickTitle) {
-		this(loaderID, tableName, emptyText, detailsClass, deletionTitle, deletionMessage, pickTitle, false);
-
-	}
-
-	protected ListFragmentCommon(int loaderID, String tableName, @StringRes int emptyText, Class<? extends Fragment> detailsClass,
-								 @StringRes int deletionTitle, @StringRes int deletionMessage, @StringRes int pickTitle, boolean deferredLoading) {
-		this.deletionTitle = deletionTitle;
-		this.deletionMessage = deletionMessage;
-		this.detailsClass = detailsClass;
-		this.tableName = tableName;
-		this.emptyText = emptyText;
-		this.loaderID = loaderID;
-		this.insertLoaderID = loaderID | 0xf00;
-		this.pickTitle = pickTitle;
-		this.deferredLoading = deferredLoading;
-		supportDetails = detailsClass != null;
+	public static ListFragmentCommonSetup.Builder createSetupBuilder(int loaderID, String tableName, @StringRes int emptyText) {
+		return ListFragmentCommonSetup.createBuilder(loaderID, tableName, emptyText);
 	}
 
 	public static Uri appendIsNewElement(Uri base) {
@@ -160,30 +113,34 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 	protected abstract ListAdapter createListAdapter();
 
 	protected void showDetails(Uri uri, boolean editable) {
-		boolean handled = false;
-		if (getParentFragment() != null && getParentFragment() instanceof IDetailsUiProvider)
-			handled = ((IDetailsUiProvider) getParentFragment()).showDetails(uri, getDetailsClass(), null, editable);
-		if (!handled && getActivity() instanceof IDetailsUiProvider)
-			((IDetailsUiProvider) getActivity()).showDetails(uri, getDetailsClass(), null, editable);
+		if (setup.supportDetails) {
+			boolean handled = false;
+			final Bundle args = new Bundle();
+			args.putBoolean(IS_EDITABLE, editable);
+			if (getParentFragment() != null && getParentFragment() instanceof IDetailsUiProvider)
+				handled = ((IDetailsUiProvider) getParentFragment()).showDetails(uri, setup.detailsClass, args, editable);
+			if (!handled && getActivity() instanceof IDetailsUiProvider)
+				((IDetailsUiProvider) getActivity()).showDetails(uri, setup.detailsClass, args, editable);
+		}
 	}
 
 	@Override
 	public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		if (supportEdit) {
 			final View wrapped = createListViewWrapper(inflater, container, savedInstanceState);
-			Ui.getView(wrapped, R.id.button_add_new).setOnClickListener(v -> startCreateNewItem());
+			final FloatingActionButton addNewButton = wrapped.findViewById(R.id.button_add_new);
+			addNewButton.setOnClickListener(v -> startCreateNewItem());
 			return wrapped;
 		}
 		return super.onCreateView(inflater, container, savedInstanceState);
 	}
 
 	protected void startCreateNewItem() {
-		createNewElementAsync(null);
+		createNewElementAsync();
 	}
 
-	@SuppressWarnings("SameParameterValue")
-	protected void createNewElementAsync(final Bundle args) {
-		LoaderManager.getInstance(this).restartLoader(insertLoaderID, args, mInsertLoaderCallback);
+	protected void createNewElementAsync() {
+		getLoaderManager().restartLoader(setup.insertLoaderID, null, mInsertLoaderCallback);
 	}
 
 	private void finishCreateNewElement(Uri itemUri) {
@@ -194,52 +151,53 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 	public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
 		super.onViewCreated(view, savedInstanceState);
 		if (supportPick)
-			requireActivity().setTitle(pickTitle);
-		setEmptyText(getText(emptyText));
+			requireActivity().setTitle(setup.pickTitle);
+		setEmptyText(getText(setup.emptyText));
 		getListView().setFastScrollEnabled(true);
 		final TypedValue typedValue = new TypedValue();
 		requireActivity().getTheme().resolveAttribute(R.attr.list_item_background, typedValue, true);
 		getListView().setSelector(typedValue.resourceId);
 		getListView().setOnItemLongClickListener(
-				(parent, viewClicked, position, id) -> {
-					if (supportPick) {
-						final Cursor cursor = (Cursor) parent.getItemAtPosition(position);
-						final Uri uri = getItemUri(cursor, id);
-						if (!ListFragmentCommon.this.onItemClick(parent, viewClicked, position, id, uri, false, false)) {
+				(parent, view1, position, id) -> {
+					final Cursor cursor = (Cursor) parent.getItemAtPosition(position);
+					final Uri uri = getItemUri(cursor, id);
+					if (!onItemClick(parent, view1, position, id, uri, getEditable(cursor), true)) {
+						if (supportPick) {
 							showDetails(uri, false);
 							return true;
 						}
-						return false;
-					}
-					final Cursor cursor = (Cursor) parent.getItemAtPosition(position);
-					if (supportEdit) {
-						if (getEditable(cursor)) {
-							GenericDialogFragment.ConfirmDelete.newInstance(DELETE_CALLBACK_ID, deletionTitle, deletionMessage, getItemUri(cursor, id))
-									.show(getChildFragmentManager(), GenericDialogFragment.DIALOG_FRAGMENT_TAG);
+						if (supportEdit) {
+							if (getEditable(cursor)) {
+								GenericDialogFragment.ConfirmDelete.newInstance(DELETE_CALLBACK_ID, setup.deletionTitle, setup.deletionMessage, getItemUri(cursor, id))
+										.show(getChildFragmentManager(), GenericDialogFragment.DIALOG_FRAGMENT_TAG);
+							}
+							return true;
 						}
+					} else
 						return true;
-					}
-					return onItemClick(parent, viewClicked, position, id, getItemUri(cursor, id), getEditable(cursor), true);
+					return false;
 				});
-		getListView().setOnItemClickListener((parent, viewClicked, position, id) -> {
+		if (supportEdit) {
+			ListView listView = getListView();
+			listView.setNextFocusRightId(R.id.button_add_new);
+		}
+		getListView().setOnItemClickListener((parent, view12, position, id) -> {
 			final Cursor cursor = (Cursor) parent.getItemAtPosition(position);
 			final Uri currentUri = getItemUri(cursor, id);
 			final boolean editable = getEditable(cursor);
-			if (supportPick) {
-				final Intent ret = new Intent();
-				ret.setData(currentUri);
-				final Parcelable parcelable = requireArguments().getParcelable(LIST_FRAGMENT_PASS_THROUGH);
-				ret.putExtra(EXTRA_PASS_THROUGH, parcelable);
-				ret.putExtra(EXTRA_ID, id);
-				ret.putExtra(EXTRA_POS, position);
-				ret.putExtra(EXTRA_ROW, StaticHelpers.cursorRowToBundle(cursor));
-				requireActivity().setResult(Activity.RESULT_OK, ret);
-				requireActivity().finish();
-				return;
-			}
-			currentId = id;
-			if (!ListFragmentCommon.this.onItemClick(parent, viewClicked, position, id, currentUri, editable, false)) {
-				if (supportDetails) {
+			if (!ListFragmentCommon.this.onItemClick(parent, view12, position, id, currentUri, editable, false)) {
+				if (supportPick) {
+					final Intent ret = new Intent();
+					ret.setData(currentUri);
+					ret.putExtra(EXTRA_ID, id);
+					ret.putExtra(EXTRA_POS, position);
+					ret.putExtra(EXTRA_ROW, StaticHelpers.cursorRowToBundle(cursor));
+					requireActivity().setResult(Activity.RESULT_OK, ret);
+					requireActivity().finish();
+					return;
+				}
+				currentId = id;
+				if (setup.supportDetails) {
 					showDetails(currentUri, editable);
 				}
 			}
@@ -247,38 +205,43 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 		setListShownNoAnimation(false);
 	}
 
-	@Override
-	public void onResume() {
-		super.onResume();
-		if (!deferredLoading)
-			LoaderManager.getInstance(this).initLoader(loaderID, null, this);
-	}
-
 	@NonNull
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		if (id == loaderID) {
-			setListShown(false);
+		if (id == setup.loaderID) {
+			setListShownNoAnimation(false);
 			return getLoader(args);
 		}
-		throw new RuntimeException("Unknown loader id: " + id);
+		throw new UnknownLoaderIdException();
 	}
 
+	@NonNull
 	protected abstract Loader<Cursor> getLoader(Bundle args);
 
-	@SuppressWarnings("UnusedParameters")
-	protected boolean onItemClick(AdapterView<?> parent, View view, int position, long id, Uri currentUri, boolean editable, boolean longClick) {
-		return false;
-	}
-
-	protected Uri getItemUri(@SuppressWarnings("UnusedParameters") Cursor cursor, long id) {
-		return ListProvider.getHelper().getItemUri(tableName, false, id);
+	protected Uri getItemUri(Cursor cursor, long id) {
+		return ListProvider.getHelper().getItemUri(setup.tableName, false, id);
 	}
 
 	protected abstract boolean getEditable(Cursor cursor);
 
 	public Uri createNewElement(Bundle args) {
 		throw new UnsupportedOperationException(getClass() + ".createNewElement");
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		if (!setup.deferredLoading) {
+			initMainLoader();
+		}
+	}
+
+	protected void initMainLoader() {
+		getLoaderManager().initLoader(setup.loaderID, null, this);
+	}
+
+	protected void restartMainLoader() {
+		getLoaderManager().restartLoader(setup.loaderID, null, this);
 	}
 
 	protected void finishLoading(final Cursor data) {
@@ -292,14 +255,17 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 
 	@Override
 	public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor data) {
-		if (loader.getId() == loaderID)
+		if (loader.getId() == setup.loaderID)
 			finishLoading(data);
 	}
 
 	@Override
 	public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-		if (loader.getId() == loaderID)
-			((CursorAdapter) Objects.requireNonNull(getListAdapter())).swapCursor(null).close();
+		if (loader.getId() == setup.loaderID) {
+			final Cursor cursor = ((CursorAdapter) Objects.requireNonNull(getListAdapter())).swapCursor(null);
+			if (cursor != null)
+				cursor.close();
+		}
 	}
 
 	private View createListViewWrapper(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -308,74 +274,40 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 		return wrapper;
 	}
 
-	public Class<? extends Fragment> getDetailsClass() {
-		return detailsClass;
-	}
-
 	public boolean onAction(int ID, boolean canceled) {
 		if (DELETE_CALLBACK_ID == ID) {
-			final View view = getView();
-			if (view != null) {
-				final int snackBarText;
-				if (canceled) {
-					snackBarText = R.string.deletion_cancelled;
-				} else {
-					snackBarText = R.string.deleted;
-				}
-				Snackbar.make(view, snackBarText, Snackbar.LENGTH_SHORT).show();
-			}
+			showSnackbar(canceled ? R.string.deletion_cancelled : R.string.deleted, Snackbar.LENGTH_SHORT);
+			if (!canceled)
+				setListShownNoAnimation(false);
 			return true;
 		}
 		return false;
+	}
+
+	/** @noinspection SameParameterValue*/
+	protected void showSnackbar(@StringRes int snackBarText, int length) {
+		final View view = getView();
+		if (view != null) {
+			Snackbar.make(view, snackBarText, length).show();
+		}
+	}
+
+	public Class<? extends Fragment> getDetailsClass() {
+		return setup.detailsClass;
 	}
 
 	public interface IDetailsUiProvider {
 		boolean showDetails(Uri itemUri, Class<? extends Fragment> fragmentClass, Bundle args, boolean editable);
 	}
 
-	private static class InsertLoader extends AsyncTaskLoader<Uri> {
-		private Bundle args;
-		private ListFragmentCommon list;
-		private Uri mUri = null;
-		private boolean wasStarted = false;
-
-		InsertLoader(Context context, Bundle args, ListFragmentCommon list) {
-			super(context);
-			this.args = args;
-			this.list = list;
-		}
-
-		@Override
-		public Uri loadInBackground() {
-			if (list != null) {
-				mUri = list.createNewElement(args);
-				cleanUp();
-			}
-			return mUri;
-		}
-
-		@Override
-		protected void onStartLoading() {
-			if ((takeContentChanged() || mUri == null) && !wasStarted) {
-				wasStarted = true;
-				forceLoad();
-			}
-		}
-
-		void cleanUp() {
-			list = null;
-			args = null;
-		}
-	}
-
 	public static class Builder {
 		final Bundle bundle;
 
-		Builder() {
+		private Builder() {
 			this(new Bundle());
 		}
 
-		Builder(Bundle in) {
+		private Builder(Bundle in) {
 			bundle = in;
 		}
 
@@ -394,11 +326,6 @@ public abstract class ListFragmentCommon extends ListFragment implements LoaderM
 
 		public Builder setSupportEdit(boolean value) {
 			bundle.putBoolean(LIST_FRAGMENT_SUPPORTS_EDIT, value);
-			return this;
-		}
-
-		public Builder putPassThrough(Parcelable value) {
-			bundle.putParcelable(LIST_FRAGMENT_PASS_THROUGH, value);
 			return this;
 		}
 

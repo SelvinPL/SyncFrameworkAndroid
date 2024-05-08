@@ -1,16 +1,18 @@
-apply plugin: 'com.android.application'
+plugins {
+    alias libs.plugins.android.gradle.plugin
+}
 apply from: 'themes.gradle'
 apply from: '../version.gradle'
 
 def disabledColor = 0xADADAD
 
 android {
-    flavorDimensions = ["db_impl"]
-    buildToolsVersion  = '34.0.0'
     namespace 'pl.selvin.android.listsyncsample'
+    compileSdk 34
+
+    flavorDimensions = ["db_impl"]
 
     defaultConfig {
-        compileSdk 34
         applicationId 'pl.selvin.android.listsyncsample'
         minSdkVersion 22
         targetSdkVersion 34
@@ -91,15 +93,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.core:core:1.12.0'
-    implementation 'androidx.appcompat:appcompat:1.6.1'
-    implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'com.google.code.findbugs:jsr305:3.0.2'
-    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
-    implementation 'com.google.android.flexbox:flexbox:3.0.0'
+    implementation libs.androidx.appcompat
+    implementation libs.material
+    implementation libs.androidx.recyclerview
+    implementation libs.jsr305
+    implementation libs.okhttp3
+    implementation libs.flexbox
     implementation project(':sync-framework')
-    androidImplementation 'androidx.sqlite:sqlite-framework:2.4.0'
-    cipherImplementation "net.zetetic:android-database-sqlcipher:4.5.3"
-    cipherImplementation 'com.commonsware.cwac:saferoom.x:1.3.0'
+    androidImplementation libs.androidx.sqlite.framework
+    cipherImplementation libs.sqlcipher.android
 }

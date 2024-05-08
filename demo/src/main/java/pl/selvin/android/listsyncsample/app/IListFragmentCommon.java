@@ -11,20 +11,25 @@
 
 package pl.selvin.android.listsyncsample.app;
 
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.AdapterView;
 
-import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 public interface IListFragmentCommon {
 	String LIST_FRAGMENT_SUPPORTS_EDIT = "LIST_FRAGMENT_SUPPORTS_EDIT";
 	String LIST_FRAGMENT_SUPPORTS_PICK = "LIST_FRAGMENT_SUPPORTS_PICK";
-	String LIST_FRAGMENT_PASS_THROUGH = "LIST_FRAGMENT_PASS_THROUGH";
 
 	Class<? extends Fragment> getDetailsClass();
 
-	@NonNull
-	Bundle requireArguments();
-
 	void setArguments(Bundle fragmentArgs);
+
+	/**
+	 * @noinspection BooleanMethodIsAlwaysInverted, unused
+	 */
+	default boolean onItemClick(AdapterView<?> parent, View view, int position, long id, Uri currentUri, boolean editable, boolean longClick) {
+		return false;
+	}
 }

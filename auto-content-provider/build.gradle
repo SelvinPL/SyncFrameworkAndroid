@@ -1,38 +1,39 @@
-apply plugin: 'com.android.library'
+plugins {
+	alias libs.plugins.android.gradle.library.plugin
+}
 ext.sync_framework_artifact_id = 'auto-content-provider'
 apply from: '../publish.gradle'
 
 android {
-    buildToolsVersion = '34.0.0'
-    namespace 'pl.selvin.android.autocontentprovider'
+	namespace 'pl.selvin.android.autocontentprovider'
+	compileSdk 34
 
-    defaultConfig {
-        compileSdk 34
-        minSdkVersion 22
-        targetSdkVersion 34
-        consumerProguardFiles 'proguard-rules.pro'
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-    }
+	defaultConfig {
+		minSdkVersion 22
+		targetSdkVersion 34
+		consumerProguardFiles 'proguard-rules.pro'
+		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+	}
 
-    buildTypes {
-        release {
-            minifyEnabled false
-        }
-    }
+	buildTypes {
+		release {
+			minifyEnabled false
+		}
+	}
 
-    publishing {
-        singleVariant('release') {
-            withSourcesJar()
-        }
-    }
+	publishing {
+		singleVariant('release') {
+			withSourcesJar()
+		}
+	}
 }
 
 dependencies {
-    api 'androidx.annotation:annotation:1.7.1'
-    api 'androidx.sqlite:sqlite:2.4.0'
-    androidTestImplementation 'androidx.test:core:1.5.0'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation 'androidx.test:rules:1.5.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.sqlite:sqlite-framework:2.4.0'
+	api libs.androidx.annotation
+	api libs.androidx.sqlite
+	androidTestImplementation libs.androidx.test.core
+	androidTestImplementation libs.androidx.test.runner
+	androidTestImplementation libs.androidx.test.rules
+	androidTestImplementation libs.junit
+	androidTestImplementation libs.androidx.sqlite.framework
 }

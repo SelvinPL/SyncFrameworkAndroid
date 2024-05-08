@@ -288,7 +288,7 @@ public class ItemDetailsFragment extends Fragment implements
 			final String name = mName.getText().toString();
 			final String description = mDescription.getText().toString();
 			//if element is new and name and description is empty - delete item
-			if (ListFragmentCommon.checkIsNewElement(getItemUri()) && StringUtil.EMPTY.equals(name) && StringUtil.EMPTY.equals(description))
+			if (ListFragmentCommon.checkIsNewElement(getItemUri()) && StringUtil.isNullOrWhitespace(name) && StringUtil.isNullOrWhitespace(description))
 				requireActivity().getContentResolver().delete(getItemUri(), null, null);
 		}
 	}

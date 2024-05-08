@@ -1,13 +1,14 @@
+import com.android.ide.common.vectordrawable.VdPreview
 import com.android.resources.Density
+import org.apache.commons.text.TextStringBuilder
+import org.gradle.work.ChangeType
+import org.gradle.work.InputChanges
+
 import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.OutputKeys
+import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.OutputKeys
-import com.android.ide.common.vectordrawable.VdPreview
-import org.apache.commons.text.TextStringBuilder
-import org.gradle.work.InputChanges
-import org.gradle.work.ChangeType
 
 class C2M {
     final map = [:]
@@ -41,7 +42,7 @@ class ThemesExtension {
 
     void createTask(variant) {
         if (hasTheme) {
-            if(task == null)
+            if (task == null)
                 task = generateTask.get()
             if (variant.respondsTo("registerGeneratedResFolders")) {
                 task.ext.generatedResFolders = project.files(path).builtBy(task)
@@ -112,7 +113,7 @@ class ThemesExtension {
                 dependsOn(generateColorsTask)
             }
         }
-        if(generateTask == null)
+        if (generateTask == null)
             generateTask = generateColorsTask
         setHasTheme()
     }
@@ -127,7 +128,7 @@ class ThemesExtension {
         }.each { k, v -> putToMaps(k, v) }
     }
 
-    String getPath(){
+    String getPath() {
         return path
     }
 
@@ -183,7 +184,7 @@ class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
         inputChanges.getAllFileChanges().each { change ->
             if (change.fileType == FileType.DIRECTORY)
                 return
-            if(change.changeType == ChangeType.ADDED || change.changeType == ChangeType.MODIFIED) {
+            if (change.changeType == ChangeType.ADDED || change.changeType == ChangeType.MODIFIED) {
                 if (change.file.isFile()) {
                     def vector = new TextStringBuilder(change.file.text)
                     colorsMapVector.each { n, v -> vector.replaceAll(n, v) }
@@ -200,7 +201,7 @@ class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
                     }
                 }
             }
-            if(change.changeType == ChangeType.REMOVED) {
+            if (change.changeType == ChangeType.REMOVED) {
                 outputDirs.each {
                     def file = file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
                     if (file.exists())
@@ -254,7 +255,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools:sdk-common:31.3.0'
-        classpath 'org.apache.commons:commons-text:1.11.0'
+        classpath libs.com.android.sdk.common
+        classpath libs.org.apache.commons.text
     }
 }

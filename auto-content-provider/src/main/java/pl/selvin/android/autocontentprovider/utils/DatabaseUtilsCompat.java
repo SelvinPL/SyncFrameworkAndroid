@@ -46,7 +46,7 @@ public class DatabaseUtilsCompat {
 	 * Appends one set of selection args to another. This is useful when adding a selection
 	 * argument to a user provided set.
 	 */
-	public static String[] appendSelectionArgs(String[] originalValues, String[] newValues) {
+	public static String[] appendSelectionArgs(String[] originalValues, String... newValues) {
 		if (newValues == null || newValues.length == 0)
 			return originalValues;
 		if (originalValues == null || originalValues.length == 0) {
