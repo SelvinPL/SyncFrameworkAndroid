@@ -42,7 +42,7 @@ jobs:
       - name: Publish to GitHub Packages
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: publishLibraryPublicationToMavenRepository
+          arguments: publishReleasePublicationToMavenRepository
         env:
           GITHUB_RELEASE: ${{ github.event.release.tag_name }}
 
