@@ -15,7 +15,7 @@ public interface Constants {
 	String ACCOUNT_TYPE = BuildConfig.APPLICATION_ID;
 	String AUTHORITY = BuildConfig.APPLICATION_ID;
 	String AUTH_TOKEN_TYPE = BuildConfig.APPLICATION_ID;
-	String SERVICE_URI = "http://selvin.pl/listservice/";
+	String SERVICE_URI = "https://selvin.pl/listservice/";
 	long SEARCH_VIEW_DELAY = 600;
 
 	class StringUtil {

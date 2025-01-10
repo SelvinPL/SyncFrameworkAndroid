@@ -14,9 +14,9 @@ if (propsFile.exists()) {
 publishing {
 	publications {
 		release(MavenPublication) {
-			groupId 'pl.selvin.android'
-			version sync_framework_version
-			artifactId sync_framework_artifact_id
+			groupId = 'pl.selvin.android'
+			version = sync_framework_version
+			artifactId = sync_framework_artifact_id
 			afterEvaluate {
 				from components.release
 			}
@@ -25,7 +25,7 @@ publishing {
 
 	repositories {
 		maven {
-			url sync_framework_maven_url
+			url = sync_framework_maven_url
 		}
 		if (System.getenv("GITHUB_ACTOR") != null)
 			maven {

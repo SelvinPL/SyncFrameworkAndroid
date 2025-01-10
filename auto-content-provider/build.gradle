@@ -5,12 +5,12 @@ ext.sync_framework_artifact_id = 'auto-content-provider'
 apply from: '../publish.gradle'
 
 android {
-	namespace 'pl.selvin.android.autocontentprovider'
-	compileSdk 34
+	namespace = 'pl.selvin.android.autocontentprovider'
+	compileSdk = 35
 
 	defaultConfig {
 		minSdkVersion 22
-		targetSdkVersion 34
+		targetSdkVersion 35
 		consumerProguardFiles 'proguard-rules.pro'
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 	}

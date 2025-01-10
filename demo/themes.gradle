@@ -91,14 +91,13 @@ class ThemesExtension {
         def flavourName = flavour.name.capitalize()
         path = project.layout.buildDirectory.dir("generated/res/themed/${flavourName}").get()
         def generateColorsTask = project.tasks.register("generate${flavourName}Themes", GenerateColors) {
-            outputFile project.file("${this.path}/values/colors.xml")
-            colorsMap this.colorsMap
+            outputFile = project.file("${this.path}/values/colors.xml")
+            colorsMap = this.colorsMap
         }
         if (project.file("themed/drawable").exists()) {
             generateTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
                 inputDir = project.file("themed/drawable")
                 outputDir = project.file("${this.path}/drawable")
-                colorsMapVector this.colorsMapVector
                 dependsOn(generateColorsTask)
             }
         }
@@ -108,7 +107,7 @@ class ThemesExtension {
                 outputDirs = sizes.collectEntries {
                     [(it): project.file("${this.path}/mipmap-${it.getResourceValue()}")]
                 }
-                colorsMapVector this.colorsMapVector
+                colorsMapVector = this.colorsMapVector
                 dependsOn(generateColorsTask)
             }
         }

@@ -79,7 +79,6 @@ public class ListsListFragment extends ListFragmentCommon implements SearchCompo
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setHasOptionsMenu(true);
 		SearchComponent.install(this, R.string.lists_search_hint);
 	}
 

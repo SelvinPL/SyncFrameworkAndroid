@@ -7,48 +7,48 @@ apply from: '../version.gradle'
 def disabledColor = 0xADADAD
 
 android {
-    namespace 'pl.selvin.android.listsyncsample'
-    compileSdk 34
+    namespace = 'pl.selvin.android.listsyncsample'
+    compileSdk = 35
 
     flavorDimensions = ["db_impl"]
 
     defaultConfig {
         applicationId 'pl.selvin.android.listsyncsample'
         minSdkVersion 22
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode sync_framework_version_int
         versionName sync_framework_version
     }
 
     signingConfigs {
         release {
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-            storeFile file('debug.keystore')
-            storePassword 'android'
+            keyAlias = 'androiddebugkey'
+            keyPassword = 'android'
+            storeFile = file('debug.keystore')
+            storePassword = 'android'
         }
     }
 
     buildTypes {
         release {
-            shrinkResources true
-            minifyEnabled true
+            shrinkResources = true
+            minifyEnabled = true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
+            signingConfig = signingConfigs.release
         }
 
         debug {
-            versionNameSuffix "(deb)"
+            versionNameSuffix = "(deb)"
         }
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 	buildFeatures {
-		aidl true
-        buildConfig true
+		aidl = true
+        buildConfig = true
 	}
 
 	android.applicationVariants.configureEach { variant ->
