@@ -21,11 +21,18 @@ public interface RequestExecutor {
 
 	Result execute(int requestMethod, String serviceRequestUrl, final BaseContentProvider.ISyncContentProducer syncContentProducer) throws IOException;
 
+	/*
+	If execution of synchronisation is longer than some 5 min(I believe)
+	and there is no IO involved android OS kills sync process.
+	To avoid you need to provide implementation which will called every 1 minute
+	which will do some "internet" operation fx do HEAD request to your server
+	 */
+	void doPing();
 
 	class Result {
 		public final int status;
-		final InputStream inputBuffer;
-		final String error;
+		public final InputStream inputBuffer;
+		public final String error;
 
 
 		protected Result(InputStream inputBuffer, int status, String error) {
@@ -35,10 +42,6 @@ public interface RequestExecutor {
 		}
 
 		public void close() {
-		}
-
-		String getError() {
-			return error;
 		}
 	}
 }

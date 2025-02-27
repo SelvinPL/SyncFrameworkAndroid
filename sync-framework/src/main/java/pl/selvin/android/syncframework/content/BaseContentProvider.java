@@ -37,6 +37,10 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import pl.selvin.android.autocontentprovider.content.AutoContentProvider;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
@@ -48,13 +52,16 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 	public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
 	public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
 	public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
-	private static final String DATABASE_OPERATION_TYPE = "DATABASE_OPERATION_TYPE";
+	private final static String DATABASE_OPERATION_TYPE = "DATABASE_OPERATION_TYPE";
+	private final static long PING_DELAY_SECONDS = 60;
 	protected final RequestExecutor executor;
 	private final SyncContentHelper syncContentHelper;
+	private final ScheduledExecutorService pingExecutor;
 
 	public BaseContentProvider(SyncContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider, RequestExecutor executor) {
 		super(contentHelper, logger, supportSQLiteOpenHelperFactoryProvider);
 		syncContentHelper = contentHelper;
+		pingExecutor = Executors.newScheduledThreadPool(1);
 		this.executor = executor;
 	}
 
@@ -123,6 +130,8 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 		final String download = String.format(syncContentHelper.DOWNLOAD_SERVICE_URI, service, scope, params);
 		final String upload = String.format(syncContentHelper.UPLOAD_SERVICE_URI, service, scope, params);
 		final String scopeServerBlob = String.format("%s.%s.%s", service, scope, SYNC.serverBlob);
+		final ScheduledFuture<?> scheduledFuture =
+				pingExecutor.scheduleWithFixedDelay(executor::doPing, PING_DELAY_SECONDS, PING_DELAY_SECONDS, TimeUnit.SECONDS);
 		String serverBlob = null;
 		final Cursor cur = db.query(
 				SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
@@ -172,7 +181,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 
 					}
 					logger.LogD(getClass(), serviceRequestUrl);
-					long startTime = System.currentTimeMillis();
 					result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
 					if (result.status == 200) {
 						if (contentProducer != null)
@@ -211,10 +219,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 									meta.tempId = null;
 									values.clear();
 									while (jp.nextToken() != JsonToken.END_OBJECT) {
-										final long currentTime = System.currentTimeMillis();
-										if (currentTime - startTime > 1000 * 30) {
-											startTime = doPing(startTime, currentTime);
-										}
 										name = jp.getCurrentName();
 										current = jp.nextToken();
 										switch (current) {
@@ -318,7 +322,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 							logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
 					} else {
 						boolean fixed = false;
-						final String error = result.getError();
+						final String error = result.error;
 						if (error != null) {
 							if (error.contains("00-00-00-05-00-00-00-00-00-00-00-01") && !serializationException) {
 								//nasty 500: System.Runtime.Serialization.SerializationException ...  using upload instead download with the same serverBlob should help
@@ -394,12 +398,8 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 			db.insert(BlobsTable.NAME, SQLiteDatabase.CONFLICT_REPLACE, cv);
 		}
 		logger.LogTimeD(clazz, "*Sync* time", start);
+		scheduledFuture.cancel(true);
 		return stats;
-	}
-
-	@SuppressWarnings("UnusedParameters")
-	public long doPing(long startTime, long currentTime) {
-		return currentTime;
 	}
 
 	protected RequestExecutor.Result executeRequest(int requestMethod, String serviceRequestUrl, final ISyncContentProducer syncContentProducer) throws IOException {
