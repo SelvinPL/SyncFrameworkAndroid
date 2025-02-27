@@ -18,8 +18,8 @@ android {
             minifyEnabled = false
         }
         debug {
-            enableUnitTestCoverage true
-            enableAndroidTestCoverage true
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
 
     }
