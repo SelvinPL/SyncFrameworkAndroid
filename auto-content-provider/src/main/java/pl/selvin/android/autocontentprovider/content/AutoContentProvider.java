@@ -39,6 +39,7 @@ public abstract class AutoContentProvider extends ContentProvider {
 	protected final ContentHelper contentHelper;
 	protected final Class<?> clazz = getClass();
 	protected final Logger logger;
+	protected final Object getDatabaseLock = new Object();
 	private final SupportSQLiteOpenHelper.Callback defaultCallback;
 	private final SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider;
 	private SupportSQLiteOpenHelper mDB;
@@ -72,11 +73,23 @@ public abstract class AutoContentProvider extends ContentProvider {
 	}
 
 	final public SupportSQLiteDatabase getReadableDatabase() {
-		return mDB.getReadableDatabase();
+		synchronized (getDatabaseLock) {
+			return mDB.getReadableDatabase();
+		}
 	}
 
 	final public SupportSQLiteDatabase getWritableDatabase() {
-		return mDB.getWritableDatabase();
+		synchronized (getDatabaseLock) {
+			return mDB.getWritableDatabase();
+		}
+	}
+
+	final protected void clearDatabase() {
+		synchronized (getDatabaseLock) {
+			mDB.getWritableDatabase().setVersion(1);
+			mDB.close();
+			requireContextEx().getContentResolver().notifyChange(contentHelper.CONTENT_URI, null, false);
+		}
 	}
 
 	@Nullable
@@ -156,7 +169,7 @@ public abstract class AutoContentProvider extends ContentProvider {
 		if (code != UriMatcher.NO_MATCH) {
 			if (code == ContentHelper.uriClearCode) {
 				logger.LogD(clazz, "delete uriClearCode");
-				getHelperCallback().onUpgrade(getWritableDatabase(), 1, contentHelper.DATABASE_VERSION);
+				clearDatabase();
 				return 0;
 			}
 			boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
@@ -209,7 +222,8 @@ public abstract class AutoContentProvider extends ContentProvider {
 									cascadeResults += delete(deleteUri, deleteWhere, whereArgs);
 								}
 							} catch (Exception ex) {
-								ex.printStackTrace();
+								logger.LogD(clazz, "*onCreateDataBase*: " + ex, ex);
+								throw new RuntimeException(ex);
 							}
 						}
 					} finally {

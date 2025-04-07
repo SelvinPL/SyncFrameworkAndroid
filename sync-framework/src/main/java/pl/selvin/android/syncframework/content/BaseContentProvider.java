@@ -103,7 +103,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 				inout.numIoExceptions++;
 				syncParams.putParcelable(SYNC_PARAM_IN_SYNC_STATS, inout);
 			}
-			ex.printStackTrace();
+			logger.LogD(clazz, "*call", ex);
 		}
 		return syncParams;
 	}
@@ -317,9 +317,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 						}
 						jp.close();
 						if (resolveConflicts)
-							logger.LogE(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
-						else
-							logger.LogD(clazz, "*Sync* has resolve conflicts: " + resolveConflicts);
+							logger.LogE(clazz, "*Sync* has resolve conflicts !!!");
 					} else {
 						boolean fixed = false;
 						final String error = result.error;
