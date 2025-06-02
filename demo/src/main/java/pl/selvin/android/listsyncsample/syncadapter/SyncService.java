@@ -19,21 +19,23 @@ import android.content.ContentProviderClient;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
-import pl.selvin.android.syncframework.content.Stats;
+import pl.selvin.android.listsyncsample.provider.RequestExecutor;
 
 public class SyncService extends Service {
-	public static final String ISYNCSERVICE_BINDER = "ISYNCSERVICE_BINDER";
+	public static final String SYNC_SERVICE_BINDER = "SYNC_SERVICE_BINDER";
 	public static final int SYNC_IDLE = 0;
 	public static final int SYNC_ACTIVE = 1;
 	public static final int SYNC_PENDING = 2;
@@ -67,42 +69,59 @@ public class SyncService extends Service {
 	};
 
 	public static String getUserId(Context context) {
-		AccountManager am = AccountManager.get(context);
-		Account[] ac = null;
-		try {
-			ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		}
-		if (ac != null && ac.length > 0) {
-			return am.getUserData(ac[0], NetworkOperations.LoginResponse.USER_ID);
+		Account account = getAccount(context);
+		if (account != null) {
+			AccountManager accountManager = AccountManager.get(context);
+			return accountManager.getUserData(account, NetworkOperations.LoginResponse.USER_ID);
 		}
 		return null;
 	}
 
 	public static Account getAccount(Context context) {
-		AccountManager am = AccountManager.get(context);
-		Account[] ac = null;
+		AccountManager accountManager = AccountManager.get(context);
+		Account[] accounts = null;
 		try {
-			ac = am.getAccountsByType(Constants.ACCOUNT_TYPE);
+			accounts = accountManager.getAccountsByType(Constants.ACCOUNT_TYPE);
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		}
-		if (ac != null && ac.length > 0) {
-			return ac[0];
+		if (accounts != null && accounts.length > 0) {
+			return accounts[0];
 		}
 		return null;
+	}
+
+	static void copySyncResult(@Nullable SyncResult source, @NonNull SyncResult destination) {
+		if (source != null && source != destination) {
+			destination.tooManyDeletions = source.tooManyDeletions;
+			destination.tooManyRetries = source.tooManyRetries;
+			destination.fullSyncRequested = source.fullSyncRequested;
+			destination.partialSyncUnavailable = source.partialSyncUnavailable;
+			destination.moreRecordsToGet = source.moreRecordsToGet;
+			destination.delayUntil = source.delayUntil;
+			destination.stats.numAuthExceptions = source.stats.numAuthExceptions;
+			destination.stats.numIoExceptions = source.stats.numIoExceptions;
+			destination.stats.numParseExceptions = source.stats.numParseExceptions;
+			destination.stats.numConflictDetectedExceptions = source.stats.numConflictDetectedExceptions;
+			destination.stats.numInserts = source.stats.numInserts;
+			destination.stats.numUpdates = source.stats.numUpdates;
+			destination.stats.numDeletes = source.stats.numDeletes;
+			destination.stats.numEntries = source.stats.numEntries;
+			destination.stats.numSkippedEntries = source.stats.numSkippedEntries;
+		}
 	}
 
 	@Override
 	public IBinder onBind(Intent intent) {
 		synchronized (sSyncAdapterLock) {
 			if (sSyncAdapter == null) {
-				sSyncAdapter = new SyncAdapter(getApplicationContext());
+				sSyncAdapter = new SyncAdapter(this);
+			} else {
+				sSyncAdapter.setService(this);
 			}
 		}
-		sSyncAdapter.setService(this);
-		if (intent.hasExtra(ISYNCSERVICE_BINDER))
+
+		if (intent.hasExtra(SYNC_SERVICE_BINDER))
 			return mBinder;
 		return sSyncAdapter.getSyncAdapterBinder();
 	}
@@ -127,10 +146,11 @@ public class SyncService extends Service {
 
 	static class SyncAdapter extends AbstractThreadedSyncAdapter {
 
-		private SyncService mService = null;
+		private SyncService mService;
 
-		SyncAdapter(Context context) {
-			super(context, true);
+		SyncAdapter(SyncService service) {
+			super(service.getApplicationContext(), true);
+			mService = service;
 		}
 
 		void setService(SyncService service) {
@@ -141,46 +161,31 @@ public class SyncService extends Service {
 		synchronized public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
 			mService.mLastStatus = SYNC_ACTIVE;
 			mService.fireStatusChanged();
-			Stats stats = new Stats();
+			extras.putParcelable(RequestExecutor.ACCOUNT_PARAMETER, account);
+			extras.putParcelable(RequestExecutor.SYNC_RESULT_PARAMETER, syncResult);
+			extras.putString(RequestExecutor.SCOPE_PARAMETER, Database.DS);
 
-			String parameters = null;
-			try {
-				parameters = String.format("?userid=%s", getUserId(getContext()));
-			} catch (Exception ex) {
-				stats.stats.numIoExceptions++;
-			}
-			if (parameters != null) {
-				final ListProvider mtProvider = (ListProvider) provider.getLocalContentProvider();
-				if (mtProvider != null) {
-					try {
-						mtProvider.sync("DefaultScopeSyncService", Database.DS, parameters, stats);
-					} catch (Exception ex) {
-						stats.stats.numIoExceptions++;
-						ex.printStackTrace();
+			final ListProvider listProvider = (ListProvider) provider.getLocalContentProvider();
+			if (listProvider != null) {
+				try {
+					final Bundle results = listProvider.sync(extras);
+				} catch (Exception ex) {
+					syncResult.stats.numIoExceptions++;
+					ex.printStackTrace();
+				}
+			} else {
+				try {
+					final Bundle results = provider.call(ListProvider.getHelper().SYNC_URI.toString(), null, extras);
+					if (results != null) {
+						final SyncResult syncResultResult = results.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER);
+						copySyncResult(syncResultResult, syncResult);
 					}
-				} else {
-					try {
-						final Uri uri = ListProvider.getHelper().getSyncUri("DefaultScopeSyncService", "defaultscope");
-						Bundle syncParams = new Bundle();
-						syncParams.putParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS, stats);
-						syncParams = provider.call(uri.toString(), parameters, syncParams);
-						stats = syncParams.getParcelable(ListProvider.SYNC_PARAM_IN_SYNC_STATS);
-					} catch (RemoteException e) {
-						stats.stats.numParseExceptions++;
-						e.printStackTrace();
-					}
+				} catch (RemoteException e) {
+					syncResult.stats.numIoExceptions++;
+					e.printStackTrace();
 				}
 			}
-			syncResult.stats.numAuthExceptions = stats.stats.numAuthExceptions;
-			syncResult.stats.numConflictDetectedExceptions = stats.stats.numConflictDetectedExceptions;
-			syncResult.stats.numDeletes = stats.stats.numDeletes;
-			syncResult.stats.numEntries = stats.stats.numEntries;
-			syncResult.stats.numInserts = stats.stats.numInserts;
-			syncResult.stats.numIoExceptions = stats.stats.numIoExceptions;
-			syncResult.stats.numParseExceptions = stats.stats.numParseExceptions;
-			syncResult.stats.numSkippedEntries = stats.stats.numSkippedEntries;
-			syncResult.stats.numUpdates = stats.stats.numUpdates;
-			Log.v("SyncStats: ", stats.stats.toString());
+			Log.v("SyncStats: ", syncResult.stats.toString());
 			Log.d("SyncResult: ", syncResult.toString());
 
 			mService.mLastStatus = SYNC_IDLE;

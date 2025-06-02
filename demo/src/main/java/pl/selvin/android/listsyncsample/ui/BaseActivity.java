@@ -118,7 +118,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 	protected void onStart() {
 		super.onStart();
 		Intent intent = new Intent(this, SyncService.class);
-		intent.putExtra(SyncService.ISYNCSERVICE_BINDER, true);
+		intent.putExtra(SyncService.SYNC_SERVICE_BINDER, true);
 		startService(intent);
 		bindService(intent, mConnection, Context.BIND_AUTO_CREATE | Context.BIND_IMPORTANT);
 

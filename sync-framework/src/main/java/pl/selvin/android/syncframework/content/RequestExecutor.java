@@ -11,15 +11,32 @@
 
 package pl.selvin.android.syncframework.content;
 
+import android.accounts.AuthenticatorException;
+import android.content.Context;
+import android.os.Bundle;
+
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 public interface RequestExecutor {
+	String SCOPE_PARAMETER = "SCOPE_PARAMETER";
+	String REQUEST_TYPE_PARAMETER = "REQUEST_TYPE_PARAMETER";
+	String REQUEST_METHOD_PARAMETER = "REQUEST_METHOD_PARAMETER";
+	String SYNC_RESULT_PARAMETER = "SYNC_RESULT";
+	String UPLOAD = "uploadchanges";
+	String DOWNLOAD = "downloadchanges";
+	int GET = 1;
+	int POST = 2;
 
-	int HTTP_GET = 1;
-	int HTTP_POST = 2;
-
-	Result execute(int requestMethod, String serviceRequestUrl, final BaseContentProvider.ISyncContentProducer syncContentProducer) throws IOException;
+	@NonNull
+	Result execute(@NonNull Context context, @Nullable BaseContentProvider.ISyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException, AuthenticatorException;
 
 	/*
 	If execution of synchronisation is longer than some 5 min(I believe)
@@ -28,6 +45,16 @@ public interface RequestExecutor {
 	which will do some "internet" operation fx do HEAD request to your server
 	 */
 	void doPing();
+
+	@Retention(RetentionPolicy.SOURCE)
+	@StringDef({UPLOAD, DOWNLOAD})
+	@interface RequestType {
+	}
+
+	@Retention(RetentionPolicy.SOURCE)
+	@IntDef({GET, POST})
+	@interface RequestMethod {
+	}
 
 	class Result {
 		public final int status;

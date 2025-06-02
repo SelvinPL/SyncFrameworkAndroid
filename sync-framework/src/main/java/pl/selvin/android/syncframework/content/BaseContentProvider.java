@@ -11,11 +11,12 @@
 
 package pl.selvin.android.syncframework.content;
 
+import android.accounts.AuthenticatorException;
 import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.SyncStats;
+import android.content.SyncResult;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
@@ -32,11 +33,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -48,7 +49,6 @@ import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
 
 public abstract class BaseContentProvider extends AutoContentProvider {
-	public static final String SYNC_PARAM_IN_SYNC_STATS = "SYNC_PARAM_IN_SYNC_STATS";
 	public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
 	public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
 	public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
@@ -90,52 +90,31 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 	}
 
 	@Override
-	public Bundle call(@NonNull String method, String arg, Bundle syncParams) {
-		try {
-			Uri uri = Uri.parse(method);
-			if (contentHelper.matchUri(uri) == SyncContentHelper.uriSyncCode) {
-				final Stats inout = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), arg, syncParams.getParcelable(SYNC_PARAM_IN_SYNC_STATS));
-				syncParams.putParcelable(SYNC_PARAM_IN_SYNC_STATS, inout);
-			}
-		} catch (Exception ex) {
-			final SyncStats inout = syncParams.getParcelable(SYNC_PARAM_IN_SYNC_STATS);
-			if (inout != null) {
-				inout.numIoExceptions++;
-				syncParams.putParcelable(SYNC_PARAM_IN_SYNC_STATS, inout);
-			}
-			logger.LogD(clazz, "*call", ex);
-		}
-		return syncParams;
-	}
-
-	@Override
-	public int update(@NonNull Uri uri, ContentValues values, String selection, String[] selectionArgs) {
+	public Bundle call(@NonNull String method, String arg, Bundle extras) {
+		final Uri uri = Uri.parse(method);
 		if (contentHelper.matchUri(uri) == SyncContentHelper.uriSyncCode) {
-			logger.LogD(clazz, "*update* sync uri: " + uri);
-			final Stats result = sync(uri.getPathSegments().get(1), uri.getPathSegments().get(2), selection, new Stats());
-			return (result.hasErrors() ? 1 : 0);
+			return sync(extras);
 		}
-		return super.update(uri, values, selection, selectionArgs);
+		return super.call(method, arg, extras);
 	}
 
 	@SuppressLint("DefaultLocale")
-	public Stats sync(String service, String scope, String params, Stats stats) {
+	public Bundle sync(Bundle parameters) {
+		//Account account, String service, String scope, String params, Stats stats) {
+		final String scope = parameters.getString(RequestExecutor.SCOPE_PARAMETER);
+		final SyncResult syncResult = Objects.requireNonNull(parameters.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER));
 		final long start = System.currentTimeMillis();
 		boolean hasError = false;
-		if (params == null) params = "";
 		final SupportSQLiteDatabase db = getWritableDatabase();
 		final ArrayList<SyncTableInfo> notifyTableInfo = new ArrayList<>();
 		final JsonFactory jsonFactory = new JsonFactory();
 		JsonToken current;
-		final String download = String.format(syncContentHelper.DOWNLOAD_SERVICE_URI, service, scope, params);
-		final String upload = String.format(syncContentHelper.UPLOAD_SERVICE_URI, service, scope, params);
-		final String scopeServerBlob = String.format("%s.%s.%s", service, scope, SYNC.serverBlob);
 		final ScheduledFuture<?> scheduledFuture =
 				pingExecutor.scheduleWithFixedDelay(executor::doPing, PING_DELAY_SECONDS, PING_DELAY_SECONDS, TimeUnit.SECONDS);
 		String serverBlob = null;
 		final Cursor cur = db.query(
 				SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
-						.selection(BlobsTable.C_NAME + "=?", new Object[]{scopeServerBlob}).create());
+						.selection(BlobsTable.C_NAME + "=?", new Object[]{scope}).create());
 		String originalBlob;
 		if (cur.moveToFirst()) {
 			originalBlob = serverBlob = cur.getString(0);
@@ -160,31 +139,31 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 				RequestExecutor.Result result = null;
 				try {
 					db.beginTransaction();
-					final int requestMethod;
-					final String serviceRequestUrl;
+					@RequestExecutor.RequestMethod final int requestMethod;
+					@RequestExecutor.RequestType final String requestType;
 					final ISyncContentProducer contentProducer;
 
 					if (serverBlob != null) {
-						requestMethod = RequestExecutor.HTTP_POST;
+						requestMethod = RequestExecutor.POST;
 						if (noChanges) {
-							serviceRequestUrl = download;
+							requestType = RequestExecutor.DOWNLOAD;
 						} else {
-							serviceRequestUrl = upload;
+							requestType = RequestExecutor.UPLOAD;
 							forceMoreChanges = true;
 						}
 						contentProducer = new SyncContentProducer(jsonFactory, db, scope, originalBlob, !noChanges, syncContentHelper, logger);
 						noChanges = true;
 					} else {
-						requestMethod = RequestExecutor.HTTP_GET;
-						serviceRequestUrl = download;
+						requestMethod = RequestExecutor.GET;
+						requestType = RequestExecutor.DOWNLOAD;
 						contentProducer = null;
-
 					}
-					logger.LogD(getClass(), serviceRequestUrl);
-					result = executeRequest(requestMethod, serviceRequestUrl, contentProducer);
+					parameters.putInt(RequestExecutor.REQUEST_METHOD_PARAMETER, requestMethod);
+					parameters.putString(RequestExecutor.REQUEST_TYPE_PARAMETER, requestType);
+					result = executor.execute(requireContextEx(), contentProducer, parameters);
 					if (result.status == 200) {
 						if (contentProducer != null)
-							stats.stats.numEntries += contentProducer.getChanges();
+							syncResult.stats.numEntries += contentProducer.getChanges();
 						final JsonParser jp = jsonFactory.createParser(result.inputBuffer);
 
 						jp.nextToken(); // skip ("START_OBJECT(d) expected");
@@ -305,11 +284,11 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 									final SyncTableInfo tab = (SyncTableInfo) contentHelper.getTableFromType(meta.type);
 									if (meta.isDeleted) {
 										tab.deleteWithUri(meta.uri, db);
-										stats.stats.numDeletes++;
+										syncResult.stats.numDeletes++;
 									} else {
 										if (tab.SyncJSON(values, meta, db))
-											stats.stats.numUpdates++;
-										else stats.stats.numInserts++;
+											syncResult.stats.numUpdates++;
+										else syncResult.stats.numInserts++;
 									}
 									if (!notifyTableInfo.contains(tab)) notifyTableInfo.add(tab);
 								}
@@ -335,7 +314,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 									&& !serializationException) {
 								//500 Cannot find a valid scope with the name 'table_xxxx-xxxx-guid-xxxxx' in table '[scope_info]'... delete tables in scope and blob then re-sync
 								//400 Scope does not exist
-								syncContentHelper.clearScope(db, scope, scopeServerBlob);
+								syncContentHelper.clearScope(db, scope);
 								serverBlob = null;
 								moreChanges = true;
 								fixed = true;
@@ -343,7 +322,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 							}
 						}
 						if (!fixed)
-							throw new IOException(String.format("%s, Server error: %d, error: %s, blob: %s", serviceRequestUrl, result.status, error, originalBlob == null ? "null" : originalBlob));
+							throw new IOException(String.format("Server error: %d, error: %s, blob: %s", result.status, error, originalBlob == null ? "null" : originalBlob));
 					}
 				} catch (Exception e) {
 					hasError = true;
@@ -353,7 +332,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 						result.close();
 					if (!hasError) {
 						cv.clear();
-						cv.put(BlobsTable.C_NAME, scopeServerBlob);
+						cv.put(BlobsTable.C_NAME, scope);
 						cv.put(BlobsTable.C_VALUE, serverBlob);
 						cv.put(BlobsTable.C_DATE, Calendar.getInstance().getTimeInMillis());
 						cv.put(BlobsTable.C_STATE, 0);
@@ -378,18 +357,19 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 					notifyTableInfo.clear();
 				}
 			} while (moreChanges);
-		} catch (InterruptedIOException e) {
-			stats.isInterrupted = true;
 		} catch (JsonParseException e) {
-			stats.stats.numParseExceptions++;
+			syncResult.stats.numParseExceptions++;
 			logger.LogE(clazz, e);
 		} catch (IOException e) {
-			stats.stats.numIoExceptions++;
+			syncResult.stats.numIoExceptions++;
+			logger.LogE(clazz, e);
+		} catch (AuthenticatorException e) {
+			syncResult.stats.numAuthExceptions++;
 			logger.LogE(clazz, e);
 		}
 		if (hasError) {
 			ContentValues cv = new ContentValues();
-			cv.put(BlobsTable.C_NAME, scopeServerBlob);
+			cv.put(BlobsTable.C_NAME, scope);
 			cv.put(BlobsTable.C_VALUE, originalBlob);
 			cv.put(BlobsTable.C_DATE, Calendar.getInstance().getTimeInMillis());
 			cv.put(BlobsTable.C_STATE, -1);
@@ -397,13 +377,8 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 		}
 		logger.LogTimeD(clazz, "*Sync* time", start);
 		scheduledFuture.cancel(true);
-		return stats;
+		return parameters;
 	}
-
-	protected RequestExecutor.Result executeRequest(int requestMethod, String serviceRequestUrl, final ISyncContentProducer syncContentProducer) throws IOException {
-		return executor.execute(requestMethod, serviceRequestUrl, syncContentProducer);
-	}
-
 
 	protected void onCreateDatabase(SupportSQLiteDatabase db) {
 		final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);

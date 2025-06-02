@@ -37,21 +37,15 @@ public class SyncContentHelper extends ContentHelper {
 	private static final String DO_SYNC = "pl_selvin_android_sync_framework_do_sync";
 	private static final String PARAMETER_UN_DELETING = "sf_un_deleting";
 	private final static HashMap<Class<?>, SyncContentHelper> instances = new HashMap<>();
-
-	final String DOWNLOAD_SERVICE_URI;
-	final String UPLOAD_SERVICE_URI;
 	private final SyncDatabaseInfo syncDatabaseInfo;
 
-	private final Uri SYNC_URI;
+	public final Uri SYNC_URI;
 
-
-	private SyncContentHelper(Class<?> dbClass, String authority, String databaseName, int databaseVersion, String serviceUri) {
+	private SyncContentHelper(Class<?> dbClass, String authority, String databaseName, int databaseVersion) {
 		super(dbClass, authority, new SyncDatabaseInfoFactory(), databaseName, databaseVersion);
 		syncDatabaseInfo = (SyncDatabaseInfo) databaseInfo;
-		UPLOAD_SERVICE_URI = serviceUri + "%s.svc/%s/UploadChanges%s";
-		DOWNLOAD_SERVICE_URI = serviceUri + "%s.svc/%s/DownloadChanges%s";
 		SYNC_URI = Uri.withAppendedPath(CONTENT_URI, DO_SYNC);
-		matcher.addURI(AUTHORITY, DO_SYNC + "/*/*", uriSyncCode);
+		matcher.addURI(AUTHORITY, DO_SYNC, uriSyncCode);
 	}
 
 	static boolean checkUnDeleting(Uri uri) {
@@ -59,18 +53,15 @@ public class SyncContentHelper extends ContentHelper {
 		return un_deleting != null && Boolean.parseBoolean(un_deleting);
 	}
 
-	@SuppressWarnings("SameParameterValue")
-	public static SyncContentHelper getInstance(Class<?> dbClass, String authority, String databaseName, int databaseVersion, String serviceUri) {
+	public static SyncContentHelper getInstance(Class<?> dbClass, String authority, String databaseName, int databaseVersion) {
 		if (instances.containsKey(dbClass))
 			return instances.get(dbClass);
-		final SyncContentHelper ret = new SyncContentHelper(dbClass, authority, databaseName, databaseVersion, serviceUri);
+		final SyncContentHelper ret = new SyncContentHelper(dbClass, authority, databaseName, databaseVersion);
 		instances.put(dbClass, ret);
 		return ret;
 	}
 
-	/**
-	 * @noinspection unused
-	 */
+	@SuppressWarnings("unused")
 	public void createScopeTables(SupportSQLiteDatabase db, String scope) {
 		for (SyncTableInfo tab : Objects.requireNonNull(getTableForScope(scope))) {
 			db.execSQL(tab.createStatement());
@@ -79,14 +70,14 @@ public class SyncContentHelper extends ContentHelper {
 		}
 	}
 
-	void clearScope(SupportSQLiteDatabase db, String scope, String scopeServerBlob) {
+	void clearScope(SupportSQLiteDatabase db, String scope) {
 		for (SyncTableInfo tab : Objects.requireNonNull(getTableForScope(scope))) {
 			db.execSQL(tab.dropStatement());
 			db.execSQL(tab.createStatement());
 			tab.executeAfterOnCreate(db);
 			tab.createIndexes(db);
 		}
-		db.delete(BlobsTable.NAME, BlobsTable.C_NAME + "=?", new String[]{scopeServerBlob});
+		db.delete(BlobsTable.NAME, BlobsTable.C_NAME + "=?", new String[]{scope});
 	}
 
 	@SuppressWarnings("WeakerAccess")
@@ -97,18 +88,17 @@ public class SyncContentHelper extends ContentHelper {
 		return builder;
 	}
 
-	@SuppressWarnings("SameParameterValue")
 	public Uri getDirUri(String tableName, boolean syncToNetwork, boolean un_deleting) {
 		return getDirUriBuilder(tableName, syncToNetwork, un_deleting).build();
 	}
 
-	@SuppressWarnings("SameParameterValue")
-	public Uri getSyncUri(String serviceName, String syncScope) {
-		return Uri.withAppendedPath(Uri.withAppendedPath(SYNC_URI, serviceName), syncScope);
-	}
-
 	public List<SyncTableInfo> getTableForScope(String scope) {
 		return syncDatabaseInfo.tablesInScope.get(scope);
+	}
+
+	@SuppressWarnings("unused")
+	public List<String> getScopes() {
+		return new ArrayList<>(syncDatabaseInfo.tablesInScope.keySet());
 	}
 
 	boolean hasDirtTable(SupportSQLiteDatabase db, String scope, Logger logger) {

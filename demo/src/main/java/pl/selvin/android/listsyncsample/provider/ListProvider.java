@@ -41,7 +41,7 @@ public class ListProvider extends BaseContentProvider {
 
 	public static synchronized SyncContentHelper getHelper() {
 		if (helperInstance == null)
-			helperInstance = SyncContentHelper.getInstance(Database.class, Constants.AUTHORITY, DATABASE_NAME, DATABASE_VERSION, Constants.SERVICE_URI);
+			helperInstance = SyncContentHelper.getInstance(Database.class, Constants.AUTHORITY, DATABASE_NAME, DATABASE_VERSION);
 		return helperInstance;
 	}
 
