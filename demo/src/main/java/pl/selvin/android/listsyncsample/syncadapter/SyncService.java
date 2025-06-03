@@ -50,7 +50,6 @@ public class SyncService extends Service {
 	public static final int SYNC_PENDING = 2;
 
 	private static final Object sSyncAdapterLock = new Object();
-	private static final long PING_DELAY_SECONDS = 60;
 
 	private final static String TAG = "SyncService";
 	private static SyncAdapter sSyncAdapter;
@@ -155,7 +154,7 @@ public class SyncService extends Service {
 	}
 
 	static class SyncAdapter extends AbstractThreadedSyncAdapter {
-
+		private static final long PING_DELAY_SECONDS = 60;
 		private final ScheduledExecutorService pingExecutor;
 		private SyncService mService;
 
@@ -173,37 +172,41 @@ public class SyncService extends Service {
 		synchronized public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
 			final ScheduledFuture<?> scheduledFuture =
 					pingExecutor.scheduleWithFixedDelay(this::doPing, PING_DELAY_SECONDS, PING_DELAY_SECONDS, TimeUnit.SECONDS);
-			mService.mLastStatus = SYNC_ACTIVE;
-			mService.fireStatusChanged();
-			extras.putParcelable(RequestExecutor.ACCOUNT_PARAMETER, account);
-			extras.putParcelable(RequestExecutor.SYNC_RESULT_PARAMETER, syncResult);
-			extras.putString(RequestExecutor.SCOPE_PARAMETER, Database.DS);
+			try {
+				mService.mLastStatus = SYNC_ACTIVE;
+				mService.fireStatusChanged();
+				extras.putParcelable(RequestExecutor.ACCOUNT_PARAMETER, account);
+				extras.putParcelable(RequestExecutor.SYNC_RESULT_PARAMETER, syncResult);
+				extras.putString(RequestExecutor.SCOPE_PARAMETER, Database.DS);
 
-			final ListProvider listProvider = (ListProvider) provider.getLocalContentProvider();
-			if (listProvider != null) {
-				try {
-					final Bundle results = listProvider.sync(extras);
-				} catch (Exception ex) {
-					syncResult.stats.numIoExceptions++;
-					ex.printStackTrace();
-				}
-			} else {
-				try {
-					final Bundle results = provider.call(ListProvider.getHelper().SYNC_URI.toString(), null, extras);
-					if (results != null) {
-						final SyncResult syncResultResult = results.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER);
-						copySyncResult(syncResultResult, syncResult);
+				final ListProvider listProvider = (ListProvider) provider.getLocalContentProvider();
+				if (listProvider != null) {
+					try {
+						final Bundle results = listProvider.sync(extras);
+					} catch (Exception ex) {
+						syncResult.stats.numIoExceptions++;
+						ex.printStackTrace();
 					}
-				} catch (RemoteException e) {
-					syncResult.stats.numIoExceptions++;
-					e.printStackTrace();
+				} else {
+					try {
+						final Bundle results = provider.call(ListProvider.getHelper().SYNC_URI.toString(), null, extras);
+						if (results != null) {
+							final SyncResult syncResultResult = results.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER);
+							copySyncResult(syncResultResult, syncResult);
+						}
+					} catch (RemoteException e) {
+						syncResult.stats.numIoExceptions++;
+						e.printStackTrace();
+					}
 				}
-			}
-			Log.v("SyncStats: ", syncResult.stats.toString());
-			Log.d("SyncResult: ", syncResult.toString());
+				Log.v("SyncStats: ", syncResult.stats.toString());
+				Log.d("SyncResult: ", syncResult.toString());
 
-			mService.mLastStatus = SYNC_IDLE;
-			mService.fireStatusChanged();
+				mService.mLastStatus = SYNC_IDLE;
+				mService.fireStatusChanged();
+			} finally {
+				scheduledFuture.cancel(true);
+			}
 		}
 
 		private void doPing() {
