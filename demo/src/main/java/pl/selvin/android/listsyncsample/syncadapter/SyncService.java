@@ -28,8 +28,17 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.CacheControl;
+import okhttp3.Request;
+import okhttp3.Response;
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
+import pl.selvin.android.listsyncsample.network.HttpClient;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.listsyncsample.provider.RequestExecutor;
@@ -41,12 +50,13 @@ public class SyncService extends Service {
 	public static final int SYNC_PENDING = 2;
 
 	private static final Object sSyncAdapterLock = new Object();
+	private static final long PING_DELAY_SECONDS = 60;
 
 	private final static String TAG = "SyncService";
 	private static SyncAdapter sSyncAdapter;
 	private final RemoteCallbackList<ISyncStatusObserver> mObservers = new RemoteCallbackList<>();
-	private int mLastStatus = SYNC_IDLE;
 
+	private int mLastStatus = SYNC_IDLE;
 	private final ISyncService.Stub mBinder = new ISyncService.Stub() {
 		public void addSyncStatusObserver(ISyncStatusObserver cb) {
 			if (cb != null) {
@@ -146,11 +156,13 @@ public class SyncService extends Service {
 
 	static class SyncAdapter extends AbstractThreadedSyncAdapter {
 
+		private final ScheduledExecutorService pingExecutor;
 		private SyncService mService;
 
 		SyncAdapter(SyncService service) {
 			super(service.getApplicationContext(), true);
 			mService = service;
+			pingExecutor = Executors.newScheduledThreadPool(1);
 		}
 
 		void setService(SyncService service) {
@@ -159,6 +171,8 @@ public class SyncService extends Service {
 
 		@Override
 		synchronized public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
+			final ScheduledFuture<?> scheduledFuture =
+					pingExecutor.scheduleWithFixedDelay(this::doPing, PING_DELAY_SECONDS, PING_DELAY_SECONDS, TimeUnit.SECONDS);
 			mService.mLastStatus = SYNC_ACTIVE;
 			mService.fireStatusChanged();
 			extras.putParcelable(RequestExecutor.ACCOUNT_PARAMETER, account);
@@ -190,6 +204,16 @@ public class SyncService extends Service {
 
 			mService.mLastStatus = SYNC_IDLE;
 			mService.fireStatusChanged();
+		}
+
+		private void doPing() {
+			try {
+				final Request.Builder requestBuilder = new Request.Builder().url(Constants.SERVICE_URI + "DefaultScopeSyncService.svc/$syncscopes")
+						.method("HEAD", null).cacheControl(new CacheControl.Builder().noCache().noStore().build());
+				final Response response = HttpClient.DEFAULT.newCall(requestBuilder.build()).execute();
+				response.close();
+			} catch (Exception ignore) {
+			}
 		}
 	}
 }

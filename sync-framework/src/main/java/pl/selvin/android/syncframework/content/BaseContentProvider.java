@@ -38,10 +38,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Objects;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import pl.selvin.android.autocontentprovider.content.AutoContentProvider;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
@@ -53,15 +49,13 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 	public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
 	public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
 	private final static String DATABASE_OPERATION_TYPE = "DATABASE_OPERATION_TYPE";
-	private final static long PING_DELAY_SECONDS = 60;
 	protected final RequestExecutor executor;
 	private final SyncContentHelper syncContentHelper;
-	private final ScheduledExecutorService pingExecutor;
+
 
 	public BaseContentProvider(SyncContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider, RequestExecutor executor) {
 		super(contentHelper, logger, supportSQLiteOpenHelperFactoryProvider);
 		syncContentHelper = contentHelper;
-		pingExecutor = Executors.newScheduledThreadPool(1);
 		this.executor = executor;
 	}
 
@@ -100,7 +94,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 
 	@SuppressLint("DefaultLocale")
 	public Bundle sync(Bundle parameters) {
-		//Account account, String service, String scope, String params, Stats stats) {
 		final String scope = parameters.getString(RequestExecutor.SCOPE_PARAMETER);
 		final SyncResult syncResult = Objects.requireNonNull(parameters.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER));
 		final long start = System.currentTimeMillis();
@@ -109,8 +102,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 		final ArrayList<SyncTableInfo> notifyTableInfo = new ArrayList<>();
 		final JsonFactory jsonFactory = new JsonFactory();
 		JsonToken current;
-		final ScheduledFuture<?> scheduledFuture =
-				pingExecutor.scheduleWithFixedDelay(executor::doPing, PING_DELAY_SECONDS, PING_DELAY_SECONDS, TimeUnit.SECONDS);
 		String serverBlob = null;
 		final Cursor cur = db.query(
 				SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
@@ -376,7 +367,6 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 			db.insert(BlobsTable.NAME, SQLiteDatabase.CONFLICT_REPLACE, cv);
 		}
 		logger.LogTimeD(clazz, "*Sync* time", start);
-		scheduledFuture.cancel(true);
 		return parameters;
 	}
 

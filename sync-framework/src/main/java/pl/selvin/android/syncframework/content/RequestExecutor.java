@@ -38,14 +38,6 @@ public interface RequestExecutor {
 	@NonNull
 	Result execute(@NonNull Context context, @Nullable BaseContentProvider.ISyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException, AuthenticatorException;
 
-	/*
-	If execution of synchronisation is longer than some 5 min(I believe)
-	and there is no IO involved android OS kills sync process.
-	To avoid you need to provide implementation which will called every 1 minute
-	which will do some "internet" operation fx do HEAD request to your server
-	 */
-	void doPing();
-
 	@Retention(RetentionPolicy.SOURCE)
 	@StringDef({UPLOAD, DOWNLOAD})
 	@interface RequestType {

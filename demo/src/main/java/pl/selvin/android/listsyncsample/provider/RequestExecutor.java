@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.CacheControl;
 import okhttp3.ConnectionPool;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -25,27 +24,11 @@ import okio.BufferedSink;
 import pl.selvin.android.listsyncsample.BuildConfig;
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
+import pl.selvin.android.listsyncsample.network.HttpClient;
 import pl.selvin.android.syncframework.content.BaseContentProvider;
 
 public class RequestExecutor implements pl.selvin.android.syncframework.content.RequestExecutor {
 	public final static String ACCOUNT_PARAMETER = "ACCOUNT_PARAMETER";
-
-	private final OkHttpClient client;
-
-	public RequestExecutor() {
-		final int connectTimeout = 3;
-		final int timeout = 15;
-		final String USER_AGENT = String.format("%s(%s)(%s)(%s)", BuildConfig.APPLICATION_ID, BuildConfig.BUILD_TYPE, BuildConfig.FLAVOR, BuildConfig.VERSION_NAME);
-		final OkHttpClient.Builder builder = new OkHttpClient.Builder().addInterceptor(
-				chain -> chain.proceed(chain.request().newBuilder().header("User-Agent", USER_AGENT).build()));
-		client = builder
-				.connectTimeout(connectTimeout, TimeUnit.SECONDS)
-				.callTimeout(timeout, TimeUnit.MINUTES)
-				.readTimeout(timeout, TimeUnit.MINUTES)
-				.writeTimeout(timeout, TimeUnit.MINUTES)
-				.connectionPool(new ConnectionPool(5, 5, TimeUnit.MINUTES))
-				.build();
-	}
 
 	@Override
 	@NonNull
@@ -75,7 +58,7 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 				}
 			});
 		}
-		final Response response = client.newCall(requestBuilder.build()).execute();
+		final Response response = HttpClient.DEFAULT.newCall(requestBuilder.build()).execute();
 		final ResponseBody body = response.body();
 		if (body != null) {
 			final String error;
@@ -88,17 +71,6 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 		}
 		response.close();
 		throw new RuntimeException("Response body is null");
-	}
-
-	@Override
-	public void doPing() {
-		try {
-			final Request.Builder requestBuilder = new Request.Builder().url(Constants.SERVICE_URI + "DefaultScopeSyncService.svc/$syncscopes")
-					.method("HEAD", null).cacheControl(new CacheControl.Builder().noCache().noStore().build());
-			final Response response = client.newCall(requestBuilder.build()).execute();
-			response.close();
-		} catch (Exception ignore) {
-		}
 	}
 
 	private static class OkHttpResult extends Result {
