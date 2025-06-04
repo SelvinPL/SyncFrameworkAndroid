@@ -10,18 +10,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
-import okhttp3.ConnectionPool;
 import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
-import pl.selvin.android.listsyncsample.BuildConfig;
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
 import pl.selvin.android.listsyncsample.network.HttpClient;
@@ -54,7 +49,7 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 
 				@Override
 				public void writeTo(@NonNull BufferedSink sink) throws IOException {
-					syncContentProducer.writeTo(sink.outputStream());
+					syncContentProducer.writeTo(sink);
 				}
 			});
 		}
@@ -67,24 +62,9 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 			} catch (Exception ex) {
 				throw new RuntimeException(ex);
 			}
-			return new OkHttpResult(body.source().inputStream(), response.code(), error, response);
+			return new Result(body.source(), response.code(), error);
 		}
 		response.close();
 		throw new RuntimeException("Response body is null");
-	}
-
-	private static class OkHttpResult extends Result {
-		private Response response;
-
-		protected OkHttpResult(InputStream inputBuffer, int status, String error, Response response) {
-			super(inputBuffer, status, error);
-			this.response = response;
-		}
-
-		@Override
-		public void close() {
-			response.close();
-			response = null;
-		}
 	}
 }

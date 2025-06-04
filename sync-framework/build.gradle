@@ -35,5 +35,6 @@ dependencies {
     api libs.jackson.core
     api libs.androidx.annotation
     api libs.androidx.sqlite
+    api libs.okio
     api project(':auto-content-provider')
 }

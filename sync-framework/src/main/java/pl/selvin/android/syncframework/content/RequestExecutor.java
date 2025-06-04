@@ -21,9 +21,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+
+import okio.BufferedSource;
 
 public interface RequestExecutor {
 	String SCOPE_PARAMETER = "SCOPE_PARAMETER";
@@ -50,17 +51,23 @@ public interface RequestExecutor {
 
 	class Result {
 		public final int status;
-		public final InputStream inputBuffer;
+		public final BufferedSource source;
 		public final String error;
 
 
-		protected Result(InputStream inputBuffer, int status, String error) {
-			this.inputBuffer = inputBuffer;
+		public Result(BufferedSource source, int status, String error) {
+			this.source = source;
 			this.status = status;
 			this.error = error;
 		}
 
-		public void close() {
+		public void closeQuietly() {
+			try {
+				source.close();
+			} catch (RuntimeException rethrown) {
+				throw rethrown;
+			} catch (Exception ignored) {
+			}
 		}
 	}
 }
