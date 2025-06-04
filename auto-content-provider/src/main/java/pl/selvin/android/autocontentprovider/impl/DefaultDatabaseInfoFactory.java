@@ -19,17 +19,17 @@ import pl.selvin.android.autocontentprovider.db.DatabaseInfoFactory;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.db.TableInfoFactory;
 
-public class DefaultDatabaseInfoFactory implements DatabaseInfoFactory {
+public class DefaultDatabaseInfoFactory implements DatabaseInfoFactory<TableInfo> {
 	private final ColumnInfoFactory columnInfoFactory = (column, field) -> {
 		final String columnName = (String) field.get(null);
 		if (columnName == null)
 			throw new IllegalStateException("Column name can not be null!");
 		return new ColumnInfo(columnName, column);
 	};
-	private final TableInfoFactory tableInfoFactory = (table, tableClass, authority) -> new TableInfo(table, tableClass, authority, "%s", columnInfoFactory);
+	private final TableInfoFactory<TableInfo> tableInfoFactory = (table, tableClass, authority) -> new TableInfo(table, tableClass, authority, "%s", columnInfoFactory);
 
 	@Override
-	public DatabaseInfo createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
-		return new DatabaseInfo(dbClass, authority, matcher, tableInfoFactory);
+	public DatabaseInfo<TableInfo> createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
+		return new DatabaseInfo<>(dbClass, authority, matcher, tableInfoFactory);
 	}
 }

@@ -19,11 +19,11 @@ import java.util.HashMap;
 import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 
-public class DatabaseInfo {
-	public final HashMap<String, TableInfo> allTablesInfo = new HashMap<>();
-	public final SparseArray<TableInfo> allTablesInfoCode = new SparseArray<>();
+public class DatabaseInfo<TTableInfo extends  TableInfo> {
+	public final HashMap<String, TTableInfo> allTablesInfo = new HashMap<>();
+	public final SparseArray<TTableInfo> allTablesInfoCode = new SparseArray<>();
 
-	public DatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher, TableInfoFactory tableInfoFactory) throws Exception {
+	public DatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher, TableInfoFactory<TTableInfo> tableInfoFactory) throws Exception {
 		final Class<?>[] tableClasses = dbClass.getClasses();
 		int code = 0;
 
@@ -31,7 +31,7 @@ public class DatabaseInfo {
 			final Table table = tableClass.getAnnotation(Table.class);
 			if (table != null) {
 				code++;
-				TableInfo tableToAdd = tableInfoFactory.createTableInfo(table, tableClass, authority);
+				TTableInfo tableToAdd = tableInfoFactory.createTableInfo(table, tableClass, authority);
 				matcher.addURI(authority, tableToAdd.name, code);
 				matcher.addURI(authority, tableToAdd.name + "/ROWID/#", code | ContentHelper.uriCodeItemRowIDFlag);
 				if (!tableToAdd.primaryKeys.isEmpty()) {

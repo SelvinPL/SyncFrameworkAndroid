@@ -27,6 +27,7 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BundleCompat;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -191,7 +192,7 @@ public class SyncService extends Service {
 					try {
 						final Bundle results = provider.call(ListProvider.getHelper().SYNC_URI.toString(), null, extras);
 						if (results != null) {
-							final SyncResult syncResultResult = results.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER);
+							final SyncResult syncResultResult = BundleCompat.getParcelable(results, RequestExecutor.SYNC_RESULT_PARAMETER, SyncResult.class);
 							copySyncResult(syncResultResult, syncResult);
 						}
 					} catch (RemoteException e) {

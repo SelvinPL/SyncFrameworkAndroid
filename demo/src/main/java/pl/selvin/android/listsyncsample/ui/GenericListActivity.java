@@ -11,6 +11,7 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -18,6 +19,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentFactory;
 
@@ -97,6 +99,7 @@ public class GenericListActivity extends BaseActivity implements ListFragmentCom
 		return super.onOptionsItemSelected(item);
 	}
 
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	@Override
 	public boolean showDetails(Uri itemUri, Class<? extends Fragment> fragmentClass, Bundle args, boolean editable) {
 		final Bundle uriArgs = new Bundle();

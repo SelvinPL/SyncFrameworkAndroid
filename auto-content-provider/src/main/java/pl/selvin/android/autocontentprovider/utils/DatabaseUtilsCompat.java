@@ -16,8 +16,6 @@
 
 package pl.selvin.android.autocontentprovider.utils;
 
-import android.text.TextUtils;
-
 /**
  * Helper for accessing features in {@link android.database.DatabaseUtils}
  * introduced after API level 4 in a backwards compatible fashion.
@@ -26,20 +24,6 @@ public class DatabaseUtilsCompat {
 
 	private DatabaseUtilsCompat() {
 		/* Hide constructor */
-	}
-
-	/**
-	 * Concatenates two SQL WHERE clauses, handling empty or null values.
-	 */
-	public static String concatenateWhere(String a, String b) {
-		if (TextUtils.isEmpty(a)) {
-			return b;
-		}
-		if (TextUtils.isEmpty(b)) {
-			return a;
-		}
-
-		return "(" + a + ") AND (" + b + ")";
 	}
 
 	/**

@@ -8,6 +8,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BundleCompat;
 
 import java.io.IOException;
 
@@ -28,7 +29,7 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 	@Override
 	@NonNull
 	public Result execute(@NonNull Context context, @Nullable final BaseContentProvider.ISyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException, AuthenticatorException {
-		final Account account = parameters.getParcelable(RequestExecutor.ACCOUNT_PARAMETER);
+		final Account account = BundleCompat.getParcelable(parameters, RequestExecutor.ACCOUNT_PARAMETER, Account.class);
 		int requestMethod = parameters.getInt(RequestExecutor.REQUEST_METHOD_PARAMETER);
 		final String scope = parameters.getString(RequestExecutor.SCOPE_PARAMETER);
 		final String requestType = parameters.getString(RequestExecutor.REQUEST_TYPE_PARAMETER);

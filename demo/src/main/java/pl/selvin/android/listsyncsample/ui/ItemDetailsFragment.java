@@ -25,6 +25,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BundleCompat;
 import androidx.cursoradapter.widget.SimpleCursorAdapter;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -127,7 +128,7 @@ public class ItemDetailsFragment extends Fragment implements
 	}
 
 	private Uri getItemUri() {
-		return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
+		return mItemUri == null ? mItemUri = BundleCompat.getParcelable(requireArguments(), GenericDetailsActivity.ITEM_URI, Uri.class) : mItemUri;
 	}
 
 	@NonNull

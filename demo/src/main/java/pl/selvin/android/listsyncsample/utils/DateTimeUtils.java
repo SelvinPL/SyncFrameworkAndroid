@@ -11,8 +11,11 @@
 
 package pl.selvin.android.listsyncsample.utils;
 
+import android.os.Bundle;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BundleCompat;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -85,5 +88,9 @@ public class DateTimeUtils {
 
 	public static Calendar fromLong(String string) throws ParseException {
 		return fromString(string, SIMPLE_DATE_FORMAT.get());
+	}
+
+	public static Calendar getCalendarFromBundle(final Bundle bundle,final String key) {
+		return BundleCompat.getSerializable(bundle, key, Calendar.class);
 	}
 }

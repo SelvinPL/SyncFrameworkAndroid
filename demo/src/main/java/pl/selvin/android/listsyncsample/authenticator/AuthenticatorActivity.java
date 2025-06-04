@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.IntentCompat;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
@@ -61,7 +62,7 @@ public class AuthenticatorActivity extends AppCompatActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		model = new ViewModelProvider(this).get(UserLoginViewModel.class);
-		accountAuthenticatorResponse = getIntent().getParcelableExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE);
+		accountAuthenticatorResponse = IntentCompat.getParcelableExtra(getIntent(), AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, AccountAuthenticatorResponse.class);
 
 		if (accountAuthenticatorResponse != null) {
 			accountAuthenticatorResponse.onRequestContinued();

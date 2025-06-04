@@ -24,6 +24,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.core.os.BundleCompat;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 
@@ -46,7 +47,7 @@ import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
 
-public abstract class BaseContentProvider extends AutoContentProvider {
+public abstract class BaseContentProvider extends AutoContentProvider<SyncTableInfo> {
 	public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
 	public final static String DATABASE_OPERATION_TYPE_CREATE = "DATABASE_OPERATION_TYPE_CREATE";
 	public final static String ACTION_SYNC_FRAMEWORK_DATABASE = "ACTION_SYNC_FRAMEWORK_DATABASE";
@@ -83,6 +84,7 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 			throw new IllegalArgumentException("Can not insert with Sync Uri.");
 		}
 		return super.insert(uri, values);
+		//recompile for fuck sake
 	}
 
 	@Override
@@ -222,10 +224,9 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 		jp.close();
 	}
 
-	@SuppressLint("DefaultLocale")
 	public Bundle sync(Bundle parameters) {
 		final String scope = parameters.getString(RequestExecutor.SCOPE_PARAMETER);
-		final SyncResult syncResult = Objects.requireNonNull(parameters.getParcelable(RequestExecutor.SYNC_RESULT_PARAMETER));
+		final SyncResult syncResult = Objects.requireNonNull(BundleCompat.getParcelable(parameters, RequestExecutor.SYNC_RESULT_PARAMETER, SyncResult.class));
 		final long start = System.currentTimeMillis();
 		final ParserState parserState = new ParserState();
 		final SupportSQLiteDatabase database = getWritableDatabase();
@@ -427,16 +428,17 @@ public abstract class BaseContentProvider extends AutoContentProvider {
 				final ContentResolver contentResolver = context.getContentResolver();
 				for (TableInfo tableInfo : notifyTableInfo) {
 					final Uri dirUri = syncContentHelper.getDirUri(tableInfo.name);
-					contentResolver.notifyChange(dirUri, null, false);
+					notifyChange(contentResolver, dirUri, null, false);
 					logger.LogD(clazz, "*Sync* notifyChange table: " + tableInfo.name + ", uri: " + dirUri);
 					for (String notifyUri : tableInfo.notifyUris) {
-						contentResolver.notifyChange(Uri.parse(notifyUri), null, false);
+						notifyChange(contentResolver, Uri.parse(notifyUri), null, false);
 						logger.LogD(clazz, "\t+ uri: " + notifyUri);
 					}
 				}
 			} else {
 				database.endTransaction();
 			}
+			//ok
 			notifyTableInfo.clear();
 		}
 	}

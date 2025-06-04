@@ -22,7 +22,7 @@ import pl.selvin.android.autocontentprovider.db.DatabaseInfo;
 import pl.selvin.android.autocontentprovider.db.DatabaseInfoFactory;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 
-public class ContentHelper {
+public class ContentHelper<TTableInfo extends  TableInfo> {
 	public static final String PARAMETER_LIMIT = "acp_limit";
 	public static final String PARAMETER_SYNC_TO_NETWORK = "apc_sync_to_network";
 	public static final int uriClearCode = 0x20000;
@@ -34,12 +34,12 @@ public class ContentHelper {
 	public final Uri CONTENT_URI;
 	public final Uri CLEAR_URI;
 	protected final UriMatcher matcher = new UriMatcher(UriMatcher.NO_MATCH);
-	protected final DatabaseInfo databaseInfo;
+	protected final DatabaseInfo<TTableInfo> databaseInfo;
 	final int DATABASE_VERSION;
 	final String DATABASE_NAME;
 
 
-	public ContentHelper(Class<?> dbClass, String authority, DatabaseInfoFactory databaseInfoFactory, String databaseName, int databaseVersion) {
+	public ContentHelper(Class<?> dbClass, String authority, DatabaseInfoFactory<TTableInfo> databaseInfoFactory, String databaseName, int databaseVersion) {
 		DATABASE_VERSION = databaseVersion;
 		DATABASE_NAME = databaseName;
 		AUTHORITY = authority;
@@ -151,7 +151,7 @@ public class ContentHelper {
 		return databaseInfo.allTablesInfo.get(type);
 	}
 
-	public Collection<? extends TableInfo> getAllTables() {
+	public Collection<TTableInfo> getAllTables() {
 		return databaseInfo.allTablesInfo.values();
 	}
 }

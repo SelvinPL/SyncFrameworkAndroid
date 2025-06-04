@@ -16,9 +16,12 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
+import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,9 +37,9 @@ import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.autocontentprovider.utils.DatabaseUtilsCompat;
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
 
-public abstract class AutoContentProvider extends ContentProvider {
+public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends ContentProvider {
 
-	protected final ContentHelper contentHelper;
+	protected final ContentHelper<TTableInfo> contentHelper;
 	protected final Class<?> clazz = getClass();
 	protected final Logger logger;
 	protected final Object getDatabaseLock = new Object();
@@ -44,7 +47,7 @@ public abstract class AutoContentProvider extends ContentProvider {
 	private final SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider;
 	private SupportSQLiteOpenHelper mDB;
 
-	public AutoContentProvider(ContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider) {
+	public AutoContentProvider(ContentHelper<TTableInfo> contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider) {
 		this.logger = logger != null ? logger : Logger.EmptyLogger.INSTANCE;
 		this.contentHelper = contentHelper;
 		this.supportSQLiteOpenHelperFactoryProvider = supportSQLiteOpenHelperFactoryProvider;
@@ -88,7 +91,16 @@ public abstract class AutoContentProvider extends ContentProvider {
 		synchronized (getDatabaseLock) {
 			mDB.getWritableDatabase().setVersion(1);
 			mDB.close();
-			requireContextEx().getContentResolver().notifyChange(contentHelper.CONTENT_URI, null, false);
+			notifyChange(requireContextEx().getContentResolver(), contentHelper.CONTENT_URI, null,false);
+		}
+	}
+
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
+	public static void notifyChange(final @NonNull ContentResolver contentResolver, Uri uri, ContentObserver observer, boolean syncToNetwork) {
+		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+			contentResolver.notifyChange(uri, observer, false);
+		} else {
+			contentResolver.notifyChange(uri, observer, syncToNetwork ? ContentResolver.NOTIFY_SYNC_TO_NETWORK : 0);
 		}
 	}
 
@@ -152,9 +164,9 @@ public abstract class AutoContentProvider extends ContentProvider {
 				boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
 				Uri ret_uri = contentHelper.getItemUri(tab.name, syncToNetwork, rowId);
 				final ContentResolver cr = requireContextEx().getContentResolver();
-				cr.notifyChange(uri, null, syncToNetwork);
+				notifyChange(cr, uri, null, syncToNetwork);
 				for (String n : tab.notifyUris) {
-					cr.notifyChange(Uri.parse(n), null, syncToNetwork);
+					notifyChange(cr, Uri.parse(n), null, syncToNetwork);
 				}
 				return ret_uri;
 			}
@@ -190,7 +202,7 @@ public abstract class AutoContentProvider extends ContentProvider {
 					}
 					newSelection = tab.getSelection();
 				}
-				selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
+				selection = DatabaseUtils.concatenateWhere(selection, newSelection);
 				selectionArgs = DatabaseUtilsCompat.appendSelectionArgs(selectionArgs, newSelectionArgs);
 			}
 			int ret;
@@ -235,9 +247,9 @@ public abstract class AutoContentProvider extends ContentProvider {
 			ret = tab.delete(getWritableDatabase(), uri, selection, selectionArgs, logger);
 			if (ret > 0) {
 				final ContentResolver cr = requireContextEx().getContentResolver();
-				cr.notifyChange(uri, null, syncToNetwork);
+				notifyChange(cr, uri, null, syncToNetwork);
 				for (String n : tab.notifyUris) {
-					cr.notifyChange(Uri.parse(n), null, syncToNetwork);
+					notifyChange(cr, Uri.parse(n), null, syncToNetwork);
 				}
 			}
 			return ret + cascadeResults;
@@ -266,7 +278,7 @@ public abstract class AutoContentProvider extends ContentProvider {
 					}
 					newSelection = tab.getSelection();
 				}
-				selection = DatabaseUtilsCompat.concatenateWhere(selection, newSelection);
+				selection = DatabaseUtils.concatenateWhere(selection, newSelection);
 				selectionArgs = DatabaseUtilsCompat
 						.appendSelectionArgs(selectionArgs, newSelectionArgs);
 			}
@@ -274,9 +286,9 @@ public abstract class AutoContentProvider extends ContentProvider {
 			if (ret > 0) {
 				boolean syncToNetwork = ContentHelper.checkSyncToNetwork(uri);
 				final ContentResolver cr = requireContextEx().getContentResolver();
-				cr.notifyChange(uri, null, syncToNetwork);
+				notifyChange(cr, uri, null, syncToNetwork);
 				for (String n : tab.notifyUris) {
-					cr.notifyChange(Uri.parse(n), null, syncToNetwork);
+					notifyChange(cr, Uri.parse(n), null, syncToNetwork);
 				}
 			}
 			return ret;

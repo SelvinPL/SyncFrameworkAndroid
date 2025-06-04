@@ -2,3 +2,9 @@ plugins {
 	alias libs.plugins.android.gradle.plugin apply false
 	alias libs.plugins.android.gradle.library.plugin apply false
 }
+
+allprojects {
+	tasks.withType(JavaCompile).configureEach {
+		options.deprecation = true
+	}
+}

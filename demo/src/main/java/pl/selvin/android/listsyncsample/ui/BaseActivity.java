@@ -180,7 +180,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 	}
 
 	public void startSync(final int delay, final boolean force) {
-		new Handler().postDelayed(() -> {
+		new Handler(getMainLooper()).postDelayed(() -> {
 			if (mBound) {
 				try {
 					if (mService.getLastStatus() == SyncService.SYNC_IDLE) {

@@ -13,6 +13,7 @@ package pl.selvin.android.syncframework.content;
 
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
@@ -42,7 +43,6 @@ import pl.selvin.android.autocontentprovider.db.ColumnInfoFactory;
 import pl.selvin.android.autocontentprovider.db.ColumnType;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.log.Logger;
-import pl.selvin.android.autocontentprovider.utils.DatabaseUtilsCompat;
 
 public class SyncTableInfo extends TableInfo {
 
@@ -221,7 +221,7 @@ public class SyncTableInfo extends TableInfo {
 
 	@Override
 	public Cursor query(SupportSQLiteDatabase database, Uri uri, SQLiteQueryBuilder builder, String[] projection, String selection, String[] selectionArgs, String groupBy, String having, String sortOrder, String limit, Logger logger) {
-		selection = DatabaseUtilsCompat.concatenateWhere(selection, SYNC.isDeleted + "=0");
+		selection = DatabaseUtils.concatenateWhere(selection, SYNC.isDeleted + "=0");
 		return super.query(database, uri, builder, projection, selection, selectionArgs, groupBy, having, sortOrder, limit, logger);
 	}
 
@@ -244,14 +244,14 @@ public class SyncTableInfo extends TableInfo {
 	@Override
 	public int delete(SupportSQLiteDatabase database, Uri uri, String selection, String[] selectionArgs, Logger logger) {
 		logger.LogD(clazz, "*delete* " + uri);
-		selection = DatabaseUtilsCompat.concatenateWhere(selection, SYNC.isDeleted + "=0");
+		selection = DatabaseUtils.concatenateWhere(selection, SYNC.isDeleted + "=0");
 		final ContentValues values = new ContentValues(2);
 		values.put("isDirty", 1);
 		values.put("isDeleted", 1);
-		final String updateSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NULL", selection);
+		final String updateSelection = DatabaseUtils.concatenateWhere("tempId IS NULL", selection);
 		int ret = database.update(name, SQLiteDatabase.CONFLICT_FAIL, values, updateSelection, selectionArgs);
 		logger.LogD(clazz, "ret:" + ret + " -upd: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + updateSelection + " values: " + values);
-		final String deleteSelection = DatabaseUtilsCompat.concatenateWhere("tempId IS NOT NULL", selection);
+		final String deleteSelection = DatabaseUtils.concatenateWhere("tempId IS NOT NULL", selection);
 		ret += database.delete(name, deleteSelection, selectionArgs);
 		logger.LogD(clazz, "ret:" + ret + " -del: selectionArgs: " + Arrays.toString(selectionArgs) + "selection: " + deleteSelection);
 		return ret;
@@ -259,7 +259,7 @@ public class SyncTableInfo extends TableInfo {
 
 	@Override
 	public int update(SupportSQLiteDatabase database, Uri uri, ContentValues values, String selection, String[] selectionArgs, Logger logger) {
-		selection = DatabaseUtilsCompat.concatenateWhere(selection, SYNC.isDeleted + "=0");
+		selection = DatabaseUtils.concatenateWhere(selection, SYNC.isDeleted + "=0");
 		values.put("isDirty", 1);
 		return super.update(database, uri, values, selection, selectionArgs, logger);
 	}

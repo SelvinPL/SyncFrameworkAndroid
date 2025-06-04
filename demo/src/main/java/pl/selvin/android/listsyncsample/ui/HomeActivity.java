@@ -52,7 +52,7 @@ public class HomeActivity extends AppCompatActivity {
 	protected void onResume() {
 		super.onResume();
 		if (accountExists()) {
-			new Handler().postDelayed(() -> startRealHome(HomeActivity.this), 500);
+			new Handler(getMainLooper()).postDelayed(() -> startRealHome(HomeActivity.this), 500);
 		}
 	}
 
@@ -72,7 +72,7 @@ public class HomeActivity extends AppCompatActivity {
 		Log.d(TAG, "" + ac);
 		if (ac == null) {
 			final FragmentActivity thizz = this;
-			new Handler().postDelayed(() -> {
+			new Handler(getMainLooper()).postDelayed(() -> {
 				try {
 					AccountManager am = AccountManager.get(thizz);
 					am.addAccount(Constants.ACCOUNT_TYPE, Constants.AUTH_TOKEN_TYPE, null, null, thizz,

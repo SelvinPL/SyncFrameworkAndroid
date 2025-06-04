@@ -17,12 +17,12 @@ import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.os.BundleCompat;
 import androidx.fragment.app.DialogFragment;
 
 import java.util.Calendar;
@@ -66,9 +66,10 @@ public interface GenericDialogFragment {
 		@NonNull
 		@Override
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
-			final int title = requireArguments().getInt(TITLE);
-			final int message = requireArguments().getInt(MESSAGE);
-			final Uri uri = requireArguments().getParcelable(URI);
+			final Bundle arguments = requireArguments();
+			final int title = arguments.getInt(TITLE);
+			final int message = arguments.getInt(MESSAGE);
+			final Uri uri = BundleCompat.getParcelable(arguments, URI, Uri.class);
 			return new AlertDialog.Builder(requireActivity())
 					.setTitle(title)
 					.setMessage(message)
@@ -76,11 +77,11 @@ public interface GenericDialogFragment {
 							(dialog, whichButton) -> {
 								if (uri != null) {
 									requireActivity().getContentResolver().delete(uri, null, null);
-									runCallback(requireArguments().getInt(ID), false);
+									runCallback(arguments.getInt(ID), false);
 								}
 							})
 					.setNegativeButton(android.R.string.cancel,
-							(dialog, whichButton) -> runCallback(requireArguments().getInt(ID), true)).create();
+							(dialog, whichButton) -> runCallback(arguments.getInt(ID), true)).create();
 		}
 
 		public interface Callback {
@@ -110,12 +111,12 @@ public interface GenericDialogFragment {
 		@NonNull
 		public Dialog onCreateDialog(Bundle savedInstanceState) {
 			final Bundle arguments = requireArguments();
-			final Calendar calendar = (Calendar) arguments.getSerializable(DATE);
+			final Calendar calendar = DateTimeUtils.getCalendarFromBundle(arguments, DATE);
 			if (calendar != null) {
 				final DatePickerDialog dialog = new DatePickerDialog(this.requireActivity(), R.style.AppTheme_Light_Dialog, this,
 						calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-				setMaxDate(dialog, (Calendar) arguments.getSerializable(MAX_DATE));
-				setMinDate(dialog, (Calendar) arguments.getSerializable(MIN_DATE));
+				setMaxDate(dialog, DateTimeUtils.getCalendarFromBundle(arguments, MAX_DATE));
+				setMinDate(dialog, DateTimeUtils.getCalendarFromBundle(arguments, MIN_DATE));
 				return dialog;
 			}
 			throw new RuntimeException("No DATE argument");
@@ -124,8 +125,8 @@ public interface GenericDialogFragment {
 		@Override
 		public void onDateSet(android.widget.DatePicker view, int year, int monthOfYear, int dayOfMonth) {
 			final Bundle arguments = requireArguments();
-			final Calendar minDate = (Calendar) arguments.getSerializable(MIN_DATE);
-			final Calendar maxDate = (Calendar) arguments.getSerializable(MAX_DATE);
+			final Calendar minDate = DateTimeUtils.getCalendarFromBundle(arguments, MIN_DATE);
+			final Calendar maxDate = DateTimeUtils.getCalendarFromBundle(arguments, MAX_DATE);
 			final Calendar calendar = DateTimeUtils.today();
 			calendar.set(Calendar.YEAR, year);
 			calendar.set(Calendar.MONTH, monthOfYear);
@@ -148,20 +149,16 @@ public interface GenericDialogFragment {
 
 		public void onCancel(@NonNull DialogInterface dialog) {
 			final Bundle arguments = requireArguments();
-			final Calendar calendar = (Calendar) arguments.getSerializable(DATE);
+			final Calendar calendar = DateTimeUtils.getCalendarFromBundle(arguments, DATE);
 			runCallback(arguments.getInt(ID), true, calendar);
 			super.onCancel(dialog);
 		}
 
 		private void setMaxDate(DatePickerDialog dialog, Calendar maxDate) {
-			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
-				dialog.getDatePicker().setCalendarViewShown(false);
 			dialog.getDatePicker().setMaxDate(maxDate.getTimeInMillis());
 		}
 
 		private void setMinDate(DatePickerDialog dialog, Calendar minDate) {
-			if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
-				dialog.getDatePicker().setCalendarViewShown(false);
 			dialog.getDatePicker().setMinDate(minDate.getTimeInMillis());
 		}
 

@@ -13,6 +13,6 @@ package pl.selvin.android.autocontentprovider.db;
 
 import pl.selvin.android.autocontentprovider.annotation.Table;
 
-public interface TableInfoFactory {
-	TableInfo createTableInfo(Table table, Class<?> tableClass, final String authority) throws Exception;
+public interface TableInfoFactory<TTableInfo extends TableInfo> {
+	TTableInfo createTableInfo(Table table, Class<?> tableClass, final String authority) throws Exception;
 }

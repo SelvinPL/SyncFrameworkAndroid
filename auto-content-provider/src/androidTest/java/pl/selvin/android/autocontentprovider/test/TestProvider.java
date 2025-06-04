@@ -14,13 +14,14 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
 
 import pl.selvin.android.autocontentprovider.content.AutoContentProvider;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
+import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.impl.DefaultDatabaseInfoFactory;
 import pl.selvin.android.autocontentprovider.log.Logger;
 
-public class TestProvider extends AutoContentProvider {
+public class TestProvider extends AutoContentProvider<TableInfo> {
 
 	public final static String AUTHORITY = "pl.selvin.android.autocontentprovider.test";
-	public final static ContentHelper CONTENT_HELPER = new ContentHelper(DatabaseTest.class, AUTHORITY, new DefaultDatabaseInfoFactory(), "test_db", 2);
+	public final static ContentHelper<TableInfo> CONTENT_HELPER = new ContentHelper<>(DatabaseTest.class, AUTHORITY, new DefaultDatabaseInfoFactory(), "test_db", 2);
 
 	public TestProvider() {
 		super(CONTENT_HELPER, Logger.EmptyLogger.INSTANCE,

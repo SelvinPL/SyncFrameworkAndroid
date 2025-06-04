@@ -18,6 +18,7 @@ import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BundleCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentFactory;
 import androidx.loader.app.LoaderManager;
@@ -51,7 +52,7 @@ public class ListDetailsFragment extends Fragment implements LoaderManager.Loade
 	}
 
 	private Uri getItemUri() {
-		return mItemUri == null ? mItemUri = requireArguments().getParcelable(GenericDetailsActivity.ITEM_URI) : mItemUri;
+		return mItemUri == null ? mItemUri = BundleCompat.getParcelable(requireArguments(), GenericDetailsActivity.ITEM_URI, Uri.class) : mItemUri;
 	}
 
 	@Override

@@ -68,11 +68,11 @@ public class Logger {
 				diff[2], diff[3], diff[4]));
 	}
 
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
 	public void LogQuery(Class<?> clazz, Uri uri, SQLiteQueryBuilder builder, String[] projection,
 						 String selection, String[] selectionArgs, String groupBy, String having,
 						 String sortOrder, String limit) {
 		LogD(clazz, uri + "");
-		//noinspection deprecation
 		LogD(clazz, builder.buildQuery(projection, selection, null, groupBy, having, sortOrder, limit));
 		LogD(clazz, Arrays.toString(selectionArgs));
 	}

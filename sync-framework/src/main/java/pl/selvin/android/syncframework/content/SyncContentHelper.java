@@ -27,19 +27,17 @@ import pl.selvin.android.autocontentprovider.content.ContentHelper;
 import pl.selvin.android.autocontentprovider.db.ColumnInfo;
 import pl.selvin.android.autocontentprovider.db.DatabaseInfo;
 import pl.selvin.android.autocontentprovider.db.DatabaseInfoFactory;
-import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.syncframework.annotation.SyncScope;
 
-public class SyncContentHelper extends ContentHelper {
+public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 	static final int uriSyncCode = 0x10000;
 	// why this name... to ensure that your never call your table like this
 	private static final String DO_SYNC = "pl_selvin_android_sync_framework_do_sync";
 	private static final String PARAMETER_UN_DELETING = "sf_un_deleting";
 	private final static HashMap<Class<?>, SyncContentHelper> instances = new HashMap<>();
-	private final SyncDatabaseInfo syncDatabaseInfo;
-
 	public final Uri SYNC_URI;
+	private final SyncDatabaseInfo syncDatabaseInfo;
 
 	private SyncContentHelper(Class<?> dbClass, String authority, String databaseName, int databaseVersion) {
 		super(dbClass, authority, new SyncDatabaseInfoFactory(), databaseName, databaseVersion);
@@ -80,7 +78,6 @@ public class SyncContentHelper extends ContentHelper {
 		db.delete(BlobsTable.NAME, BlobsTable.C_NAME + "=?", new String[]{scope});
 	}
 
-	@SuppressWarnings("WeakerAccess")
 	public Uri.Builder getDirUriBuilder(String tableName, boolean syncToNetwork, boolean un_deleting) {
 		final Uri.Builder builder = getDirUriBuilder(tableName, syncToNetwork);
 		if (un_deleting)
@@ -112,7 +109,7 @@ public class SyncContentHelper extends ContentHelper {
 		return ret;
 	}
 
-	static class SyncDatabaseInfo extends DatabaseInfo {
+	static class SyncDatabaseInfo extends DatabaseInfo<SyncTableInfo> {
 
 		final Map<String, List<SyncTableInfo>> tablesInScope;
 
@@ -130,8 +127,7 @@ public class SyncContentHelper extends ContentHelper {
 				}, scope);
 			});
 			final HashMap<String, List<SyncTableInfo>> map = new HashMap<>();
-			for (TableInfo tabb : allTablesInfo.values()) {
-				final SyncTableInfo tab = (SyncTableInfo) tabb;
+			for (SyncTableInfo tab : allTablesInfo.values()) {
 				final List<SyncTableInfo> list;
 				if (!map.containsKey(tab.scope)) {
 					list = new ArrayList<>();
@@ -148,9 +144,9 @@ public class SyncContentHelper extends ContentHelper {
 		}
 	}
 
-	private static class SyncDatabaseInfoFactory implements DatabaseInfoFactory {
+	private static class SyncDatabaseInfoFactory implements DatabaseInfoFactory<SyncTableInfo> {
 		@Override
-		public DatabaseInfo createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
+		public DatabaseInfo<SyncTableInfo> createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
 			return new SyncDatabaseInfo(dbClass, authority, matcher);
 		}
 	}
