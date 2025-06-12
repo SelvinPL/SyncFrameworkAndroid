@@ -12,15 +12,14 @@
 package pl.selvin.android.autocontentprovider.db;
 
 import android.content.UriMatcher;
+import android.util.ArrayMap;
 import android.util.SparseArray;
-
-import java.util.HashMap;
 
 import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 
-public class DatabaseInfo<TTableInfo extends  TableInfo> {
-	public final HashMap<String, TTableInfo> allTablesInfo = new HashMap<>();
+public class DatabaseInfo<TTableInfo extends TableInfo> {
+	public final ArrayMap<String, TTableInfo> allTablesInfo = new ArrayMap<>();
 	public final SparseArray<TTableInfo> allTablesInfoCode = new SparseArray<>();
 
 	public DatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher, TableInfoFactory<TTableInfo> tableInfoFactory) throws Exception {

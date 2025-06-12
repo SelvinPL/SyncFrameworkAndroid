@@ -13,12 +13,12 @@ package pl.selvin.android.syncframework.content;
 
 import android.content.UriMatcher;
 import android.net.Uri;
+import android.util.ArrayMap;
 
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,7 +35,7 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 	// why this name... to ensure that your never call your table like this
 	private static final String DO_SYNC = "pl_selvin_android_sync_framework_do_sync";
 	private static final String PARAMETER_UN_DELETING = "sf_un_deleting";
-	private final static HashMap<Class<?>, SyncContentHelper> instances = new HashMap<>();
+	private final static ArrayMap<Class<?>, SyncContentHelper> instances = new ArrayMap<>();
 	public final Uri SYNC_URI;
 	private final SyncDatabaseInfo syncDatabaseInfo;
 
@@ -126,7 +126,7 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 					return new ColumnInfo(columnName, column);
 				}, scope);
 			});
-			final HashMap<String, List<SyncTableInfo>> map = new HashMap<>();
+			final ArrayMap<String, List<SyncTableInfo>> map = new ArrayMap<>();
 			for (SyncTableInfo tab : allTablesInfo.values()) {
 				final List<SyncTableInfo> list;
 				if (!map.containsKey(tab.scope)) {

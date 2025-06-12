@@ -6,19 +6,20 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.provider.BaseColumns;
+import android.util.ArrayMap;
 
 import androidx.annotation.NonNull;
 import androidx.sqlite.db.SimpleSQLiteQuery;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteQuery;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
+import pl.selvin.android.syncframework.content.SyncTableInfo;
 import pl.selvin.apt.constructorsconstraints.annotations.ConstructorConstraint;
 
 /**
@@ -27,12 +28,12 @@ import pl.selvin.apt.constructorsconstraints.annotations.ConstructorConstraint;
 @ConstructorConstraint(arguments = {ListProvider.class, ContentHelper.class, Logger.class, UriMatcher.class, int.class})
 public abstract class AbstractQueryProvider implements AbstractQueryProviderInterface {
 	protected final ListProvider contentProvider;
-	protected final ContentHelper contentHelper;
+	protected final ContentHelper<SyncTableInfo> contentHelper;
 	protected final Logger logger;
 	protected final UriMatcher uriMatcher;
 	protected final int code;
 
-	public AbstractQueryProvider(@NonNull ListProvider contentProvider, @NonNull ContentHelper contentHelper, Logger logger,
+	public AbstractQueryProvider(@NonNull ListProvider contentProvider, @NonNull ContentHelper<SyncTableInfo> contentHelper, Logger logger,
 								 @NonNull UriMatcher uriMatcher, int code) {
 		this.contentProvider = contentProvider;
 		this.contentHelper = contentHelper;
@@ -87,10 +88,10 @@ public abstract class AbstractQueryProvider implements AbstractQueryProviderInte
 	}
 
 	public static class ProjectionMapBuilder {
-		private final HashMap<String, String> projectionMap = new HashMap<>();
-		private final ContentHelper contentHelper;
+		private final ArrayMap<String, String> projectionMap = new ArrayMap<>();
+		private final ContentHelper<SyncTableInfo> contentHelper;
 
-		private ProjectionMapBuilder(final ContentHelper contentHelper, final String scope, final String table) {
+		private ProjectionMapBuilder(final ContentHelper<SyncTableInfo> contentHelper, final String scope, final String table) {
 			this.contentHelper = contentHelper;
 			projectionMap.putAll(contentHelper.getTableFromType(String.format("%s.%s", scope, table)).map);
 		}
@@ -105,7 +106,7 @@ public abstract class AbstractQueryProvider implements AbstractQueryProviderInte
 			return this;
 		}
 
-		public HashMap<String, String> build() {
+		public ArrayMap<String, String> build() {
 			return projectionMap;
 		}
 	}

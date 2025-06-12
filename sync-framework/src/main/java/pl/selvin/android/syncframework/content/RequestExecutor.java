@@ -37,7 +37,7 @@ public interface RequestExecutor {
 	int POST = 2;
 
 	@NonNull
-	Result execute(@NonNull Context context, @Nullable BaseContentProvider.ISyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException, AuthenticatorException;
+	Result execute(@NonNull Context context, @Nullable BaseContentProvider.SyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException, AuthenticatorException;
 
 	@Retention(RetentionPolicy.SOURCE)
 	@StringDef({UPLOAD, DOWNLOAD})

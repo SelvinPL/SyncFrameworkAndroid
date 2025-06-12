@@ -38,9 +38,14 @@ public final class IndexInfo {
 	}
 
 	public String createStatement() {
-		StringBuilder sb = new StringBuilder("CREATE INDEX ");
-		if (ifNotExists)
+		StringBuilder sb = new StringBuilder("CREATE ");
+		if (isUnique) {
+			sb.append("UNIQUE ");
+		}
+		sb.append("INDEX ");
+		if (ifNotExists) {
 			sb.append("IF NOT EXISTS ");
+		}
 		sb.append('[');
 		sb.append(name);
 		sb.append("] ON [");

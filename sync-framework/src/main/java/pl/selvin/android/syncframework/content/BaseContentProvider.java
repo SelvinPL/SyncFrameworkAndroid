@@ -12,7 +12,6 @@
 package pl.selvin.android.syncframework.content;
 
 import android.accounts.AuthenticatorException;
-import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -22,22 +21,16 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.ArrayMap;
 
 import androidx.annotation.NonNull;
 import androidx.core.os.BundleCompat;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.Objects;
 
 import okio.BufferedSink;
@@ -46,6 +39,12 @@ import pl.selvin.android.autocontentprovider.content.AutoContentProvider;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.autocontentprovider.utils.SupportSQLiteOpenHelperFactoryProvider;
+import pl.selvin.android.syncframework.json.JsonDataException;
+import pl.selvin.android.syncframework.json.JsonEncodingException;
+import pl.selvin.android.syncframework.json.JsonFactory;
+import pl.selvin.android.syncframework.json.JsonReader;
+import pl.selvin.android.syncframework.json.JsonWriter;
+import pl.selvin.android.syncframework.json.moshi.MoshiJsonFactory;
 
 public abstract class BaseContentProvider extends AutoContentProvider<SyncTableInfo> {
 	public final static String DATABASE_OPERATION_TYPE_UPGRADE = "DATABASE_OPERATION_TYPE_UPGRADE";
@@ -84,7 +83,6 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 			throw new IllegalArgumentException("Can not insert with Sync Uri.");
 		}
 		return super.insert(uri, values);
-		//recompile for fuck sake
 	}
 
 	@Override
@@ -97,131 +95,117 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 	}
 
 	private void parse(ParserState parserState, BufferedSource source, JsonFactory jsonFactory, DataCallback dataCallback) throws IOException {
-		final JsonParser jp = jsonFactory.createParser(source.inputStream());
+		final JsonReader jsonParser = jsonFactory.createReader(source);
 		final Metadata meta = new Metadata();
-		JsonToken current;
+		int current;
 		String name;
-		final HashMap<String, Object> values = new HashMap<>();
-		jp.nextToken(); // skip ("START_OBJECT(d) expected");
-		jp.nextToken(); // skip ("FIELD_NAME(d) expected");
-		if (jp.nextToken() != JsonToken.START_OBJECT)
-			throw new JsonParseException(jp, "START_OBJECT(d - object) expected", jp.getCurrentLocation());
-		while (jp.nextToken() != JsonToken.END_OBJECT) {
-			name = jp.getCurrentName();
+		final ArrayMap<String, Object> values = new ArrayMap<>();
+		jsonParser.beginObject();
+		if (!jsonParser.nextName().equals(SYNC.d))
+			throw new JsonDataException("d expected!");
+		jsonParser.beginObject();
+		while (jsonParser.hasNext()) {
+			name = jsonParser.nextName();
 			if (SYNC.__sync.equals(name)) {
-				jp.nextToken();
-				while (jp.nextToken() != JsonToken.END_OBJECT) {
-					name = jp.getCurrentName();
-					jp.nextToken();
+				jsonParser.beginObject();
+				while (jsonParser.hasNext()) {
+					name = jsonParser.nextName();
 					switch (name) {
 						case SYNC.serverBlob:
-							parserState.serverBlob = jp.getText();
+							parserState.serverBlob = jsonParser.nextString();
 							break;
 						case SYNC.moreChangesAvailable:
-							parserState.moreChanges = jp.getBooleanValue() || parserState.forceMoreChanges;
+							parserState.moreChanges = jsonParser.nextBoolean() || parserState.forceMoreChanges;
 							parserState.forceMoreChanges = false;
 							break;
 						case SYNC.resolveConflicts:
-							parserState.resolveConflicts = jp.getBooleanValue();
+							parserState.resolveConflicts = jsonParser.nextBoolean();
 							break;
 					}
 				}
+				jsonParser.endObject();
 			} else if (SYNC.results.equals(name)) {
-				if (jp.nextToken() != JsonToken.START_ARRAY)
-					throw new JsonParseException(jp, "START_ARRAY(results) expected", jp.getCurrentLocation());
-				while (jp.nextToken() != JsonToken.END_ARRAY) {
+				jsonParser.beginArray();
+				while (jsonParser.hasNext()) {
 					meta.isDeleted = false;
 					meta.tempId = null;
 					values.clear();
-					while (jp.nextToken() != JsonToken.END_OBJECT) {
-						name = jp.getCurrentName();
-						current = jp.nextToken();
+					jsonParser.beginObject();
+					while (jsonParser.hasNext()) {
+						name = jsonParser.nextName();
+						current = jsonParser.peek();
 						switch (current) {
-							case VALUE_STRING:
-								values.put(name, jp.getText());
+							case JsonReader.STRING:
+								values.put(name, jsonParser.nextString());
 								break;
-							case VALUE_NUMBER_INT:
-								values.put(name, jp.getLongValue());
+							case JsonReader.NUMBER_INTEGER:
+								values.put(name, jsonParser.nextLong());
 								break;
-							case VALUE_NUMBER_FLOAT:
-								values.put(name, jp.getDoubleValue());
+							case JsonReader.NUMBER_REAL:
+								values.put(name, jsonParser.nextDouble());
 								break;
-							case VALUE_FALSE:
-								values.put(name, 0L);
+							case JsonReader.BOOLEAN:
+								values.put(name, jsonParser.nextBoolean() ? 1L : 0L);
 								break;
-							case VALUE_TRUE:
-								values.put(name, 1L);
+							case JsonReader.NULL:
+								values.put(name, jsonParser.nextNull());
 								break;
-							case VALUE_NULL:
-								values.put(name, null);
-								break;
-							case START_OBJECT:
+							case JsonReader.BEGIN_OBJECT:
 								switch (name) {
 									case SYNC.__metadata:
-										while (jp.nextToken() != JsonToken.END_OBJECT) {
-											name = jp.getCurrentName();
-											jp.nextToken();
+										jsonParser.beginObject();
+										while (jsonParser.hasNext()) {
+											name = jsonParser.nextName();
 											switch (name) {
 												case SYNC.uri:
-													meta.uri = jp.getText();
+													meta.uri = jsonParser.nextString();
 													break;
 												case SYNC.type:
-													meta.type = jp.getText();
+													meta.type = jsonParser.nextString();
 													break;
 												case SYNC.isDeleted:
-													meta.isDeleted = jp
-															.getBooleanValue();
+													meta.isDeleted = jsonParser.nextBoolean();
 													break;
 												case SYNC.tempId:
-													meta.tempId = jp.getText();
+													meta.tempId = jsonParser.nextString();
 													break;
 											}
 										}
+										jsonParser.endObject();
 										break;
 									case SYNC.__syncConflict:
-										while (jp.nextToken() != JsonToken.END_OBJECT) {
-											name = jp.getCurrentName();
-											jp.nextToken();
+										jsonParser.beginObject();
+										while (jsonParser.hasNext()) {
+											name = jsonParser.nextName();
 											switch (name) {
 												case SYNC.isResolved:
 												case SYNC.conflictResolution:
-													break;
 												case SYNC.conflictingChange:
-													while (jp.nextToken() != JsonToken
-															.END_OBJECT) {
-														name = jp.getCurrentName();
-														current = jp.nextToken();
-														if (current == JsonToken
-																.START_OBJECT) {
-															if (SYNC.__metadata.equals(name)) {
-																//noinspection StatementWithEmptyBody
-																while (jp.nextToken() != JsonToken.END_OBJECT) {
-																}
-															}
-														}
-													}
+													//TODO: proper conflict resolution
+													jsonParser.skipValue();
 													break;
 											}
 										}
-										// resolve conf
+										jsonParser.endObject();
 										break;
 									case SYNC.__syncError:
-										//noinspection StatementWithEmptyBody
-										while (jp.nextToken() != JsonToken.END_OBJECT) {
-										}
+										jsonParser.skipValue();
 										break;
 								}
 								break;
 							default:
-								throw new JsonParseException(jp, "Wrong jsonToken: " + current, jp.getCurrentLocation());
+								throw new JsonDataException("Wrong jsonToken");
 						}
 
 					}
+					jsonParser.endObject();
 					dataCallback.processValue(meta, values);
 				}
+				jsonParser.endArray();
 			}
 		}
-		jp.close();
+		jsonParser.endObject();
+		jsonParser.close();
 	}
 
 	public Bundle sync(Bundle parameters) {
@@ -230,7 +214,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		final long start = System.currentTimeMillis();
 		final ParserState parserState = new ParserState();
 		final SupportSQLiteDatabase database = getWritableDatabase();
-		final JsonFactory jsonFactory = new JsonFactory();
+		final JsonFactory jsonFactory = new MoshiJsonFactory();
 		final Cursor blobCursor = database.query(
 				SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
 						.selection(BlobsTable.C_NAME + "=?", new Object[]{scope}).create());
@@ -251,7 +235,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 					database.beginTransaction();
 					@RequestExecutor.RequestMethod final int requestMethod;
 					@RequestExecutor.RequestType final String requestType;
-					final ISyncContentProducer contentProducer;
+					final SyncContentProducer contentProducer;
 
 					if (parserState.serverBlob != null) {
 						requestMethod = RequestExecutor.POST;
@@ -274,7 +258,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 					if (result.status == 200) {
 						if (contentProducer != null)
 							syncResult.stats.numEntries += contentProducer.getChanges();
-						parse(parserState, result.source, jsonFactory, dataCallback);
+						parse(parserState, result.source, new MoshiJsonFactory(), dataCallback);
 						if (parserState.resolveConflicts) {
 							logger.LogE(clazz, "*Sync* has resolve conflicts !!!");
 						}
@@ -290,7 +274,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 					dataCallback.commitOrRollback(requireContextEx(), scope, parserState, logger, clazz);
 				}
 			} while (parserState.moreChanges);
-		} catch (JsonParseException e) {
+		} catch (JsonDataException | JsonEncodingException e) {
 			syncResult.stats.numParseExceptions++;
 			logger.LogE(clazz, e);
 		} catch (IOException e) {
@@ -364,12 +348,6 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		super.onUpgradeDatabase(db, oldVersion, newVersion);
 	}
 
-	public interface ISyncContentProducer {
-		int getChanges();
-
-		void writeTo(final @NonNull BufferedSink sink) throws IOException;
-	}
-
 	private static class ParserState {
 		public boolean hasError;
 		public String serverBlob;
@@ -398,8 +376,8 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 			this.syncResult = syncResult;
 		}
 
-		public void processValue(final Metadata meta, final HashMap<String, Object> values) {
-			final SyncTableInfo tableInfo = (SyncTableInfo) syncContentHelper.getTableFromType(meta.type);
+		public void processValue(final Metadata meta, final ArrayMap<String, Object> values) {
+			final SyncTableInfo tableInfo = syncContentHelper.getTableFromType(meta.type);
 			if (meta.isDeleted) {
 				tableInfo.deleteWithUri(meta.uri, database);
 				syncResult.stats.numDeletes++;
@@ -443,7 +421,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		}
 	}
 
-	private static class SyncContentProducer implements ISyncContentProducer {
+	public static class SyncContentProducer {
 		final SupportSQLiteDatabase database;
 		final String scope;
 		final String serverBlob;
@@ -453,9 +431,9 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		final Logger logger;
 		int counter = 0;
 
-		SyncContentProducer(JsonFactory factory, SupportSQLiteDatabase database, String scope,
-							String serverBlob, boolean upload,
-							SyncContentHelper syncContentHelper, Logger logger) {
+		private SyncContentProducer(JsonFactory factory, SupportSQLiteDatabase database, String scope,
+									String serverBlob, boolean upload,
+									SyncContentHelper syncContentHelper, Logger logger) {
 			this.factory = factory;
 			this.database = database;
 			this.scope = scope;
@@ -470,23 +448,24 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		}
 
 		public void writeTo(final @NonNull BufferedSink sink) throws IOException {
-			final JsonGenerator generator = factory.createGenerator(sink.outputStream());
-			generator.writeStartObject();
-			generator.writeObjectFieldStart(SYNC.d);
-			generator.writeObjectFieldStart(SYNC.__sync);
-			generator.writeBooleanField(SYNC.moreChangesAvailable, false);
-			generator.writeStringField(SYNC.serverBlob, serverBlob);
-			generator.writeEndObject(); // sync
-			generator.writeArrayFieldStart(SYNC.results);
+			final JsonWriter jsonWriter = factory.createWriter(sink);
+			jsonWriter.beginObject();
+			jsonWriter.name(SYNC.d).beginObject();
+			jsonWriter.name(SYNC.__sync).beginObject()
+					.name(SYNC.moreChangesAvailable).value(false)
+					.name(SYNC.serverBlob).value(serverBlob)
+					.endObject();
+			jsonWriter.name(SYNC.results).beginArray();
 			if (upload) {
 				for (SyncTableInfo tab : syncContentHelper.getTableForScope(scope)) {
-					counter += tab.getChanges(database, generator, logger);
+					counter += tab.getChanges(database, jsonWriter, logger);
 				}
 			}
-			generator.writeEndArray();// result
-			generator.writeEndObject(); // d
-			generator.writeEndObject();
-			generator.close();
+			jsonWriter
+					.endArray()// result
+					.endObject() // d
+					.endObject();
+			jsonWriter.close();
 		}
 	}
 }

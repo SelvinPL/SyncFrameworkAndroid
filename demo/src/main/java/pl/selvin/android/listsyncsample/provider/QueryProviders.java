@@ -9,13 +9,14 @@ import java.util.ArrayList;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 import pl.selvin.android.autocontentprovider.log.Logger;
 import pl.selvin.android.listsyncsample.provider.implementation.AbstractQueryProvider;
+import pl.selvin.android.syncframework.content.SyncTableInfo;
 
 public class QueryProviders {
 	private final UriMatcher uriMatcher;
 	private final ArrayList<AbstractQueryProvider> providers = new ArrayList<>();
 
 	@SafeVarargs
-	public QueryProviders(ListProvider contentProvider, ContentHelper contentHelper, Logger logger,
+	public QueryProviders(ListProvider contentProvider, ContentHelper<SyncTableInfo> contentHelper, Logger logger,
 						  Class<? extends AbstractQueryProvider>... providerClasses) {
 		uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 		try {

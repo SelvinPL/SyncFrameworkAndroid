@@ -13,7 +13,7 @@ package pl.selvin.android.syncframework.content;
 
 final class Metadata {
 	public String uri;
-	String type;
-	boolean isDeleted;
-	String tempId;
+	public String type;
+	public boolean isDeleted;
+	public String tempId;
 }

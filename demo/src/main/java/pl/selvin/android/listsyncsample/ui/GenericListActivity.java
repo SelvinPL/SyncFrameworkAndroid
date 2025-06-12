@@ -11,7 +11,6 @@
 
 package pl.selvin.android.listsyncsample.ui;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -19,7 +18,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 
-import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentFactory;
 

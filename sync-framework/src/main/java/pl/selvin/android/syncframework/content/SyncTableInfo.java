@@ -17,22 +17,18 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.util.ArrayMap;
 import android.util.Base64;
 
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteQuery;
 import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -43,6 +39,7 @@ import pl.selvin.android.autocontentprovider.db.ColumnInfoFactory;
 import pl.selvin.android.autocontentprovider.db.ColumnType;
 import pl.selvin.android.autocontentprovider.db.TableInfo;
 import pl.selvin.android.autocontentprovider.log.Logger;
+import pl.selvin.android.syncframework.json.JsonWriter;
 
 public class SyncTableInfo extends TableInfo {
 
@@ -73,7 +70,7 @@ public class SyncTableInfo extends TableInfo {
 		return false;
 	}
 
-	int getChanges(final SupportSQLiteDatabase db, final JsonGenerator generator, Logger logger) throws IOException {
+	int getChanges(final SupportSQLiteDatabase db, final JsonWriter jsonWriter, Logger logger) throws IOException {
 		String[] cols = new String[columns.size() + 3];
 		int i = 0;
 		for (; i < columns.size(); i++)
@@ -90,47 +87,47 @@ public class SyncTableInfo extends TableInfo {
 		if (c.moveToFirst()) {
 			do {
 				counter++;
-				generator.writeStartObject();
-				generator.writeObjectFieldStart(SYNC.__metadata);
-				generator.writeBooleanField(SYNC.isDirty, true);
-				generator.writeStringField(SYNC.type, nameForMime);
+				jsonWriter.beginObject();
+				jsonWriter.name(SYNC.__metadata).beginObject()
+						.name(SYNC.isDirty).value(true)
+						.name(SYNC.type).value(nameForMime);
 				final String uri = c.getString(i);
 				if (uri == null) {
-					generator.writeStringField(SYNC.tempId, c.getString(i + 1));
+					jsonWriter.name(SYNC.tempId).value(c.getString(i + 1));
 				} else {
-					generator.writeStringField(SYNC.uri, uri);
+					jsonWriter.name(SYNC.uri).value(uri);
 					final ContentValues update = new ContentValues(1);
 					update.put(SYNC.isDirty, 0);
 					operations.add(new OperationHolder(name, OperationHolder.UPDATE, update, uri));
 				}
 				boolean isDeleted = c.getInt(i + 2) == 1;
 				if (isDeleted) {
-					generator.writeBooleanField(SYNC.isDeleted, true);
-					generator.writeEndObject();// meta
+					jsonWriter.name(SYNC.isDeleted).value(true);
+					jsonWriter.endObject();// meta
 					operations.add(new OperationHolder(name, OperationHolder.DELETE, null, uri));
 				} else {
-					generator.writeEndObject();// meta
+					jsonWriter.endObject();// meta
 					for (i = 0; i < columns.size(); i++) {
 						final ColumnInfo column = columns.get(i);
 						if (column.nullable && c.isNull(i)) {
-							generator.writeNullField(column.name);
+							jsonWriter.name(column.name).nullValue();
 						} else {
 							switch (column.type) {
 								case ColumnType.BLOB:
-									generator.writeBinaryField(column.name, c.getBlob(i));
+									jsonWriter.name(column.name).value(c.getBlob(i));
 									break;
 								case ColumnType.BOOLEAN:
-									generator.writeBooleanField(column.name, c.getLong(i) == 1);
+									jsonWriter.name(column.name).value(c.getLong(i) == 1);
 									break;
 								case ColumnType.INTEGER:
-									generator.writeNumberField(column.name, c.getLong(i));
+									jsonWriter.name(column.name).value(c.getLong(i));
 									break;
 								case ColumnType.DATETIME:
 									try {
 										final Date date = sdf.parse(c.getString(i));
 										if (date == null)
 											throw new IllegalStateException("Parsed date is null!");
-										generator.writeStringField(column.name, String.format(ms_date, date.getTime()));
+										jsonWriter.name(column.name).value(String.format(ms_date, date.getTime()));
 									} catch (IllegalStateException ie) {
 										throw ie;
 									} catch (Exception e) {
@@ -138,20 +135,18 @@ public class SyncTableInfo extends TableInfo {
 										//logger.LogE(clazz, e);
 									}
 									break;
-								case ColumnType.NUMERIC:
-									generator.writeNumberField(column.name, c.getDouble(i));
-									break;
 								case ColumnType.DECIMAL:
-									generator.writeNumberField(column.name, BigDecimal.valueOf(c.getDouble(i)).setScale(column.precision, RoundingMode.HALF_UP));
+								case ColumnType.NUMERIC:
+									jsonWriter.name(column.name).value(c.getDouble(i));
 									break;
 								default:
-									generator.writeStringField(column.name, c.getString(i));
+									jsonWriter.name(column.name).value(c.getString(i));
 									break;
 							}
 						}
 					}
 				}
-				generator.writeEndObject(); // end of row
+				jsonWriter.endObject(); // end of row
 			} while (c.moveToNext());
 		}
 		c.close();
@@ -174,7 +169,7 @@ public class SyncTableInfo extends TableInfo {
 		db.delete(name, SYNC.uriP, new String[]{uri});
 	}
 
-	final boolean SyncJSON(final HashMap<String, Object> map, final Metadata meta, final SupportSQLiteDatabase db) {
+	final boolean SyncJSON(final ArrayMap<String, Object> map, final Metadata meta, final SupportSQLiteDatabase db) {
 		int i = 0;
 		values.clear();
 		for (; i < columns.size(); i++) {

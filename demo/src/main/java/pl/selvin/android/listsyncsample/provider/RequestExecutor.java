@@ -2,7 +2,6 @@ package pl.selvin.android.listsyncsample.provider;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AuthenticatorException;
 import android.content.Context;
 import android.os.Bundle;
 
@@ -23,12 +22,14 @@ import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
 import pl.selvin.android.listsyncsample.network.HttpClient;
 import pl.selvin.android.syncframework.content.BaseContentProvider;
 
-public class RequestExecutor implements pl.selvin.android.syncframework.content.RequestExecutor {
+public class RequestExecutor extends RequestBody implements pl.selvin.android.syncframework.content.RequestExecutor {
 	public final static String ACCOUNT_PARAMETER = "ACCOUNT_PARAMETER";
+	private final MediaType contentType = MediaType.parse("application/json; charset=utf-8");
+	private BaseContentProvider.SyncContentProducer syncContentProducer;
 
 	@Override
 	@NonNull
-	public Result execute(@NonNull Context context, @Nullable final BaseContentProvider.ISyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException, AuthenticatorException {
+	public Result execute(@NonNull Context context, @Nullable final BaseContentProvider.SyncContentProducer syncContentProducer, @NonNull Bundle parameters) throws IOException {
 		final Account account = BundleCompat.getParcelable(parameters, RequestExecutor.ACCOUNT_PARAMETER, Account.class);
 		int requestMethod = parameters.getInt(RequestExecutor.REQUEST_METHOD_PARAMETER);
 		final String scope = parameters.getString(RequestExecutor.SCOPE_PARAMETER);
@@ -42,19 +43,11 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 				.addHeader("Accept", "application/json");
 
 		if (requestMethod == RequestExecutor.POST && syncContentProducer != null) {
-			requestBuilder.post(new RequestBody() {
-				@Override
-				public MediaType contentType() {
-					return MediaType.parse("application/json; charset=utf-8");
-				}
-
-				@Override
-				public void writeTo(@NonNull BufferedSink sink) throws IOException {
-					syncContentProducer.writeTo(sink);
-				}
-			});
+			this.syncContentProducer = syncContentProducer;
+			requestBuilder.post(this);
 		}
 		final Response response = HttpClient.DEFAULT.newCall(requestBuilder.build()).execute();
+		this.syncContentProducer = null;
 		final ResponseBody body = response.body();
 		if (body != null) {
 			final String error;
@@ -67,5 +60,16 @@ public class RequestExecutor implements pl.selvin.android.syncframework.content.
 		}
 		response.close();
 		throw new RuntimeException("Response body is null");
+	}
+
+	@Nullable
+	@Override
+	public MediaType contentType() {
+		return contentType;
+	}
+
+	@Override
+	public void writeTo(@NonNull BufferedSink bufferedSink) throws IOException {
+		syncContentProducer.writeTo(bufferedSink);
 	}
 }

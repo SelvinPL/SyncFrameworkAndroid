@@ -18,6 +18,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
@@ -25,9 +26,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import pl.selvin.android.autocontentprovider.annotation.Cascade;
 import pl.selvin.android.autocontentprovider.annotation.Column;
@@ -38,7 +37,7 @@ import pl.selvin.android.autocontentprovider.log.Logger;
 
 public class TableInfo {
 
-	public final Map<String, String> map = new HashMap<>();
+	public final ArrayMap<String, String> map = new ArrayMap<>();
 	public final String name;
 	public final List<ColumnInfo> primaryKeys;
 	public final String dirMime;
@@ -62,7 +61,7 @@ public class TableInfo {
 		final ArrayList<ColumnInfo> computedColumns = new ArrayList<>();
 		final Field[] fields = clazz.getDeclaredFields();
 		final ArrayList<ColumnInfo> primaryKeys = new ArrayList<>();
-		final HashMap<String, ColumnInfo> namesToColumns = new HashMap<>();
+		final ArrayMap<String, ColumnInfo> namesToColumns = new ArrayMap<>();
 		for (final Field field : fields) {
 			final Column column = field.getAnnotation(Column.class);
 			if (column != null) {
@@ -172,7 +171,7 @@ public class TableInfo {
 	public Cursor query(SupportSQLiteDatabase database, Uri uri, SQLiteQueryBuilder builder, String[] projection, String selection, String[] selectionArgs, String groupBy, String having, String sortOrder, String limit, Logger logger) {
 		final String query = builder.buildQuery(projection, selection, groupBy, having, sortOrder, limit);
 		logger.LogQuery(clazz, uri, builder, projection, selection, selectionArgs, groupBy, having, sortOrder, limit);
-		if(selectionArgs == null)
+		if (selectionArgs == null)
 			return database.query(query);
 		return database.query(query, selectionArgs);
 	}
