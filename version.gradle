@@ -1,7 +1,7 @@
 import java.util.stream.Collectors
 
 def version = System.getenv("GITHUB_RELEASE") ?: "1.0.0"
-def version_int = Integer.parseInt(Arrays.stream(version.split('\\.'))
+def version_int = Integer.parseInt(Arrays.stream(version.split('-')[0].split('\\.'))
         .map(s->String.format("%03d", Integer.parseInt(s)))
         .collect(Collectors.joining()))
 ext {
