@@ -1,3 +1,5 @@
+import com.android.build.api.variant.ResValue
+
 plugins {
     alias libs.plugins.android.gradle.plugin
 }
@@ -5,27 +7,49 @@ apply from: 'themes.gradle'
 apply from: '../version.gradle'
 
 def disabledColor = 0xADADAD
+def manifestPlaceholdersMap = [appName: 'ListSyncSample', appSuffix1: '', appSuffix2: '']
 
 android {
     namespace = 'pl.selvin.android.listsyncsample'
-    compileSdk = 35
+    compileSdk = 37
 
-    flavorDimensions = ["db_impl"]
+    flavorDimensions = ["db_impl", 'httplog']
 
     defaultConfig {
         applicationId 'pl.selvin.android.listsyncsample'
-        minSdkVersion 22
-        targetSdkVersion 35
+        minSdkVersion 23
+        targetSdkVersion 37
         versionCode sync_framework_version_int
         versionName sync_framework_version
+        manifestPlaceholders = manifestPlaceholdersMap
+        multiDexEnabled = true
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    buildFeatures {
+        dataBinding = true
+        aidl = true
+        buildConfig = true
+        resValues = true
     }
 
     signingConfigs {
         release {
-            keyAlias = 'androiddebugkey'
-            keyPassword = 'android'
-            storeFile = file('debug.keystore')
-            storePassword = 'android'
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
         }
     }
 
@@ -33,30 +57,29 @@ android {
         release {
             shrinkResources = true
             minifyEnabled = true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig = signingConfigs.release
         }
 
         debug {
+            debuggable true
             versionNameSuffix = "(deb)"
+            signingConfig = signingConfigs.debug
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/LICENSE', 'META-INF/LICENSE.txt', 'META-INF/NOTICE', 'META-INF/NOTICE.txt']
+        }
     }
-	buildFeatures {
-		aidl = true
-        buildConfig = true
-	}
 
-	android.applicationVariants.configureEach { variant ->
-        variant.resValue 'string', 'application_id', variant.applicationId
+    lint {
+        checkReleaseBuilds = false
     }
 
     productFlavors {
-        android{
+        android {
             dimension "db_impl"
             resValue 'string', 'app_name', "ListSyncSample"
             themes {
@@ -72,7 +95,7 @@ android {
             }
         }
 
-        cipher{
+        cipher {
             dimension "db_impl"
             resValue 'string', 'app_name', "ListSyncSample(cipher)"
             versionNameSuffix "(cipher)"
@@ -89,19 +112,89 @@ android {
                 }
             }
         }
+        nolog {
+            dimension "httplog"
+            buildConfigField "okhttp3.Interceptor", "LOGGING_INTERCEPTOR", "null"
+        }
+        basic {
+            dimension "httplog"
+            buildConfigField "okhttp3.Interceptor", "LOGGING_INTERCEPTOR", "new okhttp3.logging.HttpLoggingInterceptor().setLevel(okhttp3.logging.HttpLoggingInterceptor.Level.BASIC)"
+            versionNameSuffix "(http log basic)"
+        }
+        headers {
+            dimension "httplog"
+            buildConfigField "okhttp3.Interceptor", "LOGGING_INTERCEPTOR", "new okhttp3.logging.HttpLoggingInterceptor().setLevel(okhttp3.logging.HttpLoggingInterceptor.Level.HEADERS)"
+            versionNameSuffix "(http log headers)"
+        }
+        body {
+            dimension "httplog"
+            buildConfigField "okhttp3.Interceptor", "LOGGING_INTERCEPTOR", "new okhttp3.logging.HttpLoggingInterceptor().setLevel(okhttp3.logging.HttpLoggingInterceptor.Level.BODY)"
+            versionNameSuffix "(http log body)"
+        }
+
+    }
+}
+
+themes {
+    android {
+        data {
+            colorsWithAlpha {
+                colorPrimary 0x3F51B5
+                colorPrimaryDark 0x1A237E
+                colorPrimaryLight 0x586ACE
+                colorAccent 0xF50057
+                colorDisabled disabledColor
+            }
+        }
+    }
+    cipher {
+        data {
+            colorsWithAlpha {
+                colorPrimary 0x3a3a3a
+                colorPrimaryDark 0x111111
+                colorPrimaryLight 0x535353
+                colorAccent 0x78909C
+                colorDisabled disabledColor
+            }
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        def flavorName = variant.productFlavors[0].second
+        def flavorDSL = android.productFlavors.getByName(flavorName)
+        def mergedPlaceholders = android.defaultConfig.manifestPlaceholders + flavorDSL.manifestPlaceholders
+        String name = mergedPlaceholders['appName']
+        variant.resValues.put(variant.makeResValueKey("string", "application_id"), new ResValue(variant.applicationId.get(), null))
+        variant.resValues.put(variant.makeResValueKey("string", "app_name"), new ResValue(name, null))
     }
 }
 
 dependencies {
+    //Support library
     implementation libs.androidx.appcompat
-    implementation libs.material
     implementation libs.androidx.recyclerview
-    implementation libs.jsr305
-    implementation libs.okhttp3
+
+    implementation libs.material
     implementation libs.flexbox
-    implementation libs.constructors.constraints.annotations
-    implementation project(':sync-framework')
+
+    //desugar
+    coreLibraryDesugaring libs.desugar.jdk.libs
+
+    implementation libs.jsr305
+    implementation libs.okio
+    implementation libs.okhttp3
+    implementation libs.okhttp3.logging.interceptor
+
+
+
+    //Sync framework
     androidImplementation libs.androidx.sqlite.framework
+    implementation project(':sync-framework')
     cipherImplementation libs.sqlcipher.android
+
+    debugImplementation libs.leakcanary.android
+    implementation libs.constructors.constraints.annotations
     annotationProcessor libs.constructors.constraints.processor
 }

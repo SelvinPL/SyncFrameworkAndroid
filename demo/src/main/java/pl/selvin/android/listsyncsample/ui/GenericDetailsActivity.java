@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentFactory;
 
 import pl.selvin.android.listsyncsample.R;
+import pl.selvin.android.listsyncsample.utils.Logging;
 
 public class GenericDetailsActivity extends BaseActivity {
 
@@ -52,7 +53,7 @@ public class GenericDetailsActivity extends BaseActivity {
 					final ActivityInfo app = getPackageManager().getActivityInfo(getComponentName(), PackageManager.GET_META_DATA);
 					extras = app.metaData;
 				} catch (Exception e) {
-					e.printStackTrace();
+					Logging.log(e);
 				}
 			}
 			if (extras != null) {
@@ -77,7 +78,7 @@ public class GenericDetailsActivity extends BaseActivity {
 						finish();
 					}
 				} catch (Exception ex) {
-					ex.printStackTrace();
+					Logging.log(ex);
 					finish();
 				}
 			} else {

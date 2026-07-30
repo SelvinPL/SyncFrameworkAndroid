@@ -95,6 +95,7 @@ class JsonUtf8Reader implements JsonReader, Closeable {
 	private int[] scopes;
 	private String[] pathNames;
 	private int[] pathIndices;
+	private final NameCache nameCache;
 	/**
 	 * A peeked value that was composed entirely of digits with an optional leading dash. Positive
 	 * values may not have a leading 0.
@@ -110,9 +111,10 @@ class JsonUtf8Reader implements JsonReader, Closeable {
 	 */
 	private String peekedString = null;
 
-	public JsonUtf8Reader(BufferedSource source) {
+	public JsonUtf8Reader(BufferedSource source, NameCache nameCache) {
 		this.source = source;
 		this.buffer = source.getBuffer();
+		this.nameCache = nameCache;
 		scopes = new int[32];
 		pathNames = new String[32];
 		pathIndices = new int[32];
@@ -571,13 +573,13 @@ class JsonUtf8Reader implements JsonReader, Closeable {
 		final String result;
 		switch (peekIfNone()) {
 			case PEEKED_UNQUOTED_NAME:
-				result = nextUnquotedValue();
+				result = nextUnquotedName();
 				break;
 			case PEEKED_DOUBLE_QUOTED_NAME:
-				result = nextQuotedValue(DOUBLE_QUOTE_OR_SLASH);
+				result = nextQuotedName(DOUBLE_QUOTE_OR_SLASH);
 				break;
 			case PEEKED_SINGLE_QUOTED_NAME:
-				result = nextQuotedValue(SINGLE_QUOTE_OR_SLASH);
+				result = nextQuotedName(SINGLE_QUOTE_OR_SLASH);
 				break;
 			case PEEKED_BUFFERED_NAME:
 				result = peekedString;
@@ -795,6 +797,34 @@ class JsonUtf8Reader implements JsonReader, Closeable {
 	private void skipUnquotedValue() throws IOException {
 		final long i = source.indexOfElement(UNQUOTED_STRING_TERMINALS);
 		buffer.skip((i != -1L) ? i : buffer.size());
+	}
+
+	private String nextQuotedName(ByteString runTerminator) throws IOException {
+		final long index = source.indexOfElement(runTerminator);
+		if (index == -1L) throw new JsonEncodingException("Unterminated string");
+		if (buffer.getByte(index) == '\\') {
+			return nextQuotedValue(runTerminator);
+		}
+		if (index <= NameCache.MAX_NAME_LEN) {
+			final String cached = nameCache.get(buffer, (int) index);
+			if (cached != null) {
+				buffer.skip(index + 1);
+				return cached;
+			}
+		}
+		final String result = buffer.readUtf8(index);
+		buffer.readByte();
+		return result;
+	}
+
+	private String nextUnquotedName() throws IOException {
+		final long i = source.indexOfElement(UNQUOTED_STRING_TERMINALS);
+		if (i == -1L) return buffer.readUtf8();
+		if (i <= NameCache.MAX_NAME_LEN) {
+			final String cached = nameCache.get(buffer, (int) i);
+			if (cached != null) { buffer.skip(i); return cached; }
+		}
+		return buffer.readUtf8(i);
 	}
 
 	@Override

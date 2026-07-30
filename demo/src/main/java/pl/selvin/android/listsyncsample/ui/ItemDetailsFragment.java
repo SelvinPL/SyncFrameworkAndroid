@@ -57,6 +57,7 @@ import pl.selvin.android.listsyncsample.provider.implementation.TagItemMappingWi
 import pl.selvin.android.listsyncsample.provider.implementation.TagNotUsedProvider;
 import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 import pl.selvin.android.listsyncsample.utils.DateTimeUtils;
+import pl.selvin.android.listsyncsample.utils.Logging;
 import pl.selvin.android.listsyncsample.utils.SpinnerHelper;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
@@ -164,7 +165,7 @@ public class ItemDetailsFragment extends Fragment implements
 					try {
 						cal = DateTimeUtils.fromLong(time);
 					} catch (ParseException e) {
-						e.printStackTrace();
+						Logging.log(e);
 					}
 					mStartDate.setTag(cal);
 					mStartTime.setTag(cal);
@@ -177,7 +178,7 @@ public class ItemDetailsFragment extends Fragment implements
 					try {
 						cal = DateTimeUtils.fromLong(time);
 					} catch (ParseException e) {
-						e.printStackTrace();
+						Logging.log(e);
 					}
 					mEndDate.setTag(cal);
 					mEndDate.setText(DateTimeUtils.toShort(cal));

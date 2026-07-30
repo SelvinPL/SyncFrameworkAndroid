@@ -15,7 +15,8 @@ public interface Constants {
 	String ACCOUNT_TYPE = BuildConfig.APPLICATION_ID;
 	String AUTHORITY = BuildConfig.APPLICATION_ID;
 	String AUTH_TOKEN_TYPE = BuildConfig.APPLICATION_ID;
-	String SERVICE_URI = "https://selvin.pl/listservice/";
+	//adb reverse tcp:55565 tcp:55565
+	String SERVICE_URI = "http://localhost:55565";
 	long SEARCH_VIEW_DELAY = 600;
 
 	class StringUtil {

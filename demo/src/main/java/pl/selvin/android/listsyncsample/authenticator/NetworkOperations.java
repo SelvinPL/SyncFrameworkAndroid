@@ -9,11 +9,12 @@ import java.io.IOException;
 
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import pl.selvin.android.listsyncsample.Constants;
+import pl.selvin.android.listsyncsample.network.HttpClient;
+import pl.selvin.android.listsyncsample.utils.Logging;
 
 public class NetworkOperations {
 
@@ -36,10 +37,10 @@ public class NetworkOperations {
 	}
 
 	private static Call createAuthCall(final String username, final String password) {
-		final OkHttpClient client = new OkHttpClient();
-		Request request = new Request.Builder().url(Constants.SERVICE_URI + "/Login.ashx?username=" + username)
-				.addHeader("Accept", "application/json").addHeader("Content-type", "application/json; charset=utf-8").build();
-		return client.newCall(request);
+		final Request request = new Request.Builder()
+				.url(Constants.SERVICE_URI + "/Login.ashx?username=" + username)
+				.build();
+		return HttpClient.DEFAULT_OK_HTTP_CLIENT.newCall(request);
 	}
 
 	@NonNull
@@ -48,11 +49,7 @@ public class NetworkOperations {
 			final Bundle bundle;
 			if (response.isSuccessful()) {
 				final ResponseBody body = response.body();
-				if (body != null) {
-					bundle = createAuthResultSucceeded(body.string());
-				} else {
-					bundle = createAuthResultFailed("Response has no body");
-				}
+				bundle = createAuthResultSucceeded(body.string());
 			} else {
 				bundle = createAuthResultFailed("HTTP error: " + response.code());
 				Log.d("status", "" + response.code());
@@ -67,7 +64,7 @@ public class NetworkOperations {
 		final Bundle bundle = new Bundle();
 		bundle.putBoolean(LoginResponse.SUCCESS, false);
 		bundle.putString(LoginResponse.ERROR, "IOException: " + e.getMessage());
-		e.printStackTrace();
+		Logging.log(e);
 		return bundle;
 	}
 

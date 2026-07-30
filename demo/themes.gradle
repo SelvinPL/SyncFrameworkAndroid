@@ -1,7 +1,3 @@
-import com.android.ide.common.vectordrawable.VdPreview
-import com.android.resources.Density
-import org.apache.commons.text.TextStringBuilder
-import org.gradle.work.ChangeType
 import org.gradle.work.InputChanges
 
 import javax.xml.parsers.DocumentBuilderFactory
@@ -22,15 +18,13 @@ class C2M {
 }
 
 class ThemesExtension {
-    final static String dimension = "default_theme_extension_dimension_name"
+    final String name
     protected def flavour
     private Project project
-    public boolean hasTheme = false
     public def generateTask = null
-    def task = null
-    protected String path
 
-    ThemesExtension(project, flavour) {
+    ThemesExtension(name, project, flavour) {
+        this.name = name
         this.project = project
         this.flavour = flavour
         colorsMap = [:]
@@ -39,36 +33,6 @@ class ThemesExtension {
 
     public Map<String, String> colorsMap
     public Map<String, String> colorsMapVector
-
-    void createTask(variant) {
-        if (hasTheme) {
-            if (task == null)
-                task = generateTask.get()
-            if (variant.respondsTo("registerGeneratedResFolders")) {
-                task.ext.generatedResFolders = project.files(path).builtBy(task)
-                variant.registerGeneratedResFolders(task.generatedResFolders)
-                if (variant.respondsTo("getMergeResourcesProvider")) {
-                    variant.mergeResourcesProvider.configure { dependsOn(task) }
-                } else {
-                    variant.mergeResources.dependsOn(task)
-                }
-            } else {
-                variant.registerResGeneratingTask(task, path)
-            }
-        }
-    }
-
-    void setHasTheme() {
-        if (!flavour.getDimension()?.trim()) {
-            List<String> dim = project.android.getFlavorDimensionList()
-            if (dim == null)
-                project.android.flavorDimensions([dimension] as String[])
-            else if (!dim.contains(dimension))
-                project.android.flavorDimensions((dim + dimension) as String[])
-            flavour.setDimension(dimension)
-        }
-        hasTheme = true
-    }
 
     static String format(v) {
         return String.format("#%08X", (v & 0xff000000) == 0 ? (v | 0xff000000) : v)
@@ -89,31 +53,10 @@ class ThemesExtension {
         closure.delegate = this
         closure()
         def flavourName = flavour.name.capitalize()
-        path = project.layout.buildDirectory.dir("generated/res/themed/${flavourName}").get()
-        def generateColorsTask = project.tasks.register("generate${flavourName}Themes", GenerateColors) {
-            outputFile = project.file("${this.path}/values/colors.xml")
+        generateTask = project.tasks.register("generate${flavourName}Themes", GenerateColors) {
+            outputDir.set(project.layout.buildDirectory.dir("generated/res/themed/${flavourName}"))
             colorsMap = this.colorsMap
         }
-        if (project.file("themed/drawable").exists()) {
-            generateTask = project.tasks.register("generate${flavourName}ThemedVectorDrawables", GenerateThemedVectorDrawable) {
-                inputDir = project.file("themed/drawable")
-                outputDir = project.file("${this.path}/drawable")
-                dependsOn(generateColorsTask)
-            }
-        }
-        if (project.file("themed/mipmap").exists()) {
-            generateTask = project.tasks.register("generate${flavourName}ThemedMipmaps", GenerateThemedMipmapsVectorDrawable) {
-                inputDir = project.file("themed/mipmap")
-                outputDirs = sizes.collectEntries {
-                    [(it): project.file("${this.path}/mipmap-${it.getResourceValue()}")]
-                }
-                colorsMapVector = this.colorsMapVector
-                dependsOn(generateColorsTask)
-            }
-        }
-        if (generateTask == null)
-            generateTask = generateColorsTask
-        setHasTheme()
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -125,94 +68,11 @@ class ThemesExtension {
             }
         }.each { k, v -> putToMaps(k, v) }
     }
-
-    String getPath() {
-        return path
-    }
-
-}
-
-class GenerateThemedVectorDrawable extends DefaultTask {
-    @SkipWhenEmpty
-    @InputDirectory
-    def inputDir
-    @OutputDirectory
-    def outputDir
-    @Input
-    Map<String, String> colorsMapVector
-
-    @TaskAction
-    void execute(InputChanges inputChanges) {
-        if (!inputChanges.incremental)
-            project.delete(outputDir.listFiles())
-        inputChanges.getAllFileChanges().each { change ->
-            if (change.changeType == ChangeType.ADDED || change.changeType == ChangeType.MODIFIED) {
-                def targetFile = project.file("$outputDir/${change.file.name}")
-                def vector = new TextStringBuilder(change.file.text)
-                colorsMapVector.each { n, v -> vector.replaceAll(n, v) }
-                targetFile.text = vector.toString()
-            }
-            if (change.changeType == ChangeType.REMOVED) {
-                def targetFile = project.file("$outputDir/${change.file.name}")
-                if (targetFile.exists()) {
-                    targetFile.delete()
-                }
-            }
-        }
-    }
-}
-
-class GenerateThemedMipmapsVectorDrawable extends DefaultTask {
-    public static final
-    def sizes = [Density.MEDIUM, Density.HIGH, Density.XHIGH, Density.XXHIGH, Density.XXXHIGH]
-    @SkipWhenEmpty
-    @InputDirectory
-    File inputDir
-    @OutputDirectories
-    Map<Density, File> outputDirs
-    @Input
-    Map<String, String> colorsMapVector
-
-
-    @TaskAction
-    void execute(InputChanges inputChanges) {
-        if (!inputChanges.incremental)
-            outputDirs.each { it.getValue().delete() }
-
-        inputChanges.getAllFileChanges().each { change ->
-            if (change.fileType == FileType.DIRECTORY)
-                return
-            if (change.changeType == ChangeType.ADDED || change.changeType == ChangeType.MODIFIED) {
-                if (change.file.isFile()) {
-                    def vector = new TextStringBuilder(change.file.text)
-                    colorsMapVector.each { n, v -> vector.replaceAll(n, v) }
-                    outputDirs.each {
-                        float scaleFactor = it.getKey().getDpiValue() / (float) Density.MEDIUM.getDpiValue()
-                        if (scaleFactor <= 0) {
-                            scaleFactor = 1.0f
-                        }
-                        def imageSize = VdPreview.TargetSize.createFromScale(scaleFactor)
-                        def image = VdPreview.getPreviewFromVectorXml(imageSize, vector.toString(), null)
-                        def fileOut = new File("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
-                        fileOut.parentFile.mkdirs()
-                        javax.imageio.ImageIO.write(image, "png", fileOut)
-                    }
-                }
-            }
-            if (change.changeType == ChangeType.REMOVED) {
-                outputDirs.each {
-                    def file = file("${it.getValue()}/${change.file.name.replace(".xml", ".png")}")
-                    if (file.exists())
-                        file.delete()
-                }
-            }
-        }
-    }
 }
 
 class GenerateColors extends DefaultTask {
-    @OutputFile
-    File outputFile
+    @OutputDirectory
+    final DirectoryProperty outputDir = project.objects.directoryProperty()
     @Input
     Map<String, String> colorsMap
 
@@ -230,7 +90,9 @@ class GenerateColors extends DefaultTask {
             resources.appendChild(color)
         }
         def domSource = new DOMSource(doc)
-        def result = new StreamResult(outputFile)
+        def file = outputDir.file("values/colors.xml").get().asFile
+        file.parentFile.mkdirs()
+        def result = new StreamResult(file)
         def tf = TransformerFactory.newInstance()
         def transformer = tf.newTransformer()
         transformer.setOutputProperty(OutputKeys.INDENT, 'yes')
@@ -238,22 +100,23 @@ class GenerateColors extends DefaultTask {
     }
 }
 
-android {
-    productFlavors.configureEach { flavour ->
-        flavour.extensions.create("themes", ThemesExtension, project, flavour)
-    }
-    applicationVariants.configureEach { variant ->
-        variant.productFlavors.each { it.themes.createTask(variant) }
-    }
+def themes = project.objects.domainObjectContainer(ThemesExtension) { name ->
+    def flavor = android.productFlavors.findByName(name)
+    return new ThemesExtension(name, project, flavor)
 }
+project.extensions.add("themes", themes)
 
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath libs.com.android.sdk.common
-        classpath libs.org.apache.commons.text
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.productFlavors.each { flavorPair ->
+            def flavorName = flavorPair.second
+            def themeData = project.extensions.findByName("themes")?.findByName(flavorName)
+            if (themeData?.generateTask != null) {
+                variant.sources.res.addGeneratedSourceDirectory(
+                        themeData.generateTask,
+                        { it.outputDir }
+                )
+            }
+        }
     }
 }

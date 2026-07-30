@@ -37,6 +37,7 @@ import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.syncadapter.ISyncService;
 import pl.selvin.android.listsyncsample.syncadapter.ISyncStatusObserver;
 import pl.selvin.android.listsyncsample.syncadapter.SyncService;
+import pl.selvin.android.listsyncsample.utils.Logging;
 import pl.selvin.android.listsyncsample.utils.StaticHelpers;
 import pl.selvin.android.listsyncsample.utils.Ui;
 
@@ -66,7 +67,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 			try {
 				mService.addSyncStatusObserver(mObserver);
 			} catch (RemoteException e) {
-				e.printStackTrace();
+				Logging.log(e);
 			}
 			if (mStartLaterDelay != null) {
 				startSync(mStartLaterDelay, false);
@@ -130,7 +131,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 			try {
 				mService.removeSyncStatusObserver(mObserver);
 			} catch (RemoteException e) {
-				e.printStackTrace();
+				Logging.log(e);
 			}
 		if (mBound) {
 			unbindService(mConnection);
@@ -153,7 +154,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 				try {
 					setRefreshActionButtonStatus(mService.getLastStatus());
 				} catch (RemoteException re) {
-					re.printStackTrace();
+					Logging.log(re);
 				}
 		}
 		return super.onCreateOptionsMenu(menu);
@@ -200,7 +201,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 							finish();
 					}
 				} catch (RemoteException re) {
-					re.printStackTrace();
+					Logging.log(re);
 				}
 			} else {
 				mStartLaterDelay = delay;
@@ -220,7 +221,7 @@ public abstract class BaseActivity extends AppCompatActivity {
 
 				return mService.getLastStatus();
 			} catch (RemoteException re) {
-				re.printStackTrace();
+				Logging.log(re);
 			}
 		return null;
 	}

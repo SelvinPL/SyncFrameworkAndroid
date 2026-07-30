@@ -53,12 +53,19 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 	private final static String DATABASE_OPERATION_TYPE = "DATABASE_OPERATION_TYPE";
 	protected final RequestExecutor executor;
 	private final SyncContentHelper syncContentHelper;
+	private final JsonFactory jsonFactory;
 
+	public BaseContentProvider(SyncContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider,
+	                           RequestExecutor executor) {
+		this(contentHelper, logger, supportSQLiteOpenHelperFactoryProvider, executor, new MoshiJsonFactory(contentHelper));
+	}
 
-	public BaseContentProvider(SyncContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider, RequestExecutor executor) {
+	public BaseContentProvider(SyncContentHelper contentHelper, Logger logger, SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider,
+							   RequestExecutor executor, JsonFactory jsonFactory) {
 		super(contentHelper, logger, supportSQLiteOpenHelperFactoryProvider);
 		syncContentHelper = contentHelper;
 		this.executor = executor;
+		this.jsonFactory = jsonFactory;
 	}
 
 	@Override
@@ -94,7 +101,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		return super.call(method, arg, extras);
 	}
 
-	private void parse(ParserState parserState, BufferedSource source, JsonFactory jsonFactory, DataCallback dataCallback) throws IOException {
+	private void parse(ParserState parserState, BufferedSource source, DataCallback dataCallback) throws IOException {
 		final JsonReader jsonParser = jsonFactory.createReader(source);
 		final Metadata meta = new Metadata();
 		int current;
@@ -214,7 +221,6 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		final long start = System.currentTimeMillis();
 		final ParserState parserState = new ParserState();
 		final SupportSQLiteDatabase database = getWritableDatabase();
-		final JsonFactory jsonFactory = new MoshiJsonFactory();
 		final Cursor blobCursor = database.query(
 				SupportSQLiteQueryBuilder.builder(BlobsTable.NAME).columns(new String[]{BlobsTable.C_VALUE})
 						.selection(BlobsTable.C_NAME + "=?", new Object[]{scope}).create());
@@ -258,7 +264,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 					if (result.status == 200) {
 						if (contentProducer != null)
 							syncResult.stats.numEntries += contentProducer.getChanges();
-						parse(parserState, result.source, new MoshiJsonFactory(), dataCallback);
+						parse(parserState, result.source, dataCallback);
 						if (parserState.resolveConflicts) {
 							logger.LogE(clazz, "*Sync* has resolve conflicts !!!");
 						}

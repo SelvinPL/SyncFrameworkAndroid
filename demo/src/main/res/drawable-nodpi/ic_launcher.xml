@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+	<item>
+		<shape android:shape="oval">
+			<solid android:color="@color/button_widget_base_main" />
+		</shape>
+	</item>
+	<item>
+		<inset android:drawable="@drawable/a_launcher_base" />
+	</item>
+</layer-list>

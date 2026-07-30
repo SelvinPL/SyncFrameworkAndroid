@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <account-authenticator xmlns:android="http://schemas.android.com/apk/res/android"
     android:accountType="@string/application_id"
-    android:icon="@mipmap/ic_launcher"
+    android:icon="@drawable/ic_launcher"
     android:label="@string/label"
-    android:smallIcon="@mipmap/ic_launcher" />
+    android:smallIcon="@drawable/ic_launcher" />

@@ -6,12 +6,11 @@ apply from: '../publish.gradle'
 
 android {
     namespace = 'pl.selvin.android.syncframework'
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
-        minSdkVersion 22
-        targetSdkVersion 35
-    }
+        minSdkVersion 23
+	}
 
     buildTypes {
         release {
@@ -29,6 +28,12 @@ android {
             withSourcesJar()
         }
     }
+	lint {
+		targetSdk 35
+	}
+	testOptions {
+		targetSdk 35
+	}
 }
 
 dependencies {

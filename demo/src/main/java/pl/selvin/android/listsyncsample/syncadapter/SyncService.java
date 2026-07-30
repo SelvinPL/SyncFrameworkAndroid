@@ -20,7 +20,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.util.Log;
@@ -28,7 +30,9 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.BundleCompat;
+import androidx.core.util.Consumer;
 
+import java.lang.ref.WeakReference;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -43,6 +47,7 @@ import pl.selvin.android.listsyncsample.network.HttpClient;
 import pl.selvin.android.listsyncsample.provider.Database;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
 import pl.selvin.android.listsyncsample.provider.RequestExecutor;
+import pl.selvin.android.listsyncsample.utils.Logging;
 
 public class SyncService extends Service {
 	public static final String SYNC_SERVICE_BINDER = "SYNC_SERVICE_BINDER";
@@ -50,33 +55,61 @@ public class SyncService extends Service {
 	public static final int SYNC_ACTIVE = 1;
 	public static final int SYNC_PENDING = 2;
 
-	private static final Object sSyncAdapterLock = new Object();
-
 	private final static String TAG = "SyncService";
-	private static SyncAdapter sSyncAdapter;
+	private final static SyncServiceHolder syncServiceHolder = new SyncServiceHolder();
+	private static SyncAdapter syncAdapter;
 	private final RemoteCallbackList<ISyncStatusObserver> mObservers = new RemoteCallbackList<>();
-
+	private final Handler handler = new Handler(Looper.getMainLooper());
+	private final ISyncService.Stub mBinder = new SyncServiceStub(this);
+	private int connections = 0;
+	private final Runnable stopSelfRunnable = () -> {
+		if (connections == 0)
+			stopSelf();
+	};
 	private int mLastStatus = SYNC_IDLE;
-	private final ISyncService.Stub mBinder = new ISyncService.Stub() {
-		public void addSyncStatusObserver(ISyncStatusObserver cb) {
-			if (cb != null) {
-				mObservers.register(cb);
-				try {
-					cb.onStatusChanged(mLastStatus);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
+
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		syncServiceHolder.registerService(this);
+		if (syncAdapter == null) {
+			syncAdapter = new SyncAdapter(getApplicationContext(), true, syncServiceHolder);
+		}
+	}
+
+	@Override
+	public IBinder onBind(Intent intent) {
+		connections++;
+		if (intent.hasExtra(SYNC_SERVICE_BINDER))
+			return mBinder;
+		return syncAdapter.getSyncAdapterBinder();
+	}
+
+	@Override
+	public boolean onUnbind(Intent intent) {
+		connections--;
+		handler.postDelayed(stopSelfRunnable, 1000);
+		return super.onUnbind(intent);
+	}
+
+	private void fireStatusChanged() {
+		final int N = mObservers.beginBroadcast();
+		for (int i = 0; i < N; i++) {
+			try {
+				mObservers.getBroadcastItem(i).onStatusChanged(mLastStatus);
+			} catch (RemoteException ignore) {
 			}
 		}
+		mObservers.finishBroadcast();
+	}
 
-		public void removeSyncStatusObserver(ISyncStatusObserver cb) {
-			if (cb != null) mObservers.unregister(cb);
-		}
-
-		public int getLastStatus() {
-			return mLastStatus;
-		}
-	};
+	@Override
+	public void onDestroy() {
+		Log.d(TAG, "onDestroy()");
+		syncServiceHolder.removeService(this);
+		mObservers.kill();
+		super.onDestroy();
+	}
 
 	public static String getUserId(Context context) {
 		Account account = getAccount(context);
@@ -93,7 +126,7 @@ public class SyncService extends Service {
 		try {
 			accounts = accountManager.getAccountsByType(Constants.ACCOUNT_TYPE);
 		} catch (SecurityException e) {
-			e.printStackTrace();
+			Logging.log(e);
 		}
 		if (accounts != null && accounts.length > 0) {
 			return accounts[0];
@@ -121,72 +154,73 @@ public class SyncService extends Service {
 		}
 	}
 
-	@Override
-	public IBinder onBind(Intent intent) {
-		synchronized (sSyncAdapterLock) {
-			if (sSyncAdapter == null) {
-				sSyncAdapter = new SyncAdapter(this);
-			} else {
-				sSyncAdapter.setService(this);
+	private static class SyncServiceStub extends ISyncService.Stub {
+		private final WeakReference<SyncService> serviceRef;
+
+		private SyncServiceStub(SyncService service) {
+			serviceRef = new WeakReference<>(service);
+		}
+
+		public void addSyncStatusObserver(ISyncStatusObserver cb) {
+			final SyncService service = serviceRef.get();
+			if (cb != null && service != null) {
+				service.mObservers.register(cb);
+				try {
+					cb.onStatusChanged(service.mLastStatus);
+				} catch (RemoteException e) {
+					Logging.log(e);
+				}
 			}
 		}
 
-		if (intent.hasExtra(SYNC_SERVICE_BINDER))
-			return mBinder;
-		return sSyncAdapter.getSyncAdapterBinder();
-	}
-
-	private void fireStatusChanged() {
-		final int N = mObservers.beginBroadcast();
-		for (int i = 0; i < N; i++) {
-			try {
-				mObservers.getBroadcastItem(i).onStatusChanged(mLastStatus);
-			} catch (RemoteException ignore) {
-			}
+		public void removeSyncStatusObserver(ISyncStatusObserver cb) {
+			final SyncService service = serviceRef.get();
+			if (cb != null && service != null)
+				service.mObservers.unregister(cb);
 		}
-		mObservers.finishBroadcast();
-	}
 
-	@Override
-	public void onDestroy() {
-		Log.d(TAG, "onDestroy()");
-		mObservers.kill();
-		super.onDestroy();
+		public int getLastStatus() {
+			final SyncService service = serviceRef.get();
+			if (service != null)
+				return service.mLastStatus;
+			else
+				return SYNC_IDLE;
+		}
 	}
 
 	static class SyncAdapter extends AbstractThreadedSyncAdapter {
 		private static final long PING_DELAY_SECONDS = 60;
 		private final ScheduledExecutorService pingExecutor;
-		private SyncService mService;
+		private final SyncServiceHolder syncServiceHolder;
 
-		SyncAdapter(SyncService service) {
-			super(service.getApplicationContext(), true);
-			mService = service;
+		SyncAdapter(Context context, boolean autoInitialize, SyncServiceHolder syncServiceHolder) {
+			super(context, autoInitialize);
+			this.syncServiceHolder = syncServiceHolder;
 			pingExecutor = Executors.newScheduledThreadPool(1);
 		}
 
-		void setService(SyncService service) {
-			mService = service;
-		}
-
 		@Override
-		synchronized public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
+		public synchronized void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
 			final ScheduledFuture<?> scheduledFuture =
 					pingExecutor.scheduleWithFixedDelay(this::doPing, PING_DELAY_SECONDS, PING_DELAY_SECONDS, TimeUnit.SECONDS);
 			try {
-				mService.mLastStatus = SYNC_ACTIVE;
-				mService.fireStatusChanged();
+
 				extras.putParcelable(RequestExecutor.ACCOUNT_PARAMETER, account);
 				extras.putParcelable(RequestExecutor.SYNC_RESULT_PARAMETER, syncResult);
 				extras.putString(RequestExecutor.SCOPE_PARAMETER, Database.DS);
 
-				final ListProvider listProvider = (ListProvider) provider.getLocalContentProvider();
-				if (listProvider != null) {
+				syncServiceHolder.Consume(syncService -> {
+					syncService.mLastStatus = SYNC_ACTIVE;
+					syncService.fireStatusChanged();
+				});
+
+				final ListProvider localContentProvider = (ListProvider) provider.getLocalContentProvider();
+				if (localContentProvider != null) {
 					try {
-						final Bundle results = listProvider.sync(extras);
+						localContentProvider.sync(extras);
 					} catch (Exception ex) {
 						syncResult.stats.numIoExceptions++;
-						ex.printStackTrace();
+						Logging.log(ex);
 					}
 				} else {
 					try {
@@ -197,14 +231,15 @@ public class SyncService extends Service {
 						}
 					} catch (RemoteException e) {
 						syncResult.stats.numIoExceptions++;
-						e.printStackTrace();
+						Logging.log(e);
 					}
 				}
 				Log.v("SyncStats: ", syncResult.stats.toString());
 				Log.d("SyncResult: ", syncResult.toString());
-
-				mService.mLastStatus = SYNC_IDLE;
-				mService.fireStatusChanged();
+				syncServiceHolder.Consume(syncService -> {
+					syncService.mLastStatus = SYNC_IDLE;
+					syncService.fireStatusChanged();
+				});
 			} finally {
 				scheduledFuture.cancel(true);
 			}
@@ -214,9 +249,29 @@ public class SyncService extends Service {
 			try {
 				final Request.Builder requestBuilder = new Request.Builder().url(Constants.SERVICE_URI + "DefaultScopeSyncService.svc/$syncscopes")
 						.method("HEAD", null).cacheControl(new CacheControl.Builder().noCache().noStore().build());
-				final Response response = HttpClient.DEFAULT.newCall(requestBuilder.build()).execute();
+				final Response response = HttpClient.DEFAULT_OK_HTTP_CLIENT.newCall(requestBuilder.build()).execute();
 				response.close();
 			} catch (Exception ignore) {
+			}
+		}
+	}
+
+	private static class SyncServiceHolder {
+		private SyncService syncService = null;
+
+		public synchronized void registerService(SyncService syncService) {
+			this.syncService = syncService;
+		}
+
+		public synchronized void removeService(SyncService syncService) {
+			if (this.syncService == syncService) {
+				this.syncService = null;
+			}
+		}
+
+		public synchronized void Consume(@NonNull Consumer<SyncService> consumer) {
+			if (syncService != null) {
+				consumer.accept(syncService);
 			}
 		}
 	}

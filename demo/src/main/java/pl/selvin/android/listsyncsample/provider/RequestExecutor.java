@@ -22,10 +22,9 @@ import pl.selvin.android.listsyncsample.authenticator.NetworkOperations;
 import pl.selvin.android.listsyncsample.network.HttpClient;
 import pl.selvin.android.syncframework.content.BaseContentProvider;
 
-public class RequestExecutor extends RequestBody implements pl.selvin.android.syncframework.content.RequestExecutor {
+public class RequestExecutor implements pl.selvin.android.syncframework.content.RequestExecutor {
 	public final static String ACCOUNT_PARAMETER = "ACCOUNT_PARAMETER";
-	private final MediaType contentType = MediaType.parse("application/json; charset=utf-8");
-	private BaseContentProvider.SyncContentProducer syncContentProducer;
+	private final SyncProducerRequestBody requestBody = new SyncProducerRequestBody();
 
 	@Override
 	@NonNull
@@ -38,38 +37,42 @@ public class RequestExecutor extends RequestBody implements pl.selvin.android.sy
 		final String userid = accountManager.getUserData(account, NetworkOperations.LoginResponse.USER_ID);
 		final String serviceRequestUrl = String.format("%s/DefaultScopeSyncService.svc/%s/%s?userid=%s", Constants.SERVICE_URI, scope, requestType, userid);
 		final Request.Builder requestBuilder = new Request.Builder().url(serviceRequestUrl)
-				.addHeader("Cache-Control", "no-store,no-cache")
-				.addHeader("Pragma", "no-cache")
-				.addHeader("Accept", "application/json");
+				.header("Cache-Control", "no-store,no-cache")
+				.header("Pragma", "no-cache")
+				.header("Accept", "application/json");
 
 		if (requestMethod == RequestExecutor.POST && syncContentProducer != null) {
-			this.syncContentProducer = syncContentProducer;
-			requestBuilder.post(this);
+			requestBody.syncContentProducer = syncContentProducer;
+			requestBuilder.post(requestBody);
 		}
-		final Response response = HttpClient.DEFAULT.newCall(requestBuilder.build()).execute();
-		this.syncContentProducer = null;
+		@SuppressWarnings("resource") final Response response = HttpClient.DEFAULT_OK_HTTP_CLIENT.newCall(requestBuilder.build()).execute();
 		final ResponseBody body = response.body();
-		if (body != null) {
-			final String error;
-			try {
-				error = response.isSuccessful() ? null : body.string();
-			} catch (Exception ex) {
-				throw new RuntimeException(ex);
-			}
-			return new Result(body.source(), response.code(), error);
+		final String error;
+		try {
+			error = response.isSuccessful() ? null : body.string();
+		} catch (Exception ex) {
+			throw new RuntimeException(ex);
 		}
-		response.close();
-		throw new RuntimeException("Response body is null");
+		return new Result(body.source(), response.code(), error);
 	}
 
-	@Nullable
-	@Override
-	public MediaType contentType() {
-		return contentType;
-	}
+	private static class SyncProducerRequestBody extends RequestBody {
+		static final MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+		BaseContentProvider.SyncContentProducer syncContentProducer;
 
-	@Override
-	public void writeTo(@NonNull BufferedSink bufferedSink) throws IOException {
-		syncContentProducer.writeTo(bufferedSink);
+		@Override
+		public MediaType contentType() {
+			return mediaType;
+		}
+
+		@Override
+		public void writeTo(@NonNull BufferedSink sink) throws IOException {
+			syncContentProducer.writeTo(sink);
+		}
+
+		@Override
+		public boolean isOneShot() {
+			return true;
+		}
 	}
 }
