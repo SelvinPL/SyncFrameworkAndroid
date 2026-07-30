@@ -1,5 +1,6 @@
 -keepnames class pl.selvin.android.listsyncsample.ui.** extends androidx.fragment.app.Fragment
 -keep class pl.selvin.android.listsyncsample.ui.** extends pl.selvin.android.listsyncsample.app.ListFragmentCommon
+-keepclassmembers class * extends pl.selvin.android.listsyncsample.provider.implementation.AbstractQueryProvider { public <init>(...); }
 -dontwarn okio.**
 -dontnote okhttp3.**
 -dontnote android.net.**
