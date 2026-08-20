@@ -91,16 +91,7 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		synchronized (getDatabaseLock) {
 			mDB.getWritableDatabase().setVersion(1);
 			mDB.close();
-			notifyChange(requireContextEx().getContentResolver(), contentHelper.CONTENT_URI, null,false);
-		}
-	}
-
-	@SuppressWarnings({"deprecation", "RedundantSuppression"})
-	public static void notifyChange(final @NonNull ContentResolver contentResolver, Uri uri, ContentObserver observer, boolean syncToNetwork) {
-		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-			contentResolver.notifyChange(uri, observer, false);
-		} else {
-			contentResolver.notifyChange(uri, observer, syncToNetwork ? ContentResolver.NOTIFY_SYNC_TO_NETWORK : 0);
+			notifyChange(requireContextEx().getContentResolver(), contentHelper.CONTENT_URI, null, false);
 		}
 	}
 
@@ -300,7 +291,6 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		return supportSQLiteOpenHelperFactoryProvider.createFactory(requireContextEx());
 	}
 
-
 	protected SupportSQLiteOpenHelper.Callback getHelperCallback() {
 		return defaultCallback;
 	}
@@ -356,5 +346,14 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 
 	protected void onDowngradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
 		onUpgradeDatabase(db, oldVersion, newVersion);
+	}
+
+	@SuppressWarnings({"deprecation", "RedundantSuppression"})
+	public static void notifyChange(final @NonNull ContentResolver contentResolver, Uri uri, ContentObserver observer, boolean syncToNetwork) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+			contentResolver.notifyChange(uri, observer, false);
+		} else {
+			contentResolver.notifyChange(uri, observer, syncToNetwork ? ContentResolver.NOTIFY_SYNC_TO_NETWORK : 0);
+		}
 	}
 }

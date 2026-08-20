@@ -53,11 +53,13 @@ public class SyncTableInfo extends TableInfo {
 	}
 
 	final String scope;
+	final String scopedName;
 	private final ContentValues values = new ContentValues(2);
 
 	SyncTableInfo(Table table, Class<?> clazz, String authority, ColumnInfoFactory columnInfoFactory, String scope) throws Exception {
-		super(table, clazz, authority, scope + ".%s", columnInfoFactory);
+		super(table, clazz, authority, columnInfoFactory);
 		this.scope = scope;
+		this.scopedName = scope + "." + name;
 	}
 
 	boolean hasDirtData(SupportSQLiteDatabase db) {
@@ -90,7 +92,7 @@ public class SyncTableInfo extends TableInfo {
 				jsonWriter.beginObject();
 				jsonWriter.name(SYNC.__metadata).beginObject()
 						.name(SYNC.isDirty).value(true)
-						.name(SYNC.type).value(nameForMime);
+						.name(SYNC.type).value(scopedName);
 				final String uri = c.getString(i);
 				if (uri == null) {
 					jsonWriter.name(SYNC.tempId).value(c.getString(i + 1));

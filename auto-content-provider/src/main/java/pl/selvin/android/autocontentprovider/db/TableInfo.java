@@ -25,7 +25,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import pl.selvin.android.autocontentprovider.annotation.Cascade;
@@ -47,14 +46,13 @@ public class TableInfo {
 	public final String rowIdAlias;
 	public final List<ColumnInfo> columns;
 	public final List<ColumnInfo> computedColumns;
-	public final CascadeInfo[] cascadeDelete;
+	public final List<CascadeInfo> cascadeDelete;
 	public final List<IndexInfo> indexes;
-	protected final String nameForMime;
 	protected final Class<?> clazz;
 	private final String[] primaryKeyStrings;
 	private String selection = null;
 
-	public TableInfo(Table table, Class<?> clazz, final String authority, final String nameForMimeFormat, ColumnInfoFactory columnInfoFactory) throws Exception {
+	public TableInfo(Table table, Class<?> clazz, final String authority, ColumnInfoFactory columnInfoFactory) throws Exception {
 		String tableName = null;
 		this.clazz = clazz;
 		final ArrayList<ColumnInfo> columns = new ArrayList<>();
@@ -88,10 +86,11 @@ public class TableInfo {
 			throw new RuntimeException("There is no field with @TableName annotation");
 		this.name = tableName;
 		final Cascade[] delete = table.delete();
-		cascadeDelete = new CascadeInfo[delete.length];
-		for (int i = 0; i < delete.length; i++) {
-			cascadeDelete[i] = new CascadeInfo(delete[i]);
+		final ArrayList<CascadeInfo> cascadeDelete = new ArrayList<>(delete.length);
+		for (Cascade cascade : delete) {
+			cascadeDelete.add(new CascadeInfo(cascade));
 		}
+		this.cascadeDelete = List.copyOf(cascadeDelete);
 		this.rowIdAlias = table.rowIdAlias();
 		readonly = table.readonly();
 		map.put("_id", "[" + name + "]." + rowIdAlias + " AS _id");
@@ -105,17 +104,17 @@ public class TableInfo {
 		for (String primaryKeyString : primaryKeyStrings) {
 			primaryKeys.add(namesToColumns.get(primaryKeyString));
 		}
-		this.columns = Collections.unmodifiableList(columns);
-		this.computedColumns = Collections.unmodifiableList(computedColumns);
-		this.primaryKeys = Collections.unmodifiableList(primaryKeys);
+		this.columns = List.copyOf(columns);
+		this.computedColumns = List.copyOf(computedColumns);
+		this.primaryKeys = List.copyOf(primaryKeys);
 
-		this.indexes = new ArrayList<>();
+		final ArrayList<IndexInfo> indexes = new ArrayList<>();
 		for (Index index : table.indexes()) {
 			indexes.add(new IndexInfo(name, index));
 		}
-		this.nameForMime = String.format(nameForMimeFormat, name);
-		dirMime = String.format("%s/%s.%s", ContentResolver.CURSOR_DIR_BASE_TYPE, authority, nameForMime);
-		itemMime = String.format("%s/%s.%s", ContentResolver.CURSOR_ITEM_BASE_TYPE, authority, nameForMime);
+		this.indexes = List.copyOf(indexes);
+		dirMime = String.format("%s/%s.%s", ContentResolver.CURSOR_DIR_BASE_TYPE, authority, name);
+		itemMime = String.format("%s/%s.%s", ContentResolver.CURSOR_ITEM_BASE_TYPE, authority, name);
 		notifyUris = table.notifyUris();
 	}
 

@@ -26,7 +26,7 @@ public class DefaultDatabaseInfoFactory implements DatabaseInfoFactory<TableInfo
 			throw new IllegalStateException("Column name can not be null!");
 		return new ColumnInfo(columnName, column);
 	};
-	private final TableInfoFactory<TableInfo> tableInfoFactory = (table, tableClass, authority) -> new TableInfo(table, tableClass, authority, "%s", columnInfoFactory);
+	private final TableInfoFactory<TableInfo> tableInfoFactory = (table, tableClass, authority) -> new TableInfo(table, tableClass, authority, columnInfoFactory);
 
 	@Override
 	public DatabaseInfo<TableInfo> createDatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {

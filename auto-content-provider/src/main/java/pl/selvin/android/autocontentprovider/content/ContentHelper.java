@@ -147,8 +147,8 @@ public class ContentHelper<TTableInfo extends  TableInfo> {
 		return matcher.match(uri);
 	}
 
-	public TTableInfo getTableFromType(String type) {
-		return databaseInfo.allTablesInfo.get(type);
+	public TTableInfo getTableFromName(String tableName) {
+		return databaseInfo.allTablesInfo.get(tableName);
 	}
 
 	public Collection<TTableInfo> getAllTables() {

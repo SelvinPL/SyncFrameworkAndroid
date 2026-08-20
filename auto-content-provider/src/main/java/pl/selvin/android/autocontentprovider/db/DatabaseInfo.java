@@ -12,20 +12,22 @@
 package pl.selvin.android.autocontentprovider.db;
 
 import android.content.UriMatcher;
-import android.util.ArrayMap;
 import android.util.SparseArray;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import pl.selvin.android.autocontentprovider.annotation.Table;
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 
 public class DatabaseInfo<TTableInfo extends TableInfo> {
-	public final ArrayMap<String, TTableInfo> allTablesInfo = new ArrayMap<>();
+	public final Map<String, TTableInfo> allTablesInfo;
 	public final SparseArray<TTableInfo> allTablesInfoCode = new SparseArray<>();
 
 	public DatabaseInfo(Class<?> dbClass, String authority, UriMatcher matcher, TableInfoFactory<TTableInfo> tableInfoFactory) throws Exception {
 		final Class<?>[] tableClasses = dbClass.getClasses();
 		int code = 0;
-
+		final LinkedHashMap<String, TTableInfo> allTablesInfo = new LinkedHashMap<>();
 		for (final Class<?> tableClass : tableClasses) {
 			final Table table = tableClass.getAnnotation(Table.class);
 			if (table != null) {
@@ -41,9 +43,11 @@ public class DatabaseInfo<TTableInfo extends TableInfo> {
 					}
 					matcher.addURI(authority, sig.toString(), code | ContentHelper.uriCodeItemFlag);
 				}
-				allTablesInfo.put(tableToAdd.nameForMime, tableToAdd);
+				if (allTablesInfo.put(tableToAdd.name, tableToAdd) != null)
+					throw new IllegalStateException("Duplicate table name: " + tableToAdd.name);
 				allTablesInfoCode.put(code, tableToAdd);
 			}
 		}
+		this.allTablesInfo = Map.copyOf(allTablesInfo);
 	}
 }

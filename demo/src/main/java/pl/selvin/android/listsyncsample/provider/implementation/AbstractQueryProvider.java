@@ -34,7 +34,7 @@ public abstract class AbstractQueryProvider implements AbstractQueryProviderInte
 	protected final int code;
 
 	public AbstractQueryProvider(@NonNull ListProvider contentProvider, @NonNull ContentHelper<SyncTableInfo> contentHelper, Logger logger,
-								 @NonNull UriMatcher uriMatcher, int code) {
+			@NonNull UriMatcher uriMatcher, int code) {
 		this.contentProvider = contentProvider;
 		this.contentHelper = contentHelper;
 		this.logger = logger;
@@ -42,8 +42,8 @@ public abstract class AbstractQueryProvider implements AbstractQueryProviderInte
 		this.code = code;
 	}
 
-	protected ProjectionMapBuilder projectionMapBuilder(final String scope, final String table) {
-		return new ProjectionMapBuilder(contentHelper, scope, table);
+	protected ProjectionMapBuilder projectionMapBuilder(final String tableName) {
+		return new ProjectionMapBuilder(contentHelper, tableName);
 	}
 
 	@NonNull
@@ -64,16 +64,16 @@ public abstract class AbstractQueryProvider implements AbstractQueryProviderInte
 	}
 
 	protected Cursor returnCursor(final Map<String, String> projectionMap, final Uri uri,
-								  final SQLiteQueryBuilder builder, final String[] projection, final String selection,
-								  final String[] selectionArgs, final String groupBy, final String having, final String sortOrder,
-								  final String limit) {
+			final SQLiteQueryBuilder builder, final String[] projection, final String selection,
+			final String[] selectionArgs, final String groupBy, final String having, final String sortOrder,
+			final String limit) {
 		return returnCursor(projectionMap, uri, builder, projection, selection, selectionArgs, groupBy, having, sortOrder, limit, true);
 	}
 
 	protected Cursor returnCursor(final Map<String, String> projectionMap, final Uri uri,
-								  final SQLiteQueryBuilder builder, final String[] projection, final String selection,
-								  final String[] selectionArgs, final String groupBy, final String having, final String sortOrder,
-								  final String limit, boolean register) {
+			final SQLiteQueryBuilder builder, final String[] projection, final String selection,
+			final String[] selectionArgs, final String groupBy, final String having, final String sortOrder,
+			final String limit, boolean register) {
 		builder.setProjectionMap(projectionMap);
 		logger.LogQuery(getClass(), uri, builder, projection, selection, selectionArgs, groupBy, having, sortOrder, limit);
 		final SupportSQLiteQuery query = new SimpleSQLiteQuery(builder.buildQuery(projection, selection, groupBy, having, sortOrder, limit), selectionArgs);
@@ -91,13 +91,13 @@ public abstract class AbstractQueryProvider implements AbstractQueryProviderInte
 		private final ArrayMap<String, String> projectionMap = new ArrayMap<>();
 		private final ContentHelper<SyncTableInfo> contentHelper;
 
-		private ProjectionMapBuilder(final ContentHelper<SyncTableInfo> contentHelper, final String scope, final String table) {
+		private ProjectionMapBuilder(final ContentHelper<SyncTableInfo> contentHelper, final String tableName) {
 			this.contentHelper = contentHelper;
-			projectionMap.putAll(contentHelper.getTableFromType(String.format("%s.%s", scope, table)).map);
+			projectionMap.putAll(contentHelper.getTableFromName(tableName).map);
 		}
 
-		public ProjectionMapBuilder addTable(final String scope, final String table) {
-			final TableInfo tableInfo = contentHelper.getTableFromType(String.format("%s.%s", scope, table));
+		public ProjectionMapBuilder addTable(final String tableName) {
+			final TableInfo tableInfo = contentHelper.getTableFromName(tableName);
 			for (final String key : tableInfo.map.keySet()) {
 				if (!key.equals(BaseColumns._ID)) {
 					projectionMap.put(key, tableInfo.map.get(key));

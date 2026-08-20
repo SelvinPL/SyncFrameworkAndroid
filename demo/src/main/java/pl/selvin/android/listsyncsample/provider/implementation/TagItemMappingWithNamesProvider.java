@@ -26,13 +26,9 @@ public class TagItemMappingWithNamesProvider extends AbstractQueryProvider {
 	public TagItemMappingWithNamesProvider(@NonNull ListProvider contentProvider, @NonNull ContentHelper<SyncTableInfo> contentHelper, Logger logger, @NonNull UriMatcher uriMatcher, int code) {
 		super(contentProvider, contentHelper, logger, uriMatcher, code);
 		uriMatcher.addURI(Constants.AUTHORITY, Path, code);
-		projectionMap = projectionMapBuilder(TagItemMapping.SCOPE, TagItemMapping.TABLE_NAME)
-				.addTable(Tag.SCOPE, Tag.TABLE_NAME)
+		projectionMap = projectionMapBuilder(TagItemMapping.TABLE_NAME)
+				.addTable(Tag.TABLE_NAME)
 				.build();
-	}
-
-	public static Uri getDirUri() {
-		return ListProvider.getHelper().getDirUri(Path, false);
 	}
 
 	@Override
@@ -49,5 +45,9 @@ public class TagItemMappingWithNamesProvider extends AbstractQueryProvider {
 		builder.appendWhere(TagItemMapping.TABLE_NAME + "." + SYNC.isDeleted + "=0");
 		return returnCursor(projectionMap, uri, builder, projection, selection, selectionArgs,
 				null, null, sortOrder, getLimit(uri));
+	}
+
+	public static Uri getDirUri() {
+		return ListProvider.getHelper().getDirUri(Path, false);
 	}
 }

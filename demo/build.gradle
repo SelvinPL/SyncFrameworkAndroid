@@ -187,8 +187,6 @@ dependencies {
     implementation libs.okhttp3
     implementation libs.okhttp3.logging.interceptor
 
-
-
     //Sync framework
     androidImplementation libs.androidx.sqlite.framework
     implementation project(':sync-framework')

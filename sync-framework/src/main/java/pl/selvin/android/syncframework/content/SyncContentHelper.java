@@ -13,15 +13,15 @@ package pl.selvin.android.syncframework.content;
 
 import android.content.UriMatcher;
 import android.net.Uri;
-import android.util.ArrayMap;
 
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import pl.selvin.android.autocontentprovider.content.ContentHelper;
 import pl.selvin.android.autocontentprovider.db.ColumnInfo;
@@ -35,7 +35,7 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 	// why this name... to ensure that your never call your table like this
 	private static final String DO_SYNC = "pl_selvin_android_sync_framework_do_sync";
 	private static final String PARAMETER_UN_DELETING = "sf_un_deleting";
-	private final static ArrayMap<Class<?>, SyncContentHelper> instances = new ArrayMap<>();
+	private final static LinkedHashMap<Class<?>, SyncContentHelper> instances = new LinkedHashMap<>();
 	public final Uri SYNC_URI;
 	private final SyncDatabaseInfo syncDatabaseInfo;
 
@@ -46,17 +46,8 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 		matcher.addURI(AUTHORITY, DO_SYNC, uriSyncCode);
 	}
 
-	static boolean checkUnDeleting(Uri uri) {
-		final String un_deleting = uri.getQueryParameter(SyncContentHelper.PARAMETER_UN_DELETING);
-		return un_deleting != null && Boolean.parseBoolean(un_deleting);
-	}
-
-	public static SyncContentHelper getInstance(Class<?> dbClass, String authority, String databaseName, int databaseVersion) {
-		if (instances.containsKey(dbClass))
-			return instances.get(dbClass);
-		final SyncContentHelper ret = new SyncContentHelper(dbClass, authority, databaseName, databaseVersion);
-		instances.put(dbClass, ret);
-		return ret;
+	public SyncTableInfo getTableFromType(String type) {
+		return syncDatabaseInfo.tablesWithScope.get(type);
 	}
 
 	@SuppressWarnings("unused")
@@ -94,8 +85,8 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 	}
 
 	@SuppressWarnings("unused")
-	public List<String> getScopes() {
-		return new ArrayList<>(syncDatabaseInfo.tablesInScope.keySet());
+	public Set<String> getScopes() {
+		return syncDatabaseInfo.tablesInScope.keySet();
 	}
 
 	boolean hasDirtTable(SupportSQLiteDatabase db, String scope, Logger logger) {
@@ -109,9 +100,22 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 		return ret;
 	}
 
-	static class SyncDatabaseInfo extends DatabaseInfo<SyncTableInfo> {
+	static boolean checkUnDeleting(Uri uri) {
+		final String un_deleting = uri.getQueryParameter(SyncContentHelper.PARAMETER_UN_DELETING);
+		return un_deleting != null && Boolean.parseBoolean(un_deleting);
+	}
 
+	public static SyncContentHelper getInstance(Class<?> dbClass, String authority, String databaseName, int databaseVersion) {
+		if (instances.containsKey(dbClass))
+			return instances.get(dbClass);
+		final SyncContentHelper ret = new SyncContentHelper(dbClass, authority, databaseName, databaseVersion);
+		instances.put(dbClass, ret);
+		return ret;
+	}
+
+	static class SyncDatabaseInfo extends DatabaseInfo<SyncTableInfo> {
 		final Map<String, List<SyncTableInfo>> tablesInScope;
+		final Map<String, SyncTableInfo> tablesWithScope;
 
 		SyncDatabaseInfo(final Class<?> dbClass, String authority, UriMatcher matcher) throws Exception {
 			super(dbClass, authority, matcher, (table, tableClass, authority1) -> {
@@ -126,21 +130,27 @@ public class SyncContentHelper extends ContentHelper<SyncTableInfo> {
 					return new ColumnInfo(columnName, column);
 				}, scope);
 			});
-			final ArrayMap<String, List<SyncTableInfo>> map = new ArrayMap<>();
+			final LinkedHashMap<String, ArrayList<SyncTableInfo>> tablesInScopeInternal = new LinkedHashMap<>();
+			final LinkedHashMap<String, SyncTableInfo> tablesWithScope = new LinkedHashMap<>();
 			for (SyncTableInfo tab : allTablesInfo.values()) {
-				final List<SyncTableInfo> list;
-				if (!map.containsKey(tab.scope)) {
+				final ArrayList<SyncTableInfo> list;
+				if (!tablesInScopeInternal.containsKey(tab.scope)) {
 					list = new ArrayList<>();
-					map.put(tab.scope, list);
+					tablesInScopeInternal.put(tab.scope, list);
 				} else
-					list = map.get(tab.scope);
+					list = tablesInScopeInternal.get(tab.scope);
 				Objects.requireNonNull(list).add(tab);
+				tablesWithScope.put(tab.scopedName, tab);
 			}
-
-			for (String key : map.keySet()) {
-				map.put(key, Collections.unmodifiableList(Objects.requireNonNull(map.get(key))));
+			final LinkedHashMap<String, List<SyncTableInfo>> tablesInScope = new LinkedHashMap<>();
+			for (final Map.Entry<String, ArrayList<SyncTableInfo>> entrySet : tablesInScopeInternal.entrySet()) {
+				final ArrayList<SyncTableInfo> value = entrySet.getValue();
+				if (value != null) {
+					tablesInScope.put(entrySet.getKey(), List.copyOf(value));
+				}
 			}
-			tablesInScope = Collections.unmodifiableMap(map);
+			this.tablesInScope = Map.copyOf(tablesInScope);
+			this.tablesWithScope = Map.copyOf(tablesWithScope);
 		}
 	}
 
