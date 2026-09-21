@@ -14,12 +14,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    # The AVD is specific to these, so they also form the cache key.
-    env:
-      API_LEVEL: 34
-      TARGET: google_apis
-      ARCH: x86_64
-
     steps:
       - uses: actions/checkout@v5
         with:
@@ -44,39 +38,16 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: AVD cache
-        uses: actions/cache@v5
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-${{ env.API_LEVEL }}-${{ env.TARGET }}-${{ env.ARCH }}
-
-      # On a miss, boot once and save a snapshot so later runs start from it
-      # instead of doing a cold boot. Skipped entirely when the cache is warm.
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: ${{ env.API_LEVEL }}
-          target: ${{ env.TARGET }}
-          arch: ${{ env.ARCH }}
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
-
       # Only the two library modules have tests; demo is not built at all.
-      # -no-snapshot-save keeps the cached snapshot as it is.
+      # No AVD caching: it covered only the AVD itself, while the SDK and system image
+      # downloads - the bulk of the setup time - are not cacheable here, so a ~2GB entry
+      # bought very little and crowded out the Gradle caches.
       - name: Run instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ env.API_LEVEL }}
-          target: ${{ env.TARGET }}
-          arch: ${{ env.ARCH }}
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          api-level: 34
+          target: google_apis
+          arch: x86_64
           disable-animations: true
           script: ./gradlew :auto-content-provider:connectedDebugAndroidTest :sync-framework:connectedDebugAndroidTest
 
@@ -130,7 +101,7 @@ jobs:
       # Kept as the fallback: the artifact also carries per test logcat.
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: android-test-reports
           path: |
