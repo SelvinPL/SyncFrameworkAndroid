@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -44,17 +45,14 @@ import pl.selvin.android.syncframework.json.JsonWriter;
 public class SyncTableInfo extends TableInfo {
 
 	private final static String ms_date = "\"/Date(%s)/\"";
-	private final static SimpleDateFormat sdf = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss", Locale.US);
-
-	static {
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		// comment this line if you're store date in SQL in UTC format
-	}
-
+	private final static ThreadLocal<SimpleDateFormat> SIMPLE_DATE_FORMAT = ThreadLocalExt.withInitial(() -> {
+				final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
+				simpleDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+				return simpleDateFormat;
+			}
+	);
 	final String scope;
 	final String scopedName;
-	private final ContentValues values = new ContentValues(2);
 
 	SyncTableInfo(Table table, Class<?> clazz, String authority, ColumnInfoFactory columnInfoFactory, String scope) throws Exception {
 		super(table, clazz, authority, columnInfoFactory);
@@ -86,6 +84,7 @@ public class SyncTableInfo extends TableInfo {
 		//to fix startPos  > actual rows for large cursors db operations should be done after
 		// cursor is closed ...
 		final ArrayList<OperationHolder> operations = new ArrayList<>();
+		SimpleDateFormat simpleDateFormat = null;
 		if (c.moveToFirst()) {
 			do {
 				counter++;
@@ -126,7 +125,9 @@ public class SyncTableInfo extends TableInfo {
 									break;
 								case ColumnType.DATETIME:
 									try {
-										final Date date = sdf.parse(c.getString(i));
+										if (simpleDateFormat == null)
+											simpleDateFormat = Objects.requireNonNull(SIMPLE_DATE_FORMAT.get());
+										final Date date = simpleDateFormat.parse(c.getString(i));
 										if (date == null)
 											throw new IllegalStateException("Parsed date is null!");
 										jsonWriter.name(column.name).value(String.format(ms_date, date.getTime()));
@@ -173,8 +174,10 @@ public class SyncTableInfo extends TableInfo {
 
 	final boolean SyncJSON(final ArrayMap<String, Object> map, final Metadata meta, final SupportSQLiteDatabase db) {
 		int i = 0;
-		values.clear();
-		for (; i < columns.size(); i++) {
+		final int columnsCount = columns.size();
+		final ContentValues values = new ContentValues(columnsCount + 3);
+		SimpleDateFormat simpleDateFormat = null;
+		for (; i < columnsCount; i++) {
 			final ColumnInfo columnInfo = columns.get(i);
 			final String column = columnInfo.name;
 			final Object obj = map.get(column);
@@ -196,7 +199,9 @@ public class SyncTableInfo extends TableInfo {
 						break;
 					case ColumnType.DATETIME:
 						final String date = (String) obj;
-						values.put(column, sdf.format(new Date(Long.parseLong(date.substring(6, date.length() - 2)))));
+						if (simpleDateFormat == null)
+							simpleDateFormat = Objects.requireNonNull(SIMPLE_DATE_FORMAT.get());
+						values.put(column, simpleDateFormat.format(new Date(Long.parseLong(date.substring(6, date.length() - 2)))));
 						break;
 					default:
 						values.put(column, (String) obj);
