@@ -10,6 +10,7 @@ android {
 
     defaultConfig {
         minSdkVersion 23
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 	}
 
     buildTypes {
@@ -42,4 +43,9 @@ dependencies {
     api libs.okio
     api libs.androidx.core
     api project(':auto-content-provider')
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.androidx.sqlite.framework
 }
