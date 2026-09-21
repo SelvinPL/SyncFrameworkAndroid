@@ -384,6 +384,8 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 
 		public void processValue(final Metadata meta, final ArrayMap<String, Object> values) {
 			final SyncTableInfo tableInfo = syncContentHelper.getTableFromType(meta.type);
+			if (tableInfo == null)
+				throw new JsonDataException("unknown type: " + meta.type);
 			if (meta.isDeleted) {
 				tableInfo.deleteWithUri(meta.uri, database);
 				syncResult.stats.numDeletes++;
