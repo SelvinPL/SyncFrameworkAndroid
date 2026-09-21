@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Selvin
+ * Copyright (c) 2017-2026 Selvin
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -43,7 +43,7 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 	protected final Class<?> clazz = getClass();
 	protected final Logger logger;
 	protected final Object getDatabaseLock = new Object();
-	private final SupportSQLiteOpenHelper.Callback defaultCallback;
+	private final SupportSQLiteOpenHelper.Callback helperCallback;
 	private final SupportSQLiteOpenHelperFactoryProvider supportSQLiteOpenHelperFactoryProvider;
 	private SupportSQLiteOpenHelper mDB;
 
@@ -51,7 +51,7 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		this.logger = logger != null ? logger : Logger.EmptyLogger.INSTANCE;
 		this.contentHelper = contentHelper;
 		this.supportSQLiteOpenHelperFactoryProvider = supportSQLiteOpenHelperFactoryProvider;
-		defaultCallback = new SupportSQLiteOpenHelper.Callback(contentHelper.DATABASE_VERSION) {
+		helperCallback = new SupportSQLiteOpenHelper.Callback(contentHelper.DATABASE_VERSION) {
 			@Override
 			public void onCreate(@NonNull SupportSQLiteDatabase db) {
 				onCreateDatabase(db);
@@ -64,7 +64,17 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 
 			@Override
 			public void onDowngrade(@NonNull SupportSQLiteDatabase db, int oldVersion, int newVersion) {
-				onDowngradeDatabase(db, oldVersion, newVersion);
+				onDowngradeDatabase(super::onDowngrade, db, oldVersion, newVersion);
+			}
+
+			@Override
+			public void onConfigure(@NonNull SupportSQLiteDatabase db) {
+				onConfigureDatabase(db);
+			}
+
+			@Override
+			public void onCorruption(@NonNull SupportSQLiteDatabase db) {
+				onCorruptionDatabase(super::onCorruption, db);
 			}
 		};
 	}
@@ -297,13 +307,18 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		return supportSQLiteOpenHelperFactoryProvider.createFactory(requireContextEx());
 	}
 
-	protected SupportSQLiteOpenHelper.Callback getHelperCallback() {
-		return defaultCallback;
-	}
-
+	@NonNull
 	protected SupportSQLiteOpenHelper.Configuration getHelperConfiguration() {
 		return SupportSQLiteOpenHelper.Configuration.builder(requireContextEx()).name(contentHelper.DATABASE_NAME)
-				.callback(getHelperCallback()).build();
+				.callback(helperCallback).build();
+	}
+
+	@NonNull
+	public Context requireContextEx() {
+		final Context ctx = getContext();
+		if (ctx == null)
+			throw new IllegalStateException("Cannot find context from the provider.");
+		return ctx;
 	}
 
 	protected void onCreateDatabase(SupportSQLiteDatabase db) {
@@ -321,16 +336,8 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		}
 	}
 
-	@NonNull
-	public Context requireContextEx() {
-		final Context ctx = getContext();
-		if (ctx == null)
-			throw new IllegalStateException("Cannot find context from the provider.");
-		return ctx;
-	}
-
 	//if you override, fallback to base on oldVersion == 0
-	protected void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+	protected void onUpgradeDatabase(@NonNull SupportSQLiteDatabase db, int oldVersion, int newVersion) {
 		final Cursor c = db.query("SELECT 'DROP TABLE ' || name || ';' AS cmd FROM sqlite_master WHERE type='table' AND name<>'android_metadata'");
 		final ArrayList<String> commands = new ArrayList<>();
 		if (c.moveToFirst()) {
@@ -351,8 +358,16 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		onCreateDatabase(db);
 	}
 
-	protected void onDowngradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
-		onUpgradeDatabase(db, oldVersion, newVersion);
+	protected void onDowngradeDatabase(@NonNull DowngradeCallback callback, @NonNull SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+		callback.onDowngrade(db, oldVersion, newVersion);
+	}
+
+	@SuppressWarnings("unused")
+	protected void onConfigureDatabase(@NonNull SupportSQLiteDatabase db) {
+	}
+
+	protected void onCorruptionDatabase(@NonNull CorruptionCallback callback, @NonNull SupportSQLiteDatabase db) {
+		callback.onCorruption(db);
 	}
 
 	@SuppressWarnings({"deprecation", "RedundantSuppression"})
@@ -362,5 +377,13 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		} else {
 			contentResolver.notifyChange(uri, observer, syncToNetwork ? ContentResolver.NOTIFY_SYNC_TO_NETWORK : 0);
 		}
+	}
+
+	public interface DowngradeCallback {
+		void onDowngrade(SupportSQLiteDatabase db, int oldVersion, int newVersion);
+	}
+
+	public interface CorruptionCallback {
+		void onCorruption(SupportSQLiteDatabase db);
 	}
 }

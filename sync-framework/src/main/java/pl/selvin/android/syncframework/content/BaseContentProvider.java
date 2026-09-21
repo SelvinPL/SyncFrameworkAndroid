@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2014 Selvin
+  Copyright (c) 2014-2026 Selvin
   Licensed under the Apache License, Version 2.0 (the "License"); you may not
   use this file except in compliance with the License. You may obtain a copy
   of the License at http://www.apache.org/licenses/LICENSE-2.0. Unless required
@@ -347,7 +347,7 @@ public abstract class BaseContentProvider extends AutoContentProvider<SyncTableI
 		}
 	}
 
-	protected void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
+	protected void onUpgradeDatabase(@NonNull SupportSQLiteDatabase db, int oldVersion, int newVersion) {
 		final Intent intent = new Intent(ACTION_SYNC_FRAMEWORK_DATABASE);
 		intent.putExtra(DATABASE_OPERATION_TYPE, DATABASE_OPERATION_TYPE_UPGRADE);
 		requireContextEx().sendBroadcast(intent);
