@@ -21,12 +21,12 @@ jobs:
       ARCH: x86_64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -35,7 +35,7 @@ jobs:
         uses: android-actions/setup-android@v4
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       # The emulator needs hardware acceleration to be usable on the runner.
       - name: Enable KVM
@@ -45,7 +45,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: AVD cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: avd-cache
         with:
           path: |
@@ -80,9 +80,57 @@ jobs:
           disable-animations: true
           script: ./gradlew :auto-content-provider:connectedDebugAndroidTest :sync-framework:connectedDebugAndroidTest
 
+      # Renders the JUnit XML onto the run's summary page, so results are readable
+      # without downloading the artifact.
+      - name: Test summary
+        if: always()
+        run: |
+          python3 - >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import glob, xml.etree.ElementTree as ET
+
+          files = sorted(glob.glob('*/build/outputs/androidTest-results/connected/debug/TEST-*.xml'))
+          if not files:
+              print('## Tests\n\nNo test results were produced.')
+              raise SystemExit
+
+          total = failed = errored = skipped = 0
+          rows, problems = [], []
+          for path in files:
+              module = path.replace('\\', '/').split('/')[0]
+              for suite in ET.parse(path).getroot().iter('testsuite'):
+                  counts = [int(suite.get(k, 0)) for k in ('tests', 'failures', 'errors', 'skipped')]
+                  total, failed = total + counts[0], failed + counts[1]
+                  errored, skipped = errored + counts[2], skipped + counts[3]
+                  name = suite.get('name', '').split('.')[-1]
+                  rows.append((module, name, counts, float(suite.get('time', 0))))
+                  for case in suite.iter('testcase'):
+                      for bad in list(case.iter('failure')) + list(case.iter('error')):
+                          problems.append((case.get('classname', '').split('.')[-1],
+                                           case.get('name', ''), (bad.text or '').strip()))
+
+          bad = failed + errored
+          print('## %s %d tests, %d failed%s' % (
+              '❌' if bad else '✅', total, bad,
+              ', %d skipped' % skipped if skipped else ''))
+          print()
+          print('| Module | Class | Tests | Failed | Skipped | Time |')
+          print('|---|---|--:|--:|--:|--:|')
+          for module, name, c, seconds in rows:
+              print('| %s | %s | %d | %d | %d | %.2fs |'
+                    % (module, name, c[0], c[1] + c[2], c[3], seconds))
+
+          if problems:
+              print('\n## Failures\n')
+              for cls, case, text in problems:
+                  print('<details><summary><code>%s.%s</code></summary>\n' % (cls, case))
+                  print('```\n%s\n```\n' % text[:3000])
+                  print('</details>\n')
+          PY
+
+      # Kept as the fallback: the artifact also carries per test logcat.
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: android-test-reports
           path: |
