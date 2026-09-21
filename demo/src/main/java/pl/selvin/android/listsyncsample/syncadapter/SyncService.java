@@ -16,6 +16,7 @@ import android.accounts.AccountManager;
 import android.app.Service;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SyncResult;
@@ -118,6 +119,21 @@ public class SyncService extends Service {
 			return accountManager.getUserData(account, NetworkOperations.LoginResponse.USER_ID);
 		}
 		return null;
+	}
+
+	public static void clearDatabase(Context context, Account account) {
+		ContentResolver.cancelSync(account, Constants.AUTHORITY);
+		SyncService.awaitSyncIdle();
+		context.getContentResolver().delete(ListProvider.getHelper().CLEAR_URI, null, null);
+	}
+
+	private static void awaitSyncIdle() {
+		final SyncAdapter a = syncAdapter;
+		if (a != null) {
+			//noinspection EmptySynchronizedStatement
+			synchronized (a) {
+			}
+		}
 	}
 
 	public static Account getAccount(Context context) {

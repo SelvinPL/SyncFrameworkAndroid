@@ -89,8 +89,14 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 
 	final protected void clearDatabase() {
 		synchronized (getDatabaseLock) {
-			mDB.getWritableDatabase().setVersion(1);
-			mDB.close();
+			final SupportSQLiteDatabase db = getWritableDatabase();
+			db.beginTransaction();
+			try {
+				onUpgradeDatabase(db, 0, contentHelper.DATABASE_VERSION);
+				db.setTransactionSuccessful();
+			} finally {
+				db.endTransaction();
+			}
 			notifyChange(requireContextEx().getContentResolver(), contentHelper.CONTENT_URI, null, false);
 		}
 	}
@@ -323,6 +329,7 @@ public abstract class AutoContentProvider<TTableInfo extends TableInfo> extends 
 		return ctx;
 	}
 
+	//if you override, fallback to base on oldVersion == 0
 	protected void onUpgradeDatabase(SupportSQLiteDatabase db, int oldVersion, int newVersion) {
 		final Cursor c = db.query("SELECT 'DROP TABLE ' || name || ';' AS cmd FROM sqlite_master WHERE type='table' AND name<>'android_metadata'");
 		final ArrayList<String> commands = new ArrayList<>();

@@ -6,6 +6,7 @@ import android.accounts.AccountAuthenticatorResponse;
 import android.accounts.AccountManager;
 import android.accounts.NetworkErrorException;
 import android.annotation.SuppressLint;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -16,17 +17,18 @@ import androidx.annotation.NonNull;
 import pl.selvin.android.listsyncsample.Constants;
 import pl.selvin.android.listsyncsample.R;
 import pl.selvin.android.listsyncsample.provider.ListProvider;
+import pl.selvin.android.listsyncsample.syncadapter.SyncService;
 import pl.selvin.android.listsyncsample.utils.StaticHelpers;
 
 class Authenticator extends AbstractAccountAuthenticator {
 
-	private final static String TAG = "MobileTrader Auth";
+	private final static String TAG = "ListSyncSample Auth";
 	private final static Class<?> AuthenticatorActivityClass = AuthenticatorActivity.class;
-	private final Context mContext;
+	private final Context context;
 
 	Authenticator(Context context) {
 		super(context);
-		mContext = context;
+		this.context = context;
 	}
 
 	@NonNull
@@ -34,8 +36,11 @@ class Authenticator extends AbstractAccountAuthenticator {
 	public Bundle getAccountRemovalAllowed(AccountAuthenticatorResponse response, Account account) throws NetworkErrorException {
 		Bundle ret = super.getAccountRemovalAllowed(response, account);
 		if (ret.getBoolean(AccountManager.KEY_BOOLEAN_RESULT)) {
-			mContext.getContentResolver().delete(ListProvider.getHelper().CLEAR_URI, null, null);
-			StaticHelpers.getPrefs(mContext).edit().clear().apply();
+			ContentResolver.setSyncAutomatically(account, Constants.AUTHORITY, false);
+			ContentResolver.cancelSync(account, Constants.AUTHORITY);
+			SyncService.clearDatabase(context, account);
+			context.getContentResolver().delete(ListProvider.getHelper().CLEAR_URI, null, null);
+			StaticHelpers.getPrefs(context).edit().clear().apply();
 		}
 		return ret;
 
@@ -46,8 +51,8 @@ class Authenticator extends AbstractAccountAuthenticator {
 	public Bundle addAccount(AccountAuthenticatorResponse response, String accountType, String authTokenType, String[] requiredFeatures, Bundle options) {
 		Log.v(TAG, "addAccount()");
 
-		final AccountManager am = AccountManager.get(mContext);
-		final Intent intent = new Intent(mContext, AuthenticatorActivityClass);
+		final AccountManager am = AccountManager.get(context);
+		final Intent intent = new Intent(context, AuthenticatorActivityClass);
 
 		if (am.getAccountsByType(accountType).length == 0) {
 			intent.putExtra(AuthenticatorActivity.PARAM_AUTH_TOKEN_TYPE, authTokenType);
@@ -59,7 +64,7 @@ class Authenticator extends AbstractAccountAuthenticator {
 
 		final Bundle bundle = new Bundle();
 		bundle.putInt(AccountManager.KEY_ERROR_CODE, AccountManager.ERROR_CODE_UNSUPPORTED_OPERATION);
-		bundle.putString(AccountManager.KEY_ERROR_MESSAGE, mContext.getString(R.string.authenticator_account_exists));
+		bundle.putString(AccountManager.KEY_ERROR_MESSAGE, context.getString(R.string.authenticator_account_exists));
 		return bundle;
 	}
 
@@ -84,7 +89,7 @@ class Authenticator extends AbstractAccountAuthenticator {
 			return result;
 		}
 
-		final AccountManager am = AccountManager.get(mContext);
+		final AccountManager am = AccountManager.get(context);
 		final String password = am.getPassword(account);
 		if (password != null) {
 			final Bundle bundle = NetworkOperations.authenticate(account.name, password);
@@ -96,7 +101,7 @@ class Authenticator extends AbstractAccountAuthenticator {
 				return result;
 			}
 		}
-		final Intent intent = new Intent(mContext, AuthenticatorActivityClass);
+		final Intent intent = new Intent(context, AuthenticatorActivityClass);
 		intent.putExtra(AuthenticatorActivity.PARAM_USERNAME, account.name);
 		intent.putExtra(AuthenticatorActivity.PARAM_AUTH_TOKEN_TYPE, authTokenType);
 		intent.putExtra(AccountManager.KEY_ACCOUNT_AUTHENTICATOR_RESPONSE, response);
