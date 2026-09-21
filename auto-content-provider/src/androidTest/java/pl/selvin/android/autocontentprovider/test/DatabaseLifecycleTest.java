@@ -141,10 +141,10 @@ public class DatabaseLifecycleTest {
 	}
 
 	/**
-	 * Characterises the current downgrade behaviour: onDowngradeDatabase delegates to
-	 * SupportSQLiteOpenHelper.Callback's own onDowngrade, which throws. Before 4.x this
-	 * path rebuilt the database instead - see the note in the summary if that was the
-	 * intended contract.
+	 * Downgrading is left to the platform on purpose: onDowngradeDatabase hands back
+	 * SupportSQLiteOpenHelper.Callback's own onDowngrade, which throws. A provider that
+	 * wants to rebuild instead overrides onDowngradeDatabase and ignores the
+	 * DowngradeCallback it is given.
 	 */
 	@Test
 	public void onDowngradeThrows() {
