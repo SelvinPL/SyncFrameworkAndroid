@@ -1,20 +1,19 @@
 [versions]
 androidx-core = "1.19.0"
-androidx-appcompat = "1.7.1"
+androidx-appcompat = "1.8.0"
 androidx-recyclerview = "1.4.0"
-androidx-sqlite = "2.7.0"
-androidx-sqlite-framework = "2.7.0"
+androidx-sqlite = "2.7.1"
 androidx-annotation = "1.10.0"
 
 material = "1.14.0"
 flexbox = "3.0.0"
 
-sqlcipher-android = "4.17.0"
+sqlcipher-android = "4.19.0"
 
-okhttp3 = "5.4.0"
-okio = "3.18.0"
+okhttp3 = "5.5.0"
+okio = "3.18.2"
 
-android-gradle-plugin = "9.3.1"
+android-gradle-plugin = "9.4.1"
 
 leakcanary-android = "2.14"
 jsr305 = "3.0.2"
@@ -34,7 +33,7 @@ androidx-core = { module = "androidx.core:core", version.ref = "androidx-core" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "androidx-appcompat" }
 androidx-recyclerview = { module = "androidx.recyclerview:recyclerview", version.ref = "androidx-recyclerview" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
-androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "androidx-sqlite-framework" }
+androidx-sqlite-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "androidx-sqlite" }
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidx-annotation" }
 
 material = { module = "com.google.android.material:material", version.ref = "material" }
