@@ -25,7 +25,7 @@ public class SyncTestProvider extends BaseContentProvider {
 
 	public final static String AUTHORITY = "pl.selvin.android.syncframework.test";
 	public final static SyncContentHelper CONTENT_HELPER = SyncContentHelper.getInstance(
-			SyncDatabase.class, AUTHORITY, "sync_test_db", 1);
+			SyncDatabase.class, AUTHORITY, "sync_test_db", 2);
 	/** Shared with the tests, which enqueue responses on it before calling sync. */
 	public final static FakeRequestExecutor EXECUTOR = new FakeRequestExecutor();
 	/** Supplied through the JsonFactory constructor parameter, wrapping the bundled codec. */

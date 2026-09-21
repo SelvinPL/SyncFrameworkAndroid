@@ -52,6 +52,9 @@ public class SyncDatabase {
 
 		@Column(type = ColumnType.DECIMAL, nullable = true)
 		String PRICE = "Price";
+
+		@Column(type = ColumnType.BLOB, nullable = true)
+		String DATA = "Data";
 	}
 
 	@SyncScope(OTHER_SCOPE)

@@ -227,6 +227,43 @@ public class SyncDownloadTest extends SyncTestCase {
 		assertEquals("request " + index + " type", type, request.type);
 	}
 
+	/**
+	 * A column this client does not have, on a table it does - the other half of a schema
+	 * skew, and the benign half: the field is parsed into the value map, no column claims
+	 * it, and the row applies as normal. Also exercises the NameCache miss path, since an
+	 * unknown field name is not in it.
+	 */
+	@Test
+	public void unknownColumnInResponseIsIgnored() {
+		SyncTestProvider.EXECUTOR.enqueue(SyncJson.response("blob-1", false,
+				SyncJson.row(SyncDatabase.Item.TYPE, URI_ONE,
+						SyncJson.itemFields("one", "first")
+								+ ",\"ColumnFromTheFuture\":\"ignored\"")));
+
+		syncDefaultScope();
+
+		assertEquals(1, visibleCount(SyncDatabase.Item.TABLE_NAME));
+		assertEquals("first", columnValue(SyncDatabase.Item.TABLE_NAME, "one",
+				SyncDatabase.Item.NAME));
+		assertEquals("blob-1", storedBlob(SyncDatabase.SCOPE));
+	}
+
+	/** A field name too long for the NameCache still reads correctly, just uncached. */
+	@Test
+	public void veryLongUnknownColumnNameIsHandled() {
+		final StringBuilder name = new StringBuilder();
+		for (int i = 0; i < 80; i++)
+			name.append('x');
+		SyncTestProvider.EXECUTOR.enqueue(SyncJson.response("blob-1", false,
+				SyncJson.row(SyncDatabase.Item.TYPE, URI_ONE,
+						SyncJson.itemFields("one", "first")
+								+ ",\"" + name + "\":\"ignored\"")));
+
+		syncDefaultScope();
+
+		assertEquals(1, visibleCount(SyncDatabase.Item.TABLE_NAME));
+	}
+
 	/** Only the scope being synced is sent - tables live in exactly one scope. */
 	@Test
 	public void syncingOneScopeLeavesTheOtherAlone() {
