@@ -14,11 +14,21 @@ package pl.selvin.android.autocontentprovider.test.suite;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
+import pl.selvin.android.autocontentprovider.test.CascadeDeleteTest;
 import pl.selvin.android.autocontentprovider.test.ContentHelperTest;
-import pl.selvin.android.autocontentprovider.test.ProviderTest;
+import pl.selvin.android.autocontentprovider.test.DatabaseLifecycleTest;
+import pl.selvin.android.autocontentprovider.test.IndexInfoTest;
+import pl.selvin.android.autocontentprovider.test.ProviderCrudTest;
+import pl.selvin.android.autocontentprovider.test.ProviderNotificationTest;
+import pl.selvin.android.autocontentprovider.test.TableInfoTest;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({ContentHelperTest.class,
-        ProviderTest.class})
+        ProviderCrudTest.class,
+        ProviderNotificationTest.class,
+        TableInfoTest.class,
+        IndexInfoTest.class,
+        CascadeDeleteTest.class,
+        DatabaseLifecycleTest.class})
 public class UnitTestSuite {
 }
