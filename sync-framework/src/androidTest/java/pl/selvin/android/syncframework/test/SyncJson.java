@@ -26,6 +26,18 @@ public final class SyncJson {
 				+ String.join(",", results) + "]}}";
 	}
 
+	/**
+	 * The same envelope carrying the optional __sync.resolveConflicts flag. SYNC documents the
+	 * field and the parser reads it, but the reference service never emits it - nothing in
+	 * SyncWinRT writes that name.
+	 */
+	public static String responseResolvingConflicts(String serverBlob, boolean moreChanges,
+	                                                String... results) {
+		return "{\"d\":{\"__sync\":{\"serverBlob\":" + quote(serverBlob)
+				+ ",\"moreChangesAvailable\":" + moreChanges + ",\"resolveConflicts\":true},"
+				+ "\"results\":[" + String.join(",", results) + "]}}";
+	}
+
 	/** A row the server is sending down, with no tempId - it did not come from us. */
 	public static String row(String type, String uri, String fields) {
 		return row(type, uri, null, fields);
@@ -44,6 +56,27 @@ public final class SyncJson {
 		if (fields != null && !fields.isEmpty())
 			sb.append(",").append(fields);
 		return sb.append("}").toString();
+	}
+
+	/**
+	 * Splices a __syncConflict member on to a row: the resolution the server applied, and the
+	 * whole entity that lost it. The reference ODataJsonWriter adds it as the entry's last
+	 * member, which is where this puts it too.
+	 */
+	public static String withConflict(String row, String resolution, String losingRow) {
+		return withConflict(row, null, resolution, losingRow);
+	}
+
+	/**
+	 * As above, with isResolved. SYNC documents that field, but the reference writer only ever
+	 * emits conflictResolution and conflictingChange - pass null to leave it out.
+	 */
+	public static String withConflict(String row, Boolean isResolved, String resolution,
+	                                  String losingRow) {
+		return row.substring(0, row.length() - 1) + ",\"__syncConflict\":{"
+				+ (isResolved == null ? "" : "\"isResolved\":" + isResolved + ",")
+				+ "\"conflictResolution\":" + quote(resolution)
+				+ ",\"conflictingChange\":" + losingRow + "}}";
 	}
 
 	/** A tombstone coming down from the server. */
